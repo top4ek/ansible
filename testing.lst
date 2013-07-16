@@ -1,0 +1,44 @@
+title Back to main menu -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /menu.lst
+
+title Debian
+  kernel /miscboot/debian/vmlinuz 
+  initrd /miscboot/debian/initrd.gz
+
+title Acronis
+  kernel /miscboot/acronis/kernel.dat quiet 
+  initrd /miscboot/acronis/ramdisk.dat
+
+title Start Acronis True Image/Disk Director from ISO
+  map /miscboot/acronis.iso (hd32)
+  map --hook
+  chainloader (hd32)
+
+title Kaspersky Rescue Disk 10
+find --set-root --ignore-floppies /miscboot/KAV/rescueusb.iso
+map /miscboot/KAV/rescueusb.iso (0xff) || map --mem /miscboot/KAV/rescueusb.iso (0xff)
+map --hook
+chainloader (0xff)
+
+title Debian 7.1 amd64 iso
+find --set-root --ignore-floppies /miscboot/debian-7.1.0-amd64-netinst.iso
+map /miscboot/debian-7.1.0-amd64-netinst.iso (0xff) || map --mem /miscboot/debian-7.1.0-amd64-netinst.iso (0xff)
+map --hook
+chainloader (0xff)
+
+
+
+title kav
+linux /boot/rescue root=live:CDLABEL=KRD10 rootfstype=auto vga=791 init=/init initrd=rescue.igz kav_lang=${kav_lang} udev liveimg splash quiet doscsi nomodeset
+initrd /boot/rescue.igz
+
+title    SV-Micro PE 2k10 Plus Pack (Rus)\n Live-RAM сборка, предназначена для сервисного обслуживания и реанимации\n локального компьютера. Быстрая загрузка и работа! После загрузки подключаются\n программы с флешки/CD-диска. Включена поддержка SATA/SCSI/RAID, сеть и \n мультимедиа отсутствуют, для работы на ПК с ОЗУ > 160 Мб.
+chainloader /WINPE/SVPE.BIN
+
+title     * SV-Micro Native Edition 2k10 96/192 (Rus)\n SV-Micro Native работает полностью с флешки (при извлечении сборка зависнет)\n и немного медленнее. Поддержка USB 3.0, SATA/Raid/SCSI отсутствует. Но зато\n требует меньше памяти для загрузки. Рекомендуется использовать для старых ПК,\n не поддерживающих загрузку в режиме USB 2.0, с ОЗУ > 96 Мб.
+chainloader /WINPE/SVNE.BIN
+
+title    RusLive Special Edition 2k10 (Rus)\n Мультимедийная Live-RAM сборка. Поддерживает основные сетевые интерфейсы, \n включая WiFi, и распространенные SATA/SCSI/RAID. Есть поддержка сети/интернета\n и возможность подключения ходовых звуковых, сетевых и видеоустройств. Драйвера\n для этой сборки находятся в папке 2k10/PeDrivers, можно добавлять свои.
+chainloader /WINPE/RLPE.BIN
+

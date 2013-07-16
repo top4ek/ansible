@@ -1,0 +1,31 @@
+﻿title Acronis Disk Director Server 10.0.2169 FULL
+  kernel /miscboot/acronis/dd_kernel.dat vga=788 ramdisk_size=65535 acpi=off quiet
+  initrd /miscboot/acronis/dd_initrd.dat
+
+title Acronis True Image Echo Server 9.7.8398 FULL
+  kernel /miscboot/acronis/ties_kernel.dat vga=788 ramdisk_size=65535 acpi=off quiet
+  initrd /miscboot/acronis/ties_initrd.dat
+
+title Acronis True Image Echo Server 9.7.8398 safe
+  map --mem /miscboot/acronis/ties97ur-safe.ima (fd0)
+  map --hook
+  chainloader (fd0)+1
+  rootnoverify (fd0)
+  map --floppies=1
+  boot
+
+title Acronis True Image Home 2011 (5519) Universal Restore
+  kernel /miscboot/acronis/tih_kernel.dat vga=788 ramdisk_size=65535 acpi=off quiet
+  initrd /miscboot/acronis/tih_initrd.dat
+
+title Acronis True Image Home 2010(6053) Plus Pack safe
+  map --mem /miscboot/acronis/tih13pp-safe.ima (fd0)
+  map --hook
+  chainloader (fd0)+1
+  rootnoverify (fd0)
+  map --floppies=1
+  boot
+
+title Acronis Backup & Recovery Workstation v.10.0.11639
+  kernel /miscboot/acronis/abr_kernel.dat product=bootagent media_for_windows vga=791 quiet
+  initrd /miscboot/acronis/abr_initrd.dat

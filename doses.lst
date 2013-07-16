@@ -1,0 +1,31 @@
+title Back to main menu -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /menu.lst
+
+title DOS 6.22
+  find --set-root /miscboot/win98.img
+  map --mem /miscboot/win98.img (fd0)
+  map --hook
+  chainloader (fd0)+1
+  rootnoverify (fd0)
+
+title DOS 7.00 (Win98)
+  find --set-root /miscboot/win98.img
+  map --mem /miscboot/win98.img (fd0)
+  map --hook
+  chainloader (fd0)+1
+  rootnoverify (fd0)
+
+title DOS 7.10 (WinMe)
+  find --set-root /miscboot/win98.img
+  map --mem /miscboot/win98.img (fd0)
+  map --hook
+  chainloader (fd0)+1
+  rootnoverify (fd0)
+
+title FreeDOS
+  find --set-root /miscboot/freedos.img
+  map --mem /miscboot/freedos.img (fd0)
+  map --hook
+  chainloader (fd0)+1
+  rootnoverify (fd0)

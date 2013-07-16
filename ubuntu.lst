@@ -1,0 +1,31 @@
+title Back to main menu -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /menu.lst
+
+	kernel linux
+	append priority=low vga=788 initrd=initrd.gz -- 
+
+title Ubuntu Mini CD
+  find --set-root /miscboot/ubuntu-mini/initrd.gz
+  kernel /miscboot/ubuntu-mini/linuz 
+  initrd /miscboot/ubuntu-mini/initrd.gz
+  boot
+
+title Ubuntu Mini CD x64
+  find --set-root /miscboot/ubuntu-mini/x64/initrd.gz
+  kernel /miscboot/ubuntu-mini/x64/linuz 
+  initrd /miscboot/ubuntu-mini/x64/initrd.gz
+  boot
+
+
+title Ubuntu LiveCD
+  find --set-root /miscboot/ubuntu/initrd.lz
+  kernel /miscboot/ubuntu/vmlinuz boot=casper live-media-path=/miscboot/ubuntu/ ignore_uuid
+  initrd /miscboot/ubuntu/initrd.lz
+  boot
+
+title Ubuntu LiveCD x64
+  find --set-root /miscboot/ubuntu/x64/initrd.lz
+  kernel /miscboot/ubuntu/x64/vmlinuz.efi boot=casper live-media-path=/miscboot/ubuntu/x64/ ignore_uuid
+  initrd /miscboot/ubuntu/x64/initrd.lz
+  boot

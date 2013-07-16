@@ -1,0 +1,79 @@
+# текст/фон курсор/фон низ/фон верх/фон
+color light-gray/blue yellow/black light-gray/black white/black
+font /rus_slim.gz
+
+#timeout 10
+default /default
+
+title Clonezilla -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /clonezilla.lst
+
+title SonyaPE\n афдывоардфлцоутпжфлдо ЖОПА
+  chainloader /S386/SETUPLDR.BIN
+
+title Windows 7 Setup
+  map --unmap=0:0xff
+  map --unhook
+  root (hd0,0)
+  chainloader /bootmgr
+
+title DOSes -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /doses.lst
+
+title ArchLinux Setup -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /archlinux.lst
+
+title System Rescue CD -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /sysresc.lst
+
+title Passwords -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /passwords.lst
+
+title Acronis -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /acronis.lst
+
+title KolibriOS
+  find --set-root /miscboot/kolibri.img
+  map --mem /miscboot/kolibri.img (fd0)
+  map --hook
+  chainloader (fd0)+1
+  rootnoverify (fd0)
+
+title Android -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /android.lst
+
+title Memtest -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /memtest.lst
+
+title Hiren
+  find --set-root /miscboot/hiren.img
+  map --mem /miscboot/hiren.img (fd0)
+  map --hook
+  chainloader (fd0)+1
+  rootnoverify (fd0)
+
+title HDDs -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /hdd.lst
+
+title Other boot methods -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /booting.lst
+
+title reboot
+reboot
+
+title halt
+halt
+
+title 2test -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /testing.lst

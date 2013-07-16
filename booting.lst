@@ -1,0 +1,13 @@
+title Back to main menu -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /menu.lst
+
+title PLoP boot manager
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  kernel /miscboot/plpbt.bin
+
+title Network boot via gPXE
+  kernel /miscboot/gpxe.lkn
+
+title Network boot via iPXE
+  kernel /miscboot/ipxe.lkn
