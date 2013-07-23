@@ -1,0 +1,24 @@
+title Back to main menu -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /menu.lst
+
+title MemTest
+  kernel /miscboot/memtest/memtest
+
+#LABEL 2
+#	kernel memtest 
+#	append onepass
+
+title MemTest P
+  kernel /miscboot/memtest/memtest.p
+
+title MemTest PP
+  kernel /miscboot/memtest/memtest.pp
+
+#LABEL 5
+#	kernel memtest
+#	append btrace
+
+#LABEL 6
+#	kernel memtest
+#	append maxcpus=1

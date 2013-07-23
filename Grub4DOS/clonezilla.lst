@@ -1,0 +1,67 @@
+title Back to main menu -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /menu.lst
+
+title Clonezilla Ubuntu live
+  kernel /miscboot/clonezilla/vmlinuz  boot=live config noswap edd=on nomodeset vga=normal noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no ip=frommedia  nosplash i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.blacklist=yes
+  initrd /miscboot/clonezilla/initrd.img
+
+title Clonezilla Ubuntu live 640x480
+  kernel /miscboot/clonezilla/vmlinuz  boot=live config noswap edd=on nomodeset noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no vga=785 ip=frommedia  nosplash i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.blacklist=yes
+  initrd /miscboot/clonezilla/initrd.img
+
+title Clonezilla Ubuntu live (To RAM)
+  kernel /miscboot/clonezilla/vmlinuz boot=live config noswap edd=on nomodeset noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no vga=788 toram=filesystem.squashfs ip=frommedia  nosplash i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.blacklist=yes
+  initrd /miscboot/clonezilla/initrd.img 
+
+title Clonezilla Ubuntu live failsafe mode
+  kernel /miscboot/clonezilla/vmlinuz boot=live config  noswap edd=on nomodeset noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no acpi=off irqpoll noapic noapm nodma nomce nolapic nosmp ip=frommedia nomodeset vga=normal nosplash
+  initrd /miscboot/clonezilla/initrd.img
+
+title Clonezilla i486 live
+  kernel /miscboot/clonezilla/i486/vmlinuz
+  initrd /miscboot/clonezilla/i486/initrd.img boot=live config noswap edd=on nomodeset vga=normal noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no ip=frommedia  nosplash i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.blacklist=yes
+
+title Clonezilla i486 live 640x480
+  kernel /miscboot/clonezilla/i486/vmlinuz
+  initrd /miscboot/clonezilla/i486/initrd.img boot=live config noswap edd=on nomodeset noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no vga=785 ip=frommedia  nosplash i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.blacklist=yes
+
+title Clonezilla i486 live (To RAM)
+  kernel /miscboot/clonezilla/i486/vmlinuz
+  initrd /miscboot/clonezilla/i486/initrd.img boot=live config noswap edd=on nomodeset noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no vga=788 toram=filesystem.squashfs ip=frommedia  nosplash i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.blacklist=yes
+
+title Clonezilla i486 live failsafe mode
+  kernel /miscboot/clonezilla/i486/vmlinuz
+  initrd /miscboot/clonezilla/i486/initrd.img boot=live config  noswap edd=on nomodeset noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no acpi=off irqpoll noapic noapm nodma nomce nolapic nosmp ip=frommedia nomodeset vga=normal nosplash
+
+title Clonezilla amd64 live
+  kernel /miscboot/clonezilla/amd64/vmlinuz
+  initrd /miscboot/clonezilla/amd64/initrd.img boot=live config noswap edd=on nomodeset vga=normal noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no ip=frommedia  nosplash i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.blacklist=yes
+
+title Clonezilla amd64 live 640x480
+  kernel /miscboot/clonezilla/amd64/vmlinuz
+  initrd /miscboot/clonezilla/amd64/initrd.img boot=live config noswap edd=on nomodeset noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no vga=785 ip=frommedia  nosplash i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.blacklist=yes
+
+title Clonezilla amd64 live (To RAM)
+  kernel /miscboot/clonezilla/amd64/vmlinuz
+  initrd /miscboot/clonezilla/amd64/initrd.img boot=live config noswap edd=on nomodeset noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no vga=788 toram=filesystem.squashfs ip=frommedia  nosplash i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.blacklist=yes
+
+title Clonezilla amd64 live failsafe mode
+  kernel /miscboot/clonezilla/amd64/vmlinuz
+  initrd /miscboot/clonezilla/amd64/initrd.img boot=live config  noswap edd=on nomodeset noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no acpi=off irqpoll noapic noapm nodma nomce nolapic nosmp ip=frommedia nomodeset vga=normal nosplash
+
+title Clonezilla i686 live
+  kernel /miscboot/clonezilla/i686/vmlinuz boot=live config noswap edd=on nomodeset vga=normal noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no ip=frommedia  nosplash i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.blacklist=yes
+  initrd /miscboot/clonezilla/i686/initrd.img
+
+title Clonezilla i686 live 640x480
+  kernel /miscboot/clonezilla/i686/vmlinuz boot=live config noswap edd=on nomodeset noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no vga=785 ip=frommedia  nosplash i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.blacklist=yes
+  initrd /miscboot/clonezilla/i686/initrd.img
+
+title Clonezilla i686 live (To RAM)
+  kernel /miscboot/clonezilla/i686/vmlinuz  boot=live config noswap edd=on nomodeset noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no vga=788 toram=filesystem.squashfs ip=frommedia  nosplash i915.blacklist=yes radeonhd.blacklist=yes nouveau.blacklist=yes vmwgfx.blacklist=yes
+  initrd /miscboot/clonezilla/i686/initrd.img
+
+title Clonezilla i686 live failsafe mode
+  kernel /miscboot/clonezilla/i686/vmlinuz boot=live config  noswap edd=on nomodeset noprompt locales= keyboard-layouts= ocs_live_run="ocs-live-general" ocs_live_extra_param="" ocs_live_batch=no acpi=off irqpoll noapic noapm nodma nomce nolapic nosmp ip=frommedia nomodeset vga=normal nosplash
+  initrd /miscboot/clonezilla/i686/initrd.img

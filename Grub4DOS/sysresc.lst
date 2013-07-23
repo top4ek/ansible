@@ -1,0 +1,11 @@
+title Back to main menu -->
+  ls /usbdrive.tag || find --set-root --ignore-cd /usbdrive.tag
+  configfile /menu.lst
+
+title System Rescue CD x86
+  kernel /miscboot/sysresccd/rescue32 subdir=/miscboot/sysresccd setkmap=ru
+  initrd /miscboot/sysresccd/initram.igz
+
+title System Rescue CD x86_64
+  kernel /miscboot/sysresccd/rescue64 subdir=/miscboot/sysresccd setkmap=ru
+  initrd /miscboot/sysresccd/initram.igz
