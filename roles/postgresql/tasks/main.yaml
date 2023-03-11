@@ -1,0 +1,119 @@
+---
+- name: Add Apt signing key from official Postgres repo
+  become: true
+  apt_key:
+    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+    state: present
+
+- name: Add postgres official repository
+  become: true
+  apt_repository:
+    repo: deb http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main
+    state: present
+
+- name: Index new repo into the cache
+  become: true
+  apt:
+    name: "*"
+    state: latest
+    update_cache: yes
+    force_apt_get: yes
+
+- name: Install PostgreSQL and pip
+  become: true
+  apt:
+    name:
+      - python3-psycopg2
+      - postgresql
+    state: latest
+
+- name: Set config options
+  become: true
+  template:
+    src: custom.conf.j2
+    dest: "{{ postgresql_conf_dir }}/conf.d/custom.conf"
+    owner: "{{ postgresql_user_name }}"
+    group: "{{ postgresql_user_name }}"
+    mode: 0644
+    backup: true
+  notify: Reload PostgreSQL
+
+- name: Install pg_hba.conf
+  become: true
+  template:
+    src: pg_hba.conf.j2
+    dest: "{{ postgresql_conf_dir }}/pg_hba.conf"
+    owner: "{{ postgresql_user_name }}"
+    group: "{{ postgresql_user_name }}"
+    mode: 0400
+  notify: Reload PostgreSQL
+
+- name: "Change superuser password"
+  become: true
+  become_user: postgres
+  vars:
+    ansible_ssh_pipelining: true
+  postgresql_user:
+    name: "{{ postgresql_user_name }}"
+    password: "{{ postgresql_user_password }}"
+    expires: infinity
+
+- name: "Create roles"
+  become: true
+  become_user: postgres
+  no_log: True
+  vars:
+    ansible_ssh_pipelining: true
+  postgresql_user:
+    name: "{{ item['user'] }}"
+    password: "{{ item['password'] }}"
+    state: present
+  loop: "{{ postgresql_databases }}"
+
+- name: "Create databases"
+  become: true
+  become_user: postgres
+  no_log: True
+  vars:
+    ansible_ssh_pipelining: true
+  postgresql_db:
+    name: "{{ item['database'] }}"
+    owner: "{{ item['user'] }}"
+    state: present
+  loop: "{{ postgresql_databases }}"
+
+- name: "Set priviledges databases"
+  become: true
+  become_user: postgres
+  no_log: True
+  vars:
+    ansible_ssh_pipelining: true
+  postgresql_privs:
+    type: database
+    database: "{{ item['database'] }}"
+    roles: "{{ item['user'] }}"
+    grant_option: no
+    privs: all
+  loop: "{{ postgresql_databases }}"
+
+# - name: "Back up the database"
+#   become: true
+#   become_user: postgres
+#   vars:
+#     ansible_ssh_pipelining: true
+#   postgresql_db:
+#     state: dump
+#     name: "{{ db_name }}"
+#     target: "/var/lib/{{ app_name }}/backups/{{ now }}/{{ db_name }}.dump.gz"
+#   loop: "{{ postgresql_databases }}"
+
+# - name: "Restore the database"
+#   become: true
+#   become_user: postgres
+#   vars:
+#     ansible_ssh_pipelining: true
+#   postgresql_db:
+#     state: restore
+#     name: "{{db_name}}"
+#     target: "/var/lib/{{ app_name }}/backups/uploads/{{ backup_file }}.dump.gz"
+#   loop: "{{ postgresql_databases }}"

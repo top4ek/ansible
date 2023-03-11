@@ -1,0 +1,11 @@
+- name: Install alacritty
+  become: true
+  package:
+    state: latest
+    name:
+      - alacritty
+
+- name: Copy config file
+  copy:
+    src: alacritty.yaml
+    dest: ~/.alacritty.yml

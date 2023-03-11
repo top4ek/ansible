@@ -1,0 +1,48 @@
+- name: Run distribution specific tasks
+  include_tasks: "{{ ansible_os_family }}.yaml"
+
+- name: Allow unprivileged users
+  become: true
+  sysctl:
+    name: kernel.unprivileged_userns_clone
+    value: '1'
+    state: present
+    sysctl_file: /etc/sysctl.d/userns.conf
+    sysctl_set: true
+
+- name: Create subuid
+  become: true
+  copy:
+    dest: /etc/subuid
+    content: "{{ admin_user }}:100000:65536"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Create subgid
+  become: true
+  copy:
+    dest: /etc/subgid
+    content: "{{ admin_user }}:100000:65536"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Create containers.conf
+  become: true
+  copy:
+    src: "containers.conf"
+    dest: "/etc/containers/containers.conf"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Check if linger exists
+  stat: path=/var/lib/systemd/linger/{{ admin_user }}
+  register: linger
+
+- name: Enable linger {{ admin_user }}
+  become: true
+  command: loginctl enable-linger {{ admin_user }}
+  when: not linger.stat.exists
+

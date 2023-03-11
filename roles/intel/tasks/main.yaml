@@ -1,0 +1,8 @@
+# TODO: Debian config
+
+- name: Early KMS start
+  become: yes
+  lineinfile:
+    dest: /etc/mkinitcpio.conf
+    regexp: '^MODULES=()'
+    line: 'MODULES=(i915)'

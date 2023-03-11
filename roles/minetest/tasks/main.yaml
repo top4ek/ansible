@@ -1,0 +1,151 @@
+- name: Create base directory
+  file:
+    path: /home/{{ admin_user }}/minetest
+    state: directory
+    mode: '0777'
+
+- name: Create data directory
+  file:
+    path: /home/{{ admin_user }}/minetest/data
+    state: directory
+    mode: '0777'
+
+- name: Create .minetest directory
+  become: true
+  file:
+    path: /home/{{ admin_user }}/minetest/data/.minetest
+    state: directory
+    mode: '0777'
+    owner: '129999'
+    group: '129999'
+
+- name: Create worlds directory
+  become: true
+  file:
+    path: /home/{{ admin_user }}/minetest/data/.minetest/worlds
+    state: directory
+    owner: '129999'
+    group: '129999'
+
+- name: Create world directory
+  become: true
+  file:
+    path: /home/{{ admin_user }}/minetest/data/.minetest/worlds/world
+    state: directory
+    owner: '129999'
+    group: '129999'
+
+- name: Set world options
+  become: true
+  ini_file:
+    no_extra_spaces: false
+    path: /home/{{ admin_user }}/minetest/data/.minetest/worlds/world/world.mt
+    section:
+    option: "{{ item['option'] }}"
+    value: "{{ item['value'] }}"
+    owner: '129999'
+    group: '129999'
+    backup: false
+  loop: "{{ minetest.world_options }}"
+
+- name: Create config directory
+  file:
+    path: /home/{{ admin_user }}/minetest/conf
+    state: directory
+    mode: '0777'
+
+- name: Set server options
+  become: true
+  ini_file:
+    no_extra_spaces: false
+    path: /home/{{ admin_user }}/minetest/conf/minetest.conf
+    section:
+    option: "{{ item['option'] }}"
+    value: "{{ item['value'] }}"
+    owner: '129999'
+    group: '129999'
+    backup: false
+  loop: "{{ minetest.configuration }}"
+
+- name: Chown config file
+  become: true
+  file:
+    dest: /home/{{ admin_user }}/minetest/conf/minetest.conf
+    owner: '129999'
+    group: '129999'
+
+- name: Chown mods
+  become: true
+  file:
+    dest: /home/{{ admin_user }}/minetest/data/.minetest/mods/
+    recurse: true
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+
+- name: Clone mods
+  git:
+    repo: "{{ item['repo'] }}"
+    dest: "/home/{{ admin_user }}/minetest/data/.minetest/mods/{{ item['name'] }}"
+    update: true
+    version: "{{ item['version'] }}"
+    single_branch: true
+  loop: "{{ minetest.mods }}"
+
+- name: Chown mods back
+  become: true
+  file:
+    dest: /home/{{ admin_user }}/minetest/data/.minetest/mods/
+    recurse: true
+    owner: '129999'
+    group: '129999'
+
+- name: Chown games
+  become: true
+  file:
+    dest: /home/{{ admin_user }}/minetest/data/.minetest/games/
+    recurse: true
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+
+- name: Clone games
+  git:
+    repo: "{{ item['repo'] }}"
+    dest: "/home/{{ admin_user }}/minetest/data/.minetest/games/{{ item['name'] }}"
+    update: true
+    version: "{{ item['version'] }}"
+    single_branch: true
+  loop: "{{ minetest.games }}"
+
+- name: Chown games back
+  become: true
+  file:
+    dest: /home/{{ admin_user }}/minetest/data/.minetest/games/
+    recurse: true
+    owner: '129999'
+    group: '129999'
+
+- name: "Pull {{ minetest.version }} version"
+  command: podman pull registry.gitlab.com/minetest/minetest/server:{{ minetest.version }}
+
+- name: Start Minetest
+  command: podman run -d --replace --restart unless-stopped --userns=keep-id --name minetest -p {{ minetest.port }}:30000 -p {{ minetest.port }}:30000/udp -v /home/{{ admin_user }}/minetest/data/:/var/lib/minetest/:Z -v /home/{{ admin_user }}/minetest/conf/:/etc/minetest registry.gitlab.com/minetest/minetest/server:{{ minetest.version }}
+
+- name: Generate systemd application unit
+  shell: podman generate systemd --restart-policy=always --name minetest > /home/{{ admin_user }}/minetest/minetest.service
+
+- name: Create symlink to systemd unit
+  file:
+    src: /home/{{ admin_user }}/minetest/minetest.service
+    path: "/home/{{ admin_user }}/.config/systemd/user/minetest.service"
+    state: link
+
+- name: Reload systemd config for application
+  systemd:
+    name: minetest
+    daemon_reload: yes
+    scope: user
+    enabled: yes
+
+- name: Install map server
+  include_tasks: "map.yaml"
+  when: minetest_map is defined

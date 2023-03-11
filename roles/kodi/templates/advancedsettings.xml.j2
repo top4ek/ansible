@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<advancedsettings>
+{% for category in kodi.advanced %}
+<{{ category }}>
+{% for opt in kodi.advanced.get(category) %}
+<{{ opt }}>{{ kodi.advanced.get(category).get(opt) }}</{{ opt }}>
+{% endfor %}
+</{{ category }}>
+{% endfor %}
+</advancedsettings>

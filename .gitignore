@@ -1,0 +1,5 @@
+roles/kde/files/network_manager/*
+group_vars
+host_vars
+hosts.yaml
+roles.yaml

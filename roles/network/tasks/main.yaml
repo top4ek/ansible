@@ -1,0 +1,51 @@
+- name: Create network files
+  become: true
+  template:
+    src: interfaces.j2
+    dest: /etc/network/interfaces
+    mode: 0644
+  when: interfaces is defined
+
+- name: Set IPv4 forwarding flag
+  become: true
+  sysctl:
+    name: net.ipv4.ip_forward
+    sysctl_file: /etc/sysctl.d/ipv4.conf
+    value: "1"
+    state: present
+
+- name: Set IPv6 forwarding flag
+  become: true
+  ignore_errors: true
+  sysctl:
+    name: net.ipv6.conf.all.forwarding
+    sysctl_file: /etc/sysctl.d/ipv6.conf
+    value: "0"
+    state: present
+
+- name: Deleting old firewall daemons
+  become: true
+  package:
+    state: absent
+    name:
+      - firewalld
+    update_cache: yes
+
+- name: Installing required packages
+  become: true
+  package:
+    name: nftables
+    state: present
+    update_cache: yes
+
+- name: "Generating nftables rules"
+  become: true
+  template:
+    src: "nftables.conf.j2"
+    dest: "/etc/nftables.conf"
+    owner: root
+    group: adm
+    mode: "0644"
+    validate: "nft --check --file %s"
+  notify: "Restarting firewall rules"
+  when: interfaces is defined

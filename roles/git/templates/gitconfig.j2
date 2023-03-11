@@ -1,0 +1,59 @@
+[user]
+  name = {{ git_name }}
+  email = {{ git_email }}
+
+[alias]
+  co      = checkout
+  ci      = commit
+  cl      = clean
+  st      = status
+  br      = branch
+  up      = pull --rebase
+  pr      = pull --rebase
+  pust    = push staging staging:master
+  pupr    = push production production:master
+  last    = log -1 HEAD
+  olog    = log --oneline
+  unstage = reset HEAD --
+  undo  = reset HEAD^
+  history = log --pretty=format:\"%h %ad | %s%d [%an]\" --graph --date=short
+  type    = cat-file -t
+  dump    = cat-file -p
+  lg  = log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+
+
+[mirror]
+  summary = true
+
+[color]
+  diff = auto
+  status = auto
+  branch = auto
+
+[color "branch"]
+  current = yellow bold
+  local = yellow
+  remote = green
+
+[color "diff"]
+  meta = yellow bold
+  frag = magenta bold
+  old = red bold
+  new = green bold
+
+[color "status"]
+  added = yellow
+  changed = green
+  untracked = cyan
+
+[merge]
+  summary = true
+
+[push]
+  default = tracking
+
+[rerere]
+  enabled = 1
+
+[github]
+  user = {{ git_hub_username }}

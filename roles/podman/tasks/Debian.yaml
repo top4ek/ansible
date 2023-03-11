@@ -1,0 +1,11 @@
+- name: Install podman
+  become: true
+  package:
+    state: latest
+    name:
+      - uidmap
+      - podman
+      - runc
+      - slirp4netns
+      - fuse-overlayfs
+

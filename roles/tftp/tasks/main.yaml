@@ -1,0 +1,18 @@
+- name: Install tftp hpa
+  become: yes
+  package:
+    name: tftp-hpa
+
+- name: Create main config
+  become: true
+  template:
+    src: config.j2
+    dest: /etc/default/tftpd-hpa
+    mode: 0644
+
+- name: Create map file
+  become: true
+  template:
+    src: map.j2
+    dest: /etc/tftpd.map
+    mode: 0644

@@ -1,0 +1,105 @@
+- name: Install KDE
+  become: yes
+  package:
+    name:
+      - ark
+      - bluedevil
+      - breeze-gtk
+      - ffmpegthumbs
+      - gwenview
+      - kde-gtk-config
+      - kdeconnect
+      - kdialog
+      - kimageformats
+      - konsole
+      - kscreen
+      - libappindicator-gtk3
+      - networkmanager-openvpn
+      - okular
+      - pipewire
+      - pipewire-alsa
+      - pipewire-pulse
+      - plasma-desktop
+      - plasma-nm
+      - plasma-pa
+      - powerdevil
+      - qt5-imageformats
+      - sddm
+      - sddm-kcm
+      - spectacle
+      - sshfs
+      - vlc
+      - wireplumber
+      - xdg-desktop-portal-kde
+
+- name: Copy Network Manager profiles
+  become: true
+  copy:
+    src: "network_manager/"
+    dest: "/etc/NetworkManager/system-connections"
+
+- name: Copy konsole default profile
+  copy:
+    src: Default.profile
+    dest: /home/{{ admin_user }}/.local/share/konsole/Default.profile
+
+- name: Enable SDDM service
+  become: yes
+  service:
+    name: sddm
+    enabled: true
+
+- name: Enable relogin
+  become: true
+  ini_file:
+    path: /etc/sddm.conf.d/kde_settings.conf
+    section: Autologin
+    option: Relogin
+    value: true
+    no_extra_spaces: true
+
+- name: Set login session name
+  become: true
+  ini_file:
+    path: /etc/sddm.conf.d/kde_settings.conf
+    section: Autologin
+    option: User
+    value: "{{ admin_user }}"
+    no_extra_spaces: true
+
+- name: Set login session mode
+  become: true
+  ini_file:
+    path: /etc/sddm.conf.d/kde_settings.conf
+    section: Autologin
+    option: Session
+    value: plasma
+    no_extra_spaces: true
+
+- name: Disable kwallet
+  become: true
+  ini_file:
+    path: /home/{{ admin_user }}/.config/kwalletrc
+    section: Wallet
+    option: Enabled
+    value: false
+    no_extra_spaces: true
+
+- name: Disable balooctl
+  shell: |
+    balooctl suspend || true
+    balooctl disable
+    balooctl purge
+
+- name: Update user groups
+  become: true
+  user:
+    name: "{{ admin_user }}"
+    append: yes
+    groups:
+      - avahi
+      - nm-openvpn
+      - openvpn
+      - polkitd
+      - rtkit
+      - sddm

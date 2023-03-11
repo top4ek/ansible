@@ -1,0 +1,30 @@
+[NetDev]
+Name=wg0
+Kind=wireguard
+Description=WireGuard tunnel wg0
+
+[WireGuard]
+ListenPort={{ wireguard_port }}
+PrivateKey={{ wireguard_private_key.stdout }}
+
+{% for peer in groups['wireguard'] %}
+{% if peer != inventory_hostname %}
+
+[WireGuardPeer]
+PublicKey={{ hostvars[peer].wireguard_public_key.stdout }}
+PresharedKey={{ wireguard_preshared_keys[peer] if inventory_hostname < peer else hostvars[peer].wireguard_preshared_keys[inventory_hostname] }}
+AllowedIPs={{ hostvars[peer].wireguard.mesh.internal_ip }}/32
+Endpoint={{ hostvars[peer].wireguard.mesh.external_ip }}:{{ wireguard_port }}
+PersistentKeepalive=25
+{% endif %}
+{% endfor %}
+
+{% if wireguard.vpn is defined %}
+{% for client in wireguard.vpn.clients %}
+
+# {{ client.name }}
+[WireGuardPeer]
+AllowedIPs={{ client.internal_ip }}/32
+PublicKey={{ client.public_key }}
+{% endfor %}
+{% endif %}

@@ -1,0 +1,19 @@
+source /etc/network/interfaces.d/*
+
+{% for interface in interfaces %}
+auto {{ interface.iface }}
+iface {{ interface.iface }} inet {{ interface.type }}
+{% if interface.address is defined %}
+  address {{ interface.address }}
+{% endif %}
+{% if interface.netmask is defined %}
+  netmask {{ interface.netmask }}
+{% endif %}
+{% if interface.gateway is defined %}
+  gateway {{ interface.gateway }}
+{% endif %}
+{% if interface.nameservers is defined %}
+  dns-nameservers {{ interface.nameservers }}
+{% endif %}
+
+{% endfor %}

@@ -1,0 +1,11 @@
+[
+{% if minecraft.players is defined %}
+{% for player in minecraft.players %}
+  {
+    "ignoresPlayerLimit": "{{ player.ignore_limit }}",
+    "name": "{{ player.name }}",
+    "xuid": "{{ player.xuid }}"
+  }{{ "," if not loop.last }}
+{% endfor %}
+{% endif %}
+]

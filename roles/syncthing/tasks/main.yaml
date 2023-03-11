@@ -1,0 +1,33 @@
+- name: Create directory
+  file:
+    path: "/home/{{ admin_user }}/syncthing"
+    state: directory
+    mode: '0755'
+
+- name: Pull syncthing
+  shell: podman pull docker.io/syncthing/syncthing:latest
+
+- name: Start syncthing
+  shell: podman run -d --replace --restart unless-stopped --userns=keep-id -p 8384:8384 -p 22000:22000/tcp -p 22000:22000/udp --name syncthing -v /home/{{ admin_user }}/syncthing:/var/syncthing --hostname=syncthing docker.io/syncthing/syncthing:latest
+
+- name: Create systemd units directory
+  file:
+    path: "/home/{{ admin_user }}/.config/systemd/user"
+    state: directory
+    mode: '0755'
+
+- name: Generate systemd unit
+  shell: podman generate systemd --restart-policy=always --name syncthing > /home/{{ admin_user }}/syncthing/syncthing.service
+
+- name: Create symlink to systemd
+  file:
+    src: /home/{{ admin_user }}/syncthing/syncthing.service
+    path: "/home/{{ admin_user }}/.config/systemd/user/syncthing.service"
+    state: link
+
+- name: Reload systemd config
+  systemd:
+    name: syncthing
+    daemon_reload: yes
+    scope: user
+    enabled: yes

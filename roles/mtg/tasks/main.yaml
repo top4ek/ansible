@@ -1,0 +1,38 @@
+- name: Create directory
+  file:
+    path: "/home/{{ admin_user }}/mtg"
+    state: directory
+    mode: '0755'
+
+- name: Generate MTG config
+  copy:
+    content: "secret = \"{{ mtg.secret }}\"\nbind-to = \"{{ mtg.bind }}:{{ mtg.port}}\"\n"
+    dest: "/home/{{ admin_user }}/mtg/config.toml"
+
+- name: Pull MTG
+  shell: podman pull docker.io/nineseconds/mtg:stable
+
+- name: Start MTG
+  shell: podman run -d --replace --restart unless-stopped --name mtg -p {{ mtg.port }}:{{ mtg.port }} -v /home/{{ admin_user }}/mtg/config.toml:/config.toml nineseconds/mtg:stable
+
+- name: Create systemd units directory
+  file:
+    path: "/home/{{ admin_user }}/.config/systemd/user"
+    state: directory
+    mode: '0755'
+
+- name: Generate systemd unit
+  shell: podman generate systemd --restart-policy=always --name mtg > /home/{{ admin_user }}/mtg/mtg.service
+
+- name: Create symlink to systemd
+  file:
+    src: /home/{{ admin_user }}/mtg/mtg.service
+    path: "/home/{{ admin_user }}/.config/systemd/user/mtg.service"
+    state: link
+
+- name: Reload systemd config
+  systemd:
+    name: mtg
+    daemon_reload: yes
+    scope: user
+    enabled: yes

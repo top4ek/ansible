@@ -1,0 +1,4 @@
+- name: Create wakatime config
+  template:
+    dest: "/home/{{ admin_user }}/.wakatime.cfg"
+    src: ".wakatime.cfg.j2"

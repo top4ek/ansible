@@ -1,0 +1,48 @@
+- name: Create directory
+  file:
+    path: "/home/{{ admin_user }}/papyruscs"
+    state: directory
+    mode: '0755'
+
+- name: Create output directory
+  file:
+    path: "/home/{{ admin_user }}/papyruscs/output"
+    state: directory
+    mode: '0755'
+
+- name: Create worlds directory
+  file:
+    path: "/home/{{ admin_user }}/papyruscs/worlds"
+    state: directory
+    mode: '0755'
+
+- name: Pull PapyrusCS
+  shell: podman pull docker.io/achton/papyruscs-docker:latest
+
+- name: Start PapyrusCS
+  shell: podman run -d --replace --restart unless-stopped --name papyruscs -v /home/{{ admin_user }}/papyruscs/worlds:/app/worlds -v /home/{{ admin_user }}/papyruscs/output:/app/output docker.io/achton/papyruscs-docker:latest
+
+- name: Create systemd units directory
+  file:
+    path: "/home/{{ admin_user }}/.config/systemd/user"
+    state: directory
+    mode: '0755'
+
+- name: Generate systemd unit
+  shell: podman generate systemd --restart-policy=always --name papyruscs > /home/{{ admin_user }}/papyruscs/papyruscs.service
+
+- name: Create symlink to systemd
+  file:
+    src: /home/{{ admin_user }}/papyruscs/papyruscs.service
+    path: "/home/{{ admin_user }}/.config/systemd/user/papyruscs.service"
+    state: link
+
+- name: Reload systemd config
+  systemd:
+    name: papyruscs
+    daemon_reload: yes
+    scope: user
+    enabled: yes
+
+# - name: Clean images
+#   shell: podman system prune -f

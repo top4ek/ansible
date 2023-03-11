@@ -1,0 +1,14 @@
+nginx_proxies:
+{% for proxy in nginx_proxies %}
+  - domain: {{ proxy.domain }}
+    zone: {{ proxy.zone }}
+    dest: {{ proxy.dest }}
+    enabled: {{ proxy.enabled }}
+{% endfor %}
+
+acme_email: {{ acme_email }}
+acme_common_name: aleschenko.ru
+
+dns_cloudflare_email: {{ dns_cloudflare_email }}
+dns_cloudflare_api_key: {{ dns_cloudflare_api_key }}
+

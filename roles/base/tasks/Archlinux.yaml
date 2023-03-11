@@ -1,0 +1,76 @@
+- name: Pacman
+  become: true
+  ini_file:
+    path: /etc/pacman.conf
+    section: options
+    option: ILoveCandy
+    allow_no_value: true
+
+- name: Colored output
+  become: true
+  ini_file:
+    path: /etc/pacman.conf
+    section: options
+    option: Color
+    allow_no_value: true
+
+- name: Enable parallel downloads
+  become: true
+  ini_file:
+    path: /etc/pacman.conf
+    section: options
+    option: ParallelDownloads
+    value: "5"
+
+- name: Enable multilib
+  become: true
+  ini_file:
+    path: /etc/pacman.conf
+    section: multilib
+    option: Include
+    value: "/etc/pacman.d/mirrorlist"
+
+- name: Set clean method
+  become: true
+  ini_file:
+    path: /etc/pacman.conf
+    section: options
+    option: CleanMethod
+    value: KeepInstalled
+
+- name: Update packages
+  become: true
+  pacman:
+    update_cache: yes
+    upgrade: yes
+
+- name: Install packages
+  become: true
+  pacman:
+    name:
+      - base-devel
+      - cdrtools
+      - curl
+      - diffutils
+      - gnupg
+      - go
+      - gzip
+      - mc
+      - networkmanager
+      - nfs-utils
+      - openssh
+      - p7zip
+      - sudo
+      - tar
+      - terminus-font
+      - unrar
+      - unzip
+      - usbutils
+      - wget
+
+- name: Enable NetworkManager service
+  become: true
+  service:
+    name: NetworkManager
+    enabled: true
+    state: started

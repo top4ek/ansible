@@ -1,0 +1,75 @@
+- name: "{{ item.domain }}.{{ item.zone }}: Create directory"
+  become: true
+  file:
+    dest: "/etc/pki/{{ item.domain }}.{{ item.zone }}"
+    state: directory
+
+- name: "{{ item.domain }}.{{ item.zone }}: Generate certificate key"
+  become: true
+  community.crypto.openssl_privatekey:
+    path: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.pem"
+
+- name: "{{ item.domain }}.{{ item.zone }}: Generate CSR"
+  become: true
+  community.crypto.openssl_csr:
+    path: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.csr"
+    privatekey_path: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.pem"
+    common_name: "{{ item.domain }}.{{ item.zone }}"
+
+- name: "{{ item.domain }}.{{ item.zone }}: Create a challenge"
+  become: true
+  community.crypto.acme_certificate:
+    account_key_src: "/etc/pki/acme.pem"
+    account_email: "{{ acme_email }}"
+    src: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.csr"
+    cert: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.crt"
+    challenge: dns-01
+    # acme_directory: https://acme-staging-v02.api.letsencrypt.org/directory
+    acme_directory: https://acme-v02.api.letsencrypt.org/directory
+    acme_version: 2
+    remaining_days: 30
+    terms_agreed: yes
+  register: acme_data
+
+- name: "{{ item.domain }}.{{ item.zone }}: Create TXT record"
+  delegate_to: localhost
+  community.general.cloudflare_dns:
+    zone: "{{ item.zone }}"
+    account_email: "{{ dns_cloudflare_email }}"
+    account_api_key: "{{ dns_cloudflare_api_key }}"
+    type: TXT
+    record: "{{ acme_data.challenge_data[item.domain + '.' + item.zone]['dns-01']['record'] }}"
+    value: "{{ acme_data.challenge_data[item.domain + '.' + item.zone]['dns-01']['resource_value'] }}"
+    ttl: 60
+    state: present
+  when: acme_data is changed
+
+- name: "{{ item.domain }}.{{ item.zone }}: Validated and retrieve the certs"
+  become: true
+  community.crypto.acme_certificate:
+    account_key_src: "/etc/pki/acme.pem"
+    account_email: "{{ acme_email }}"
+    src: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.csr"
+    cert: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.crt"
+    fullchain: "/etc/pki/{{ item.domain }}.{{ item.zone }}/fullchain.crt"
+    chain: "/etc/pki/{{ item.domain }}.{{ item.zone }}/intermediate.crt"
+    challenge: dns-01
+    # acme_directory: https://acme-staging-v02.api.letsencrypt.org/directory
+    acme_directory: https://acme-v02.api.letsencrypt.org/directory
+    acme_version: 2
+    remaining_days: 30
+    terms_agreed: yes
+    data: "{{ acme_data }}"
+  when: acme_data is changed
+
+- name: "{{ item.domain }}.{{ item.zone }}: Remove TXT record"
+  delegate_to: localhost
+  community.general.cloudflare_dns:
+    zone: "{{ item.zone }}"
+    account_email: "{{ dns_cloudflare_email }}"
+    account_api_key: "{{ dns_cloudflare_api_key }}"
+    type: TXT
+    record: "{{ acme_data.challenge_data[item.domain + '.' + item.zone]['dns-01']['record'] }}"
+    ttl: 60
+    state: absent
+  when: acme_data is changed

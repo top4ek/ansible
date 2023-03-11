@@ -1,0 +1,23 @@
+- name: Update user
+  become: true
+  ignore_errors: yes
+  user:
+    name: "{{ admin_user }}"
+    shell: /bin/zsh
+    system: yes
+    create_home: yes
+    expires: -1
+    append: yes
+    groups:
+      - adm
+      - games
+      - sudo
+
+- name: Enable passwordless sudo
+  become: true
+  ignore_errors: yes
+  lineinfile:
+    regexp: "^%sudo"
+    line: "%sudo ALL=(ALL) NOPASSWD: ALL"
+    state: present
+    path: "/etc/sudoers"

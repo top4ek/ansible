@@ -1,0 +1,23 @@
+- name: Disable SSH password authentication
+  become: true
+  lineinfile:
+    path: "/etc/ssh/sshd_config"
+    regex: '^(\#|\s)*PasswordAuthentication\s*(yes|no)$'
+    line: "PasswordAuthentication no"
+
+- name: Set hostname in /etc/hostname
+  become: true
+  copy:
+    content: "{{ hostname|default(inventory_hostname) }}\n"
+    dest: "/etc/hostname"
+
+- name: Set hostname in /etc/hosts
+  become: true
+  lineinfile:
+    regexp: "^127.0.1.1"
+    line: "127.0.1.1 {{ hostname|default(inventory_hostname) }}.localdomain {{ hostname|default(inventory_hostname) }}"
+    state: present
+    path: "/etc/hosts"
+- name: Run distribution specific tasks
+
+  include_tasks: "{{ ansible_os_family }}.yaml"

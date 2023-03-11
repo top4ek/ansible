@@ -1,0 +1,2 @@
+- name: Run distribution specific tasks
+  include_tasks: "{{ ansible_os_family }}.yaml"

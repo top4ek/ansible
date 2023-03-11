@@ -1,0 +1,10 @@
+- name: Install latest NeoVim
+  become: true
+  apt:
+    deb: https://github.com/neovim/neovim/releases/download/stable/nvim-linux64.deb
+
+- name: Use Light configuration
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.profile
+    line: "export LIGHT_NVIM=true"

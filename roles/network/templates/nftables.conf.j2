@@ -1,0 +1,69 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table inet filter {
+  chain input {
+    type filter hook input priority filter; policy drop;
+
+    iifname "lo" accept;
+{% if wireguard.mesh.internal_ip is defined %}
+    iifname "wg0" accept;
+{% endif %}
+
+    ct state related,established accept;
+    ct state invalid drop;
+
+    iifname != "lo" ip saddr 127.0.0.0/8 drop;
+
+    fib daddr type broadcast drop;
+    fib daddr type multicast drop;
+    fib daddr type anycast drop;
+    ip daddr 224.0.0.0/4 drop;
+
+    tcp dport {{ ansible_port }} tcp flags & (fin|syn|rst|ack) == syn ct state new accept;
+
+{% for interface in interfaces %}
+{% if interface.open_ports.udp is defined %}
+    iifname {{ interface.iface }} ip protocol udp udp dport { {{ interface.open_ports.udp|join(',') }} } accept;
+{% endif %}
+{% if interface.open_ports.tcp is defined %}
+    iifname {{ interface.iface }} tcp dport { {{ interface.open_ports.tcp|join(',') }} } tcp flags & (fin|syn|rst|ack) == syn ct state new accept;
+{% endif %}
+{% endfor %}
+
+    icmp type echo-reply ct state new accept
+    icmp type destination-unreachable ct state new accept
+    icmp type time-exceeded ct state new accept
+  }
+
+  chain forward {
+    type filter hook forward priority filter; policy drop;
+
+    ct state { related, established } accept
+    ct state invalid drop
+
+    iifname "wg0" oif "ens3" accept
+    iifname "ens3" oifname "wg0" ct state related,established accept
+  }
+
+  chain output {
+    type filter hook output priority filter; policy accept;
+    ct state { established, related, new } accept
+    iifname "lo" accept
+  }
+}
+
+{% if wireguard.vpn.snat_interface is defined %}
+table ip nat {
+  chain prerouting {
+    type nat hook prerouting priority dstnat; policy accept;
+    counter;
+  }
+
+  chain postrouting {
+    type nat hook postrouting priority srcnat; policy accept;
+    ip saddr {{ wireguard.vpn.range }} oif {{ wireguard.vpn.snat_interface }} snat to {{ ansible_host }};
+  }
+}
+{% endif %}

@@ -1,0 +1,3 @@
+{% for module in asdf.modules | dict2items %}
+{{ module.key }} {{ module.value.version }}
+{% endfor %}

@@ -1,0 +1,73 @@
+{
+        "configversion": 2,
+        "port": {{ minetest_map.port }},
+        "enableprometheus": false,
+        "enablerendering": true,
+        "enablesearch": true,
+        "enableinitialrendering": true,
+        "enabletransparency": false,
+        "enablemediarepository": false,
+        "webdev": false,
+        "webapi": {
+                "enablemapblock": false,
+                "secretkey":  "{{ minetest_map.password }}"
+        },
+        "layers": [
+                {
+                        "id": 0,
+                        "name": "Base",
+                        "from": -16,
+                        "to": 160
+                }
+        ],
+        "renderingfetchlimit": 1000,
+        "renderingjobs": 2,
+        "renderingqueue": 100,
+        "incrementalrenderingtimer": "5s",
+        "mapobjects": {
+                "areas": true,
+                "bones": true,
+                "protector": true,
+                "xpprotector": true,
+                "privprotector": true,
+                "technic_quarry": true,
+                "technic_switch": true,
+                "technic_anchor": true,
+                "technic_reactor": true,
+                "luacontroller": true,
+                "digiterms": true,
+                "digilines": true,
+                "travelnet": true,
+                "mapserver_player": true,
+                "mapserver_poi": true,
+                "mapserver_label": true,
+                "mapserver_trainline": true,
+                "mapserver_border": true,
+                "tileserverlegacy": true,
+                "mission": true,
+                "jumpdrive": true,
+                "smartshop": true,
+                "fancyvend": true,
+                "atm": true,
+                "train": true,
+                "trainsignal": true,
+                "minecart": false,
+                "locator": false,
+                "signs": true,
+                "mapserver_airutils": true
+        },
+        "mapblockaccessor": {
+                "expiretime": "10s",
+                "purgetime": "15s",
+                "maxitems": 5000
+        },
+        "defaultoverlays": [
+                "mapserver_poi",
+                "mapserver_label",
+                "mapserver_player"
+        ],
+        "skins": {
+                "enableskinsdb": false,
+                "skinspath": ""
+        }
+}

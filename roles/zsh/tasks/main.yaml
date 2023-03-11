@@ -1,0 +1,106 @@
+- name: Install zsh
+  become: true
+  package:
+    name:
+      - zsh
+      - fzf
+
+- name: Clone oh my zsh sources
+  git:
+    repo: "https://github.com/robbyrussell/oh-my-zsh.git"
+    dest: "/home/{{ admin_user }}/.oh-my-zsh"
+    single_branch: yes
+    depth: 1
+    update: yes
+
+- name: Set permissions of oh-my-zsh
+  become: true
+  file:
+    path: '/home/{{ admin_user }}/.oh-my-zsh'
+    mode: 'go-w'
+
+- name: Oh-my-zsh plugins
+  lineinfile:
+    dest: /home/{{ admin_user }}/.zshrc
+    create: yes
+    regexp: '^plugins='
+    line: "plugins=(git docker colorize fzf{{ ' tmux' if 'tmux' in role_names }})"
+    state: present
+
+- name: Set ZSH_TMUX_AUTOSTART
+  lineinfile:
+    dest: /home/{{ admin_user }}/.zshrc
+    regexp: '^ZSH_TMUX_AUTOSTART='
+    line: "ZSH_TMUX_AUTOSTART={{ 'true' if 'tmux' in role_names else 'false' }}"
+    state: present
+
+- name: Disable update prompt
+  lineinfile:
+    dest: /home/{{ admin_user }}/.zshrc
+    create: yes
+    line: "zstyle ':omz:update' mode auto"
+    state: present
+
+- name: Disable Oh-my-zsh theme if specified
+  lineinfile:
+    dest: /home/{{ admin_user }}/.zshrc
+    regexp: '^ZSH_THEME='
+    line: "# ZSH_THEME="
+
+- name: Set Oh-my-zsh COMPLETION_WAITING_DOTS
+  lineinfile:
+    dest: /home/{{ admin_user }}/.zshrc
+    regexp: '^COMPLETION_WAITING_DOTS='
+    line: "COMPLETION_WAITING_DOTS=true"
+    state: present
+
+- name: Set Oh-my-zsh ENABLE_CORRECTION
+  lineinfile:
+    dest: /home/{{ admin_user }}/.zshrc
+    regexp: '^ENABLE_CORRECTION='
+    line: "ENABLE_CORRECTION=false"
+    state: present
+
+- name: Export oh-my-zsh home
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.zshrc
+    line: "export ZSH=$HOME/.oh-my-zsh"
+
+- name: Source oh my zsh
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.zshrc
+    line: "source $ZSH/oh-my-zsh.sh"
+
+- name: Clone powerlevel10k sources
+  become_user: '{{ admin_user }}'
+  git:
+    depth: 1
+    repo: "https://github.com/romkatv/powerlevel10k.git"
+    dest: "/home/{{ admin_user }}/.oh-my-zsh/custom/themes/powerlevel10k"
+    update: yes
+
+- name: Creating .p10k.zsh
+  copy:
+    src: templates/.p10k.zsh
+    dest: /home/{{ admin_user }}/.p10k.zsh
+
+- name: Powerlevel10k config sourced
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.zshrc
+    line: "source ~/.p10k.zsh"
+
+- name: Check if powerlevel10k sourced
+  lineinfile:
+    state: present
+    insertbefore: BOF
+    path: /home/{{ admin_user }}/.zshrc
+    line: "source /home/{{ admin_user }}/.oh-my-zsh/custom/themes/powerlevel10k/powerlevel10k.zsh-theme"
+
+- name: Define source $HOME/.profile if undefined
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.zshrc
+    line: "source $HOME/.profile"

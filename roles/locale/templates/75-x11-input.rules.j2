@@ -1,0 +1,13 @@
+SUBSYSTEM!="input", GOTO="x11_input_end"
+ACTION!="change|add", GOTO="x11_input_end"
+KERNEL!="event*", GOTO="x11_input_end"
+
+ENV{x11_driver}="evdev"
+
+ENV{ID_INPUT_KEYBOARD}=="?*"
+ENV{xkbmodel}="evdev"
+ENV{xkblayout}="us,ru"
+ENV{xkbvariant}=",winkeys"
+ENV{xkboptions}="grp:{{ KEYBOARD_LAYOUT_SWITCHER }},grp_led:scroll,compose:ralt"
+
+LABEL="x11_input_end"

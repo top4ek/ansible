@@ -1,0 +1,26 @@
+- name: Install tmux and tmp
+  include_role:
+    name: yay
+  vars:
+    packages:
+      - tmux
+      - tmux-plugin-manager
+
+- name: Copy unit file
+  become: true
+  copy:
+    src: tmux.service
+    dest: /etc/systemd/system/tmux@.service
+
+- name: Copy config file
+  copy:
+    src: .tmux.config
+    dest: ~/.tmux.conf
+
+- name: Enable and start service
+  become: true
+  systemd:
+    name: "tmux@{{ admin_user }}"
+    enabled: true
+    state: started
+    daemon_reload: true

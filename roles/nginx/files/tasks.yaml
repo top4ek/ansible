@@ -1,0 +1,6 @@
+- name: Update letsencrypt
+  hosts: localhost
+  tasks:
+    - name: Fetch certs
+      include_tasks: fetch_certs.yaml
+      with_items: "{{ nginx_proxies }}"

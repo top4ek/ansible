@@ -1,0 +1,22 @@
+- name: Install Redis
+  apt:
+    name: redis
+    state: present
+
+- name: Bind addresses
+  become: true
+  lineinfile:
+    regexp: "^bind"
+    line: "bind 127.0.0.1 ::1 {{ wireguard.mesh.internal_ip }}"
+    state: present
+    path: "/etc/redis/redis.conf"
+  notify: Reload Redis
+
+- name: Set password
+  become: true
+  lineinfile:
+    regexp: "^# requirepass "
+    line: "requirepass {{ redis_password }}"
+    state: present
+    path: "/etc/redis/redis.conf"
+  notify: Reload Redis

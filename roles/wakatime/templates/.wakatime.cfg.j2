@@ -1,0 +1,12 @@
+[settings]
+debug = false
+hidefilenames = false
+ignore =
+    COMMIT_EDITMSG$
+    PULLREQ_EDITMSG$
+    MERGE_MSG$
+    TAG_EDITMSG$
+{% if wakatime_api_url is defined %}
+api_url={{ wakatime_api_url }}
+{% endif %}
+api_key={{ wakatime_api_key }}

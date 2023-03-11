@@ -1,0 +1,54 @@
+- name: Create directory
+  file:
+    path: /home/{{ admin_user }}/shizoid
+    state: directory
+    mode: '0755'
+
+- name: Create environment file
+  template:
+    src: .env.j2
+    dest: /home/{{ admin_user }}/shizoid/.env
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0600"
+
+- name: Pull latest version
+  shell: podman pull docker.io/top4ek/shizoid:latest
+
+- name: Start Web
+  shell: podman run -d --replace --restart unless-stopped --env-file /home/{{ admin_user }}/shizoid/.env --name shizoid_app -p '{{ shizoid.ports.internal }}:{{ shizoid.ports.external }}' --workdir=/opt/app/src docker.io/top4ek/shizoid:latest /opt/app/src/start.sh
+
+- name: Start Sidekiq
+  shell: podman run -d --replace --restart unless-stopped --env-file /home/{{ admin_user }}/shizoid/.env --name shizoid_sidekiq --workdir=/opt/app/src docker.io/top4ek/shizoid:latest bundle exec sidekiq -C config/sidekiq.yml
+
+- name: Generate systemd application unit
+  shell: podman generate systemd --restart-policy=always --name shizoid_app > /home/{{ admin_user }}/shizoid/shizoid-app.service
+
+- name: Generate systemd sidekiq unit
+  shell: podman generate systemd --restart-policy=always --name shizoid_sidekiq > /home/{{ admin_user }}/shizoid/shizoid-sidekiq.service
+
+- name: Create symlink to systemd application unit
+  file:
+    src: /home/{{ admin_user }}/shizoid/shizoid-app.service
+    path: "/home/{{ admin_user }}/.config/systemd/user/shizoid-app.service"
+    state: link
+
+- name: Create symlink to systemd sidekiq unit
+  file:
+    src: /home/{{ admin_user }}/shizoid/shizoid-sidekiq.service
+    path: "/home/{{ admin_user }}/.config/systemd/user/shizoid-sidekiq.service"
+    state: link
+
+- name: Reload systemd config for application
+  systemd:
+    name: shizoid-app
+    daemon_reload: yes
+    scope: user
+    enabled: yes
+
+- name: Reload systemd config for sidekiq
+  systemd:
+    name: shizoid-sidekiq
+    daemon_reload: yes
+    scope: user
+    enabled: yes

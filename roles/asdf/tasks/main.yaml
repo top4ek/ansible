@@ -1,0 +1,31 @@
+- name: Run distribution specific tasks
+  include_tasks: "{{ ansible_os_family }}.yaml"
+
+- name: Enable legacy version file
+  ini_file:
+    path: /home/{{ admin_user }}/.asdfrc
+    create: yes
+    section:
+    option: legacy_version_file
+    value: yes
+
+- name: Copy tool varsions
+  template:
+    src: tool-versions
+    dest: "/home/{{ admin_user }}/.tool-versions"
+
+- name: Source asdf script
+  lineinfile:
+    create: yes
+    state: present
+    path: /home/{{ admin_user }}/.profile
+    line: ". /opt/asdf-vm/asdf.sh"
+
+- name: Add plugins
+  command: "bash -lc 'source /opt/asdf-vm/asdf.sh && asdf plugin add {{ item.key }} {{ item.value.src }}'"
+  ignore_errors: true
+  loop: "{{ asdf.modules | dict2items }}"
+
+- name: Install plugins
+  command: "bash -lc 'source /opt/asdf-vm/asdf.sh && asdf install'"
+  ignore_errors: true

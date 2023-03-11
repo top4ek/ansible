@@ -1,0 +1,52 @@
+- name: Ensure .profile exists
+  copy:
+    content: ""
+    dest: /home/{{ admin_user }}/.profile
+    force: false
+
+- name: Define export EDITOR if undefined
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.profile
+    regexp: "^export EDITOR="
+    line: "export EDITOR={{ 'nvim' if 'nvim' in role_names else 'mcedit' }}"
+
+- name: Create directory
+  file:
+    path: "/home/{{ admin_user }}/.ssh"
+    state: directory
+    mode: '0700'
+
+- name: Add public key
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.ssh/authorized_keys
+    line: "{{ admin_public_key }}"
+
+- name: Define backward kill word if undefined
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.profile
+    line: "bindkey '^H' backward-kill-word"
+
+- name: Define cursor backward word if undefined
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.profile
+    line: "bindkey '^[[1;5D' backward-word"
+
+- name: Define forward word word if undefined
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.profile
+    line: "bindkey '^[[1;5C' forward-word"
+
+- name: Run distribution specific tasks
+  include_tasks: "{{ ansible_os_family }}.yaml"
+
+- name: Set home permissions
+  file:
+    path: "/home/{{ admin_user }}"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "700"

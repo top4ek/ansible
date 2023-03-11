@@ -1,0 +1,7 @@
+- name: Install Office packets
+  become: true
+  package:
+    name:
+      - libreoffice-fresh
+    state: present
+    update_cache: yes

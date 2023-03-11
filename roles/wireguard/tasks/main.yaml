@@ -1,0 +1,72 @@
+- name: Install Wireguard
+  become: true
+  apt:
+    name: wireguard
+    state: present
+
+- name: Create a directory if it does not exist
+  become: true
+  file:
+    path: /etc/wireguard
+    state: directory
+    mode: '0755'
+
+- name: Generate Wireguard keypair
+  become: true
+  shell: wg genkey | tee /etc/wireguard/privatekey | wg pubkey | tee /etc/wireguard/publickey
+  args:
+    creates: /etc/wireguard/privatekey
+
+- name: Register private key
+  become: true
+  shell: cat /etc/wireguard/privatekey
+  register: wireguard_private_key
+  changed_when: false
+
+- name: Register public key
+  become: true
+  shell: cat /etc/wireguard/publickey
+  register: wireguard_public_key
+  changed_when: false
+
+- name: Generate Preshared keyskeypair
+  become: true
+  shell: "wg genpsk > /etc/wireguard/psk-{{ item }}"
+  args:
+    creates: "/etc/wireguard/psk-{{ item }}"
+  when: inventory_hostname < item
+  with_items: "{{ groups['wireguard'] }}"
+
+- name: Register preshared key
+  become: true
+  shell: "cat /etc/wireguard/psk-{{ item }}"
+  register: wireguard_preshared_key
+  changed_when: false
+  when: inventory_hostname < item
+  with_items: "{{ groups['wireguard'] }}"
+
+- name: Massage preshared keys
+  become: true
+  set_fact: "wireguard_preshared_keys={{ wireguard_preshared_keys|default({}) | combine( {item.item: item.stdout} ) }}"
+  when: item.skipped is not defined
+  with_items: "{{ wireguard_preshared_key.results }}"
+
+- name: Setup wg0 device
+  template:
+    src: systemd.netdev
+    dest: /etc/systemd/network/99-wg0.netdev
+    owner: root
+    group: systemd-network
+    mode: 0640
+  become: true
+  notify: systemd network restart
+
+- name: Setup wg0 network
+  template:
+    src: systemd.network
+    dest: /etc/systemd/network/99-wg0.network
+    owner: root
+    group: systemd-network
+    mode: 0640
+  become: true
+  notify: systemd network restart

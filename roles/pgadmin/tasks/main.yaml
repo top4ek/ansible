@@ -1,0 +1,33 @@
+- name: Create directory
+  file:
+    path: "/home/{{ admin_user }}/pgadmin"
+    state: directory
+    mode: '0777'
+
+- name: Pull PGAdmin4
+  shell: podman pull docker.io/dpage/pgadmin4:latest
+
+- name: Start PGAdmin4
+  shell: podman run -d --replace --restart unless-stopped -v /home/{{ admin_user }}/pgadmin:/var/lib/pgadmin --name pgadmin -p {{ pgadmin.port }}:80 --env PGADMIN_DEFAULT_EMAIL={{ pgadmin.user }} --env PGADMIN_DEFAULT_PASSWORD={{ pgadmin.password }} --env PGADMIN_DISABLE_POSTFIX=true docker.io/dpage/pgadmin4:latest
+
+- name: Create systemd units directory
+  file:
+    path: "/home/{{ admin_user }}/.config/systemd/user"
+    state: directory
+    mode: '0755'
+
+- name: Generate systemd unit
+  shell: podman generate systemd --restart-policy=always --name pgadmin > /home/{{ admin_user }}/pgadmin/pgadmin.service
+
+- name: Create symlink to systemd
+  file:
+    src: /home/{{ admin_user }}/pgadmin/pgadmin.service
+    path: "/home/{{ admin_user }}/.config/systemd/user/pgadmin.service"
+    state: link
+
+- name: Reload systemd config
+  systemd:
+    name: pgadmin
+    daemon_reload: yes
+    scope: user
+    enabled: yes

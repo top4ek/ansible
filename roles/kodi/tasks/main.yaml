@@ -1,0 +1,117 @@
+- name: Install Kodi
+  become: true
+  package:
+    name:
+      - kodi
+      - kodi-addon-inputstream-adaptive
+      - kodi-addon-inputstream-rtmp
+      - python-lxml
+      - polkit
+      - upower
+
+- name: Creating systemd service file
+  become: true
+  template:
+    src: kodi-gbm.service.j2
+    dest: /etc/systemd/system/kodi.service
+
+- name: Enable Kodi service
+  become: true
+  service:
+    name: kodi
+    enabled: true
+    state: started
+
+- name: Create Kodi directories
+  file:
+    path: /home/{{ admin_user }}/.kodi/{{ item }}
+    state: directory
+    mode: '0755'
+  loop:
+    - "addons"
+    - "userdata/addon_data/plugin.video.youtube"
+    - "userdata/addon_data/video.kino.pub"
+
+- name: Create advancedsettings.xml
+  template:
+    src: advancedsettings.xml.j2
+    dest: /home/{{ admin_user }}/.kodi/userdata/advancedsettings.xml
+
+- name: Ensure options file exists
+  copy:
+    content: '<settings version="2"></settings>'
+    dest: /home/{{ admin_user }}/.kodi/userdata/guisettings.xml
+    force: false
+
+- name: Setting default system options
+  community.general.xml:
+    path: /home/{{ admin_user }}/.kodi/userdata/guisettings.xml
+    xpath: /settings/setting[@id='{{ item.key }}']
+    value: "{{ item.value }}"
+    state: present
+  loop: "{{ kodi.settings | dict2items }}"
+
+- name: Create YouTube API credentials
+  template:
+    src: api_keys.json.j2
+    dest: /home/{{ admin_user }}/.kodi/userdata/addon_data/plugin.video.youtube/api_keys.json
+
+- name: Remove KinoPub addon
+  file:
+    path: /home/{{ admin_user }}/.kodi/addons/video.kino.pub
+    state: absent
+
+- name: Install KinoPub addon
+  unarchive:
+    src: "https://github.com/quarckster/kodi.kino.pub/releases/download/{{ kodi.kinopub.release }}/video.kino.pub-{{ kodi.kinopub.release }}.zip"
+    dest: /home/{{ admin_user }}/.kodi/addons
+    remote_src: yes
+
+- name: Move the src file to dest
+  command: mv /home/{{ admin_user }}/.kodi/addons/video.kino.pub-{{ kodi.kinopub.release }} /home/{{ admin_user }}/.kodi/addons/video.kino.pub
+  args:
+    removes: /home/{{ admin_user }}/.kodi/addons/video.kino.pub-{{ kodi.kinopub.release }}
+    creates: /home/{{ admin_user }}/.kodi/addons/video.kino.pub
+
+- name: Ensure KinoPub options file exists
+  copy:
+    content: '<settings version="2"></settings>'
+    dest: /home/{{ admin_user }}/.kodi/userdata/addon_data/video.kino.pub/settings.xml
+    force: false
+
+- name: Setting KinoPub options
+  community.general.xml:
+    path: /home/{{ admin_user }}/.kodi/userdata/addon_data/video.kino.pub/settings.xml
+    xpath: /settings/setting[@id='{{ item.key }}']
+    value: "{{ item.value }}"
+    state: present
+  loop: "{{ kodi.kinopub.settings | dict2items }}"
+
+- name: Check if steamlink is available
+  command: "steamlink --version"
+  ignore_errors: true
+  register: steamresult
+
+- name: Install steamlink
+  include_role:
+    name: yay
+  vars:
+    packages:
+      - steamlink
+  when: "steamresult.rc != 0"
+
+# - name: Check if hyperion is available
+#   command: steamlink --version
+#   ignore_errors: true
+#   register: hyperionresult
+#
+# - name: Install hyperion
+#   become: true
+#   yay:
+#     name: hyperion.ng-git
+#     state: present
+#     update_cache: yes
+#   when: "hyperionresult.rc != 0"
+
+
+  # https://forum.kodi.tv/showthread.php?tid=366351

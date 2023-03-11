@@ -1,0 +1,70 @@
+- name: Create directory
+  file:
+    path: "/home/{{ admin_user }}/minecraft"
+    state: directory
+    mode: '0755'
+
+- name: Create backup directory
+  file:
+    path: "/home/{{ admin_user }}/syncthing/configs/Minecraft"
+    state: directory
+    mode: '0755'
+
+- name: Set world options
+  ini_file:
+    no_extra_spaces: true
+    path: /home/{{ admin_user }}/minecraft/server.properties
+    section:
+    option: "{{ item['option'] }}"
+    value: "{{ item['value'] }}"
+    mode: '0644'
+    backup: false
+  loop: "{{ minecraft.options }}"
+
+- name: Create permissions.json
+  template:
+    src: "permissions.json.j2"
+    dest: "/home/{{ admin_user }}/minecraft/permissions.json"
+
+- name: Create allowlist.json
+  template:
+    src: "allowlist.json.j2"
+    dest: "/home/{{ admin_user }}/minecraft/allowlist.json"
+
+- name: Pull minecraft
+  shell: podman pull docker.io/itzg/minecraft-bedrock-server
+
+- name: Stop minecraft
+  ignore_errors: true
+  systemd:
+    name: minecraft
+    state: stopped
+    scope: user
+
+- name: Backup data
+  shell: 7z -mx=9 a /home/{{ admin_user }}/syncthing/configs/Minecraft/$(date +'%Y%m%d_%H%M').7z /home/{{ admin_user }}/minecraft
+
+- name: Start minecraft
+  shell: podman run -d --replace --restart unless-stopped --name minecraft -e EULA=true -p {{ minecraft.port }}:19132/udp -v /home/{{ admin_user }}/minecraft:/data:rw --userns=keep-id docker.io/itzg/minecraft-bedrock-server
+
+- name: Create systemd units directory
+  file:
+    path: "/home/{{ admin_user }}/.config/systemd/user"
+    state: directory
+    mode: '0755'
+
+- name: Generate systemd unit
+  shell: podman generate systemd --restart-policy=always --name minecraft > /home/{{ admin_user }}/minecraft/minecraft.service
+
+- name: Create symlink to systemd
+  file:
+    src: /home/{{ admin_user }}/minecraft/minecraft.service
+    path: "/home/{{ admin_user }}/.config/systemd/user/minecraft.service"
+    state: link
+
+- name: Reload systemd config
+  systemd:
+    name: minecraft
+    daemon_reload: yes
+    scope: user
+    enabled: yes

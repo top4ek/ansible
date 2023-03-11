@@ -1,0 +1,6 @@
+dependencies:
+  - role: yay
+    vars:
+      packages:
+        - otf-nerd-fonts-fira-code
+        - nerd-fonts-jetbrains-mono

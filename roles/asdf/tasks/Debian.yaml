@@ -1,0 +1,17 @@
+- name: Checkout sources
+  git:
+    repo: 'https://github.com/asdf-vm/asdf.git'
+    dest: "/opt/asdf-vm"
+    single_branch: yes
+    version: "{{ asdf.version }}"
+
+- name: Install dev packages
+  apt:
+    state: latest
+    update_cache: yes
+    autoremove: yes
+    purge: yes
+    name:
+      - build-essential
+      - libssl-dev
+      - zlib1g-dev

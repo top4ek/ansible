@@ -1,0 +1,34 @@
+- name: Create config
+  become: true
+  template:
+    dest: "/home/{{ admin_user }}/minetest/data/.minetest/worlds/world/mapserver.json"
+    src: "mapserver.json.j2"
+    mode: '0666'
+
+- name: Pull Minetest Map server
+  shell: podman pull docker.io/minetestmapserver/mapserver:latest
+
+- name: Start server
+  shell: podman run -d --replace --restart unless-stopped --name minetest_map -v /home/{{ admin_user }}/minetest/data/.minetest/worlds/world:/minetest:Z -p {{ minetest_map.port }}:{{ minetest_map.port }} --workdir=/minetest docker.io/minetestmapserver/mapserver:latest
+
+- name: Create systemd units directory
+  file:
+    path: "/home/{{ admin_user }}/.config/systemd/user"
+    state: directory
+    mode: '0755'
+
+- name: Generate systemd unit
+  shell: podman generate systemd --restart-policy=always --name minetest_map > /home/{{ admin_user }}/minetest/minetest_map.service
+
+- name: Create symlink to systemd
+  file:
+    src: /home/{{ admin_user }}/minetest/minetest_map.service
+    path: "/home/{{ admin_user }}/.config/systemd/user/minetest_map.service"
+    state: link
+
+- name: Reload systemd config
+  systemd:
+    name: minetest_map
+    daemon_reload: yes
+    scope: user
+    enabled: yes

@@ -1,0 +1,5 @@
+- name: Set console font
+  become: yes
+  template:
+    src: "templates/vconsole.conf.j2"
+    dest: "/etc/vconsole.conf"

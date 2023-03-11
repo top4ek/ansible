@@ -1,0 +1,40 @@
+---
+- name: Disable all apt recommendations and suggestions
+  become: true
+  copy:
+    src: 99local
+    dest: /etc/apt/apt.conf.d/99local
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Upgrade the system
+  become: true
+  apt:
+    update_cache: yes
+    upgrade: dist
+
+- name: Install packages
+  become: true
+  apt:
+    force_apt_get: yes
+    state: latest
+    update_cache: yes
+    autoremove: yes
+    purge: yes
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg2
+      - openssh-client
+      - p7zip-full
+      - wget
+
+- name: Generate chroot services file
+  when: chroot_services is defined
+  become: true
+  template:
+    src: chroot-services.list.j2
+    dest: /chroot-services.list
+    mode: 0644

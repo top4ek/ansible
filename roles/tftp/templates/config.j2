@@ -1,0 +1,6 @@
+# /etc/default/tftpd-hpa
+
+TFTP_USERNAME="{{ tftp.username }}"
+TFTP_DIRECTORY="{{ tftp.directory }}"
+TFTP_ADDRESS="{{ tftp.bind }}"
+TFTP_OPTIONS="{{ tftp.options | map('regex_replace', '^', '--') | join(' ') }}"

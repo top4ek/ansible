@@ -1,0 +1,21 @@
+- name: Install Bluetooth support
+  become: true
+  package:
+    name:
+      - bluez
+      - bluez-utils
+
+- name: Enable Bluetooth service
+  become: true
+  service:
+    name: bluetooth
+    enabled: true
+
+- name: Enable fast connect
+  become: true
+  ini_file:
+    path: /etc/bluetooth/main.conf
+    section: General
+    option: FastConnectable
+    value: true
+    no_extra_spaces: false

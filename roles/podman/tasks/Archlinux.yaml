@@ -1,0 +1,10 @@
+- name: Install podman
+  become: true
+  package:
+    state: latest
+    name:
+      - aardvark-dns
+      - cni-plugins
+      - fuse-overlayfs
+      - podman
+      - slirp4netns

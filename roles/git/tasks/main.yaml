@@ -1,0 +1,10 @@
+- name: Install git
+  become: true
+  package:
+    name: git
+    state: present
+
+- name: Copy gitconfig
+  template:
+    src: gitconfig.j2
+    dest: /home/{{ admin_user }}/.gitconfig

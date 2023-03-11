@@ -1,0 +1,93 @@
+- name: Install nginx
+  become: true
+  package:
+    name:
+      - nginx
+      - openssl
+      - ansible
+    state: present
+    update_cache: yes
+
+- name: Create nginx configs
+  become: true
+  template:
+    dest: "/etc/nginx/sites-available/{{ item.domain }}.{{ item.zone }}"
+    src: "proxy.conf.j2"
+  with_items: "{{ nginx_proxies }}"
+
+- name: Create a symbolic links for configs
+  become: true
+  file:
+    src: "/etc/nginx/sites-available/{{ item.domain }}.{{ item.zone }}"
+    dest: "/etc/nginx/sites-enabled/{{ item.domain }}.{{ item.zone }}"
+    state: link
+  with_items: "{{ nginx_proxies }}"
+  when: item.enabled
+
+- name: Remove a symbolic links
+  become: true
+  file:
+    dest: "/etc/nginx/sites-enabled/{{ item.domain }}.{{ item.zone }}"
+    state: absent
+  with_items: "{{ nginx_proxies }}"
+  when: not item.enabled
+
+- name: Create certs directory
+  become: true
+  file:
+    dest: "/etc/pki/scripts/group_vars"
+    state: directory
+
+- name: Generate Diffie-Hellman parameters
+  become: true
+  community.crypto.openssl_dhparam:
+    path: /etc/pki/dhparams.pem
+
+- name: Generate acme account key
+  become: true
+  community.crypto.openssl_privatekey:
+    path: "/etc/pki/acme.pem"
+
+- name: Create vars config
+  become: true
+  template:
+    dest: "/etc/pki/scripts/group_vars/all.yaml"
+    src: "vars.yaml.j2"
+
+- name: Create fetch_certs file
+  become: true
+  copy:
+    src: "fetch_certs.yaml"
+    dest: "/etc/pki/scripts/fetch_certs.yaml"
+
+- name: Create tasks file
+  become: true
+  copy:
+    src: "tasks.yaml"
+    dest: "/etc/pki/scripts/tasks.yaml"
+
+- name: Creates a cron file
+  become: true
+  ansible.builtin.cron:
+    name: LetsEncrypt autoupdate
+    special_time: "monthly"
+    user: root
+    job: "ansible-playbook --connection=local --inventory=127.0.0.1 /etc/pki/scripts/tasks.yaml"
+    cron_file: lets_encrypt_update
+- name: Fetch certs
+  include_tasks: fetch_certs.yaml
+  with_items: "{{ nginx_proxies }}"
+
+- name: Remove default config symbolic link
+  become: true
+  file:
+    dest: "/etc/nginx/sites-enabled/default"
+    state: absent
+
+- name: Reload nginx
+  become: true
+  service:
+    name: nginx
+    state: restarted
+    enabled: yes
+

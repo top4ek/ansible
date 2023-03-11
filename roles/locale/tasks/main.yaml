@@ -1,0 +1,44 @@
+- name: Run distribution specific tasks
+  include_tasks: "{{ ansible_os_family }}.yaml"
+
+- name: Create timezone symbolic link
+  become: true
+  file:
+    src: "/usr/share/zoneinfo/{{ TIMEZONE }}"
+    dest: "/etc/localtime"
+    state: link
+
+- name: Create udev directory
+  file:
+    path: "/etc/udev/rules.d"
+    state: directory
+    mode: '0755'
+
+- name: Set keymap via udev
+  become: yes
+  template:
+    src: "templates/75-x11-input.rules.j2"
+    dest: "/etc/udev/rules.d/75-x11-input.rules"
+
+- name: Copy locale.conf
+  become: true
+  template:
+    src: "templates/locale.conf.j2"
+    dest: "/etc/locale.conf"
+
+- name: Copy locale.gen
+  become: true
+  copy:
+    src: "templates/locale.gen"
+    dest: "/etc"
+
+- name: Set timezone
+  become: true
+  timezone:
+    name: "{{ TIMEZONE }}"
+    hwclock: UTC
+
+- name: Generate locale
+  become: true
+  locale_gen:
+    name: "{{ LC_ALL }}"
