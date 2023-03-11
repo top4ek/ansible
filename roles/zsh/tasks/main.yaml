@@ -24,14 +24,14 @@
     dest: /home/{{ admin_user }}/.zshrc
     create: yes
     regexp: '^plugins='
-    line: "plugins=(git docker colorize fzf{{ ' tmux' if 'tmux' in role_names }})"
+    line: "plugins=(git docker colorize fzf{{ ' tmux' if 'tmux' in group_names }})"
     state: present
 
 - name: Set ZSH_TMUX_AUTOSTART
   lineinfile:
     dest: /home/{{ admin_user }}/.zshrc
     regexp: '^ZSH_TMUX_AUTOSTART='
-    line: "ZSH_TMUX_AUTOSTART={{ 'true' if 'tmux' in role_names else 'false' }}"
+    line: "ZSH_TMUX_AUTOSTART={{ 'true' if 'tmux' in group_names else 'false' }}"
     state: present
 
 - name: Disable update prompt

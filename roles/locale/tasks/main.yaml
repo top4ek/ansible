@@ -15,7 +15,7 @@
     mode: '0755'
 
 - name: Set keymap via udev
-  become: yes
+  become: false
   template:
     src: "templates/75-x11-input.rules.j2"
     dest: "/etc/udev/rules.d/75-x11-input.rules"

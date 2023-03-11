@@ -9,7 +9,7 @@
     state: present
     path: /home/{{ admin_user }}/.profile
     regexp: "^export EDITOR="
-    line: "export EDITOR={{ 'nvim' if 'nvim' in role_names else 'mcedit' }}"
+    line: "export EDITOR={{ 'nvim' if 'nvim' in group_names else 'mcedit' }}"
 
 - name: Create directory
   file:

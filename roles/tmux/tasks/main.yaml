@@ -14,7 +14,7 @@
 
 - name: Copy config file
   copy:
-    src: .tmux.config
+    src: .tmux.conf
     dest: ~/.tmux.conf
 
 - name: Enable and start service

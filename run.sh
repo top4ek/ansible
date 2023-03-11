@@ -1,3 +1,3 @@
 #!/bin/bash
 
-ansible-playbook --diff -i hosts.yaml roles.yaml
+ansible-playbook --diff -i hosts.yaml playbook.yaml

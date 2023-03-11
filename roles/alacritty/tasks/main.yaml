@@ -7,5 +7,5 @@
 
 - name: Copy config file
   copy:
-    src: alacritty.yaml
+    src: .alacritty.yml
     dest: ~/.alacritty.yml
