@@ -6,6 +6,6 @@
       - alacritty
 
 - name: Copy config file
-  copy:
-    src: .alacritty.yml
+  template:
+    src: .alacritty.yml.j2
     dest: ~/.alacritty.yml

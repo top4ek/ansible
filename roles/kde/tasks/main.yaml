@@ -39,8 +39,8 @@
     dest: "/etc/NetworkManager/system-connections"
 
 - name: Copy konsole default profile
-  copy:
-    src: Default.profile
+  template:
+    src: Default.profile.j2
     dest: /home/{{ admin_user }}/.local/share/konsole/Default.profile
 
 - name: Enable SDDM service
