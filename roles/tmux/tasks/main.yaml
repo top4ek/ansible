@@ -13,7 +13,7 @@
     dest: /etc/systemd/system/tmux@.service
 
 - name: Copy config file
-  copy:
+  template:
     src: .tmux.conf
     dest: ~/.tmux.conf
 
