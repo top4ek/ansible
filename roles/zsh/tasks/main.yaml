@@ -2,8 +2,10 @@
   become: true
   package:
     name:
-      - zsh
       - fzf
+      - zsh
+      - zsh-autosuggestions
+      - zsh-syntax-highlighting
 
 - name: Clone oh my zsh sources
   git:
@@ -104,3 +106,18 @@
     state: present
     path: /home/{{ admin_user }}/.zshrc
     line: "source $HOME/.profile"
+
+- name: Check if zsh-syntax-highlighting sourced
+  lineinfile:
+    state: present
+    insertbefore: BOF
+    path: /home/{{ admin_user }}/.zshrc
+    line: "source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+
+
+- name: Check if zsh-autosuggestions sourced
+  lineinfile:
+    state: present
+    insertbefore: BOF
+    path: /home/{{ admin_user }}/.zshrc
+    line: "source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
