@@ -23,6 +23,13 @@
     path: /home/{{ admin_user }}/.ssh/authorized_keys
     line: "{{ admin_public_key }}"
 
+- name: Define export LIGHT_TERMINAL if undefined
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.profile
+    regexp: "^export LIGHT_TERMINAL="
+    line: "export LIGHT_TERMINAL={{ temu_light_theme }}"
+
 - name: Define backward kill word if undefined
   lineinfile:
     state: present

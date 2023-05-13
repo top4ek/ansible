@@ -46,23 +46,23 @@
     replace: "typeset -g {{ item.key }}={{ item.value }}"
   loop:
     - key: POWERLEVEL9K_BACKGROUND
-      value: "{{ 251 if temu_light_theme else 238 }}"
+      value: "{{ 251 if temu_light_theme|bool else 238 }}"
     - key: POWERLEVEL9K_OS_ICON_FOREGROUND
-      value: "{{ 0 if temu_light_theme else 255 }}"
+      value: "{{ 0 if temu_light_theme|bool else 255 }}"
     - key: POWERLEVEL9K_DIR_SHORTENED_FOREGROUND
-      value: "{{ 238 if temu_light_theme else 103 }}"
+      value: "{{ 238 if temu_light_theme|bool else 103 }}"
     - key: POWERLEVEL9K_DIR_ANCHOR_FOREGROUND
-      value: "{{ 12 if temu_light_theme else 39 }}"
+      value: "{{ 12 if temu_light_theme|bool else 39 }}"
     - key: POWERLEVEL9K_VCS_CLEAN_FOREGROUND
-      value: "{{ 16 if temu_light_theme else 76 }}"
+      value: "{{ 16 if temu_light_theme|bool else 76 }}"
     - key: POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND
-      value: "{{ 16 if temu_light_theme else 76 }}"
+      value: "{{ 16 if temu_light_theme|bool else 76 }}"
     - key: POWERLEVEL9K_STATUS_OK_FOREGROUND
-      value: "{{ 34 if temu_light_theme else 70 }}"
+      value: "{{ 34 if temu_light_theme|bool else 70 }}"
     - key: POWERLEVEL9K_COMMAND_EXECUTION_TIME_FOREGROUND
-      value: "{{ 236 if temu_light_theme else 248 }}"
+      value: "{{ 236 if temu_light_theme|bool else 248 }}"
     - key: POWERLEVEL9K_CONTEXT_FOREGROUND
-      value: "{{ 16 if temu_light_theme else 180 }}"
+      value: "{{ 16 if temu_light_theme|bool else 180 }}"
 
 - name: Set p10k colors
   replace:
@@ -71,6 +71,6 @@
     replace: "{{ item.value }}"
   loop:
     - key: "clean=.*# green foreground"
-      value: "local clean={{ '%28F' if temu_light_theme else '%76F' }} # green foreground"
+      value: "local clean={{ '%28F' if temu_light_theme|bool else '%76F' }} # green foreground"
     - key: "modified=.*# yellow foreground"
-      value: "local modified={{ '%226F' if temu_light_theme else '%178F' }} # yellow foreground"
+      value: "local modified={{ '%226F' if temu_light_theme|bool else '%178F' }} # yellow foreground"
