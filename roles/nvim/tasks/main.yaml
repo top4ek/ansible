@@ -6,11 +6,6 @@
     state: present
     update_cache: yes
 
-- name: Create config directory
-  file:
-    dest: "/home/{{ admin_user }}/.config/nvim"
-    state: directory
-
 - name: Run distribution specific tasks
   include_tasks: "{{ ansible_os_family }}.yaml"
 
@@ -18,6 +13,12 @@
   stat:
     path: [path to the file or directory you want to check]
   register: vim_config
+
+- name: Create config directory
+  file:
+    dest: "/home/{{ admin_user }}/.config/nvim"
+    state: directory
+  when: not vim_config.stat.exists
 
 - name: Clone NeoVim config
   git:

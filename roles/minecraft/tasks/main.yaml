@@ -42,7 +42,7 @@
     scope: user
 
 - name: Backup data
-  shell: 7z -mx=9 a /home/{{ admin_user }}/syncthing/configs/Minecraft/$(date +'%Y%m%d_%H%M').7z /home/{{ admin_user }}/minecraft
+  shell: 7z -mx=9 a /home/{{ admin_user }}/syncthing/configs/Minecraft/{{ hostname|default(inventory_hostname) }}_$(date +'%Y%m%d_%H%M').7z /home/{{ admin_user }}/minecraft
 
 - name: Start minecraft
   shell: podman run -d --replace --restart unless-stopped --name minecraft -e EULA=true -p {{ minecraft.port }}:19132/udp -v /home/{{ admin_user }}/minecraft:/data:rw --userns=keep-id docker.io/itzg/minecraft-bedrock-server

@@ -21,60 +21,6 @@
     path: '/home/{{ admin_user }}/.oh-my-zsh'
     mode: 'go-w'
 
-- name: Oh-my-zsh plugins
-  lineinfile:
-    dest: /home/{{ admin_user }}/.zshrc
-    create: yes
-    regexp: '^plugins='
-    line: "plugins=(git docker colorize fzf{{ ' tmux' if 'tmux' in group_names }})"
-    state: present
-
-- name: Set ZSH_TMUX_AUTOSTART
-  lineinfile:
-    dest: /home/{{ admin_user }}/.zshrc
-    regexp: '^ZSH_TMUX_AUTOSTART='
-    line: "ZSH_TMUX_AUTOSTART={{ 'true' if 'tmux' in group_names else 'false' }}"
-    state: present
-
-- name: Disable update prompt
-  lineinfile:
-    dest: /home/{{ admin_user }}/.zshrc
-    create: yes
-    line: "zstyle ':omz:update' mode auto"
-    state: present
-
-- name: Disable Oh-my-zsh theme if specified
-  lineinfile:
-    dest: /home/{{ admin_user }}/.zshrc
-    regexp: '^ZSH_THEME='
-    line: "# ZSH_THEME="
-
-- name: Set Oh-my-zsh COMPLETION_WAITING_DOTS
-  lineinfile:
-    dest: /home/{{ admin_user }}/.zshrc
-    regexp: '^COMPLETION_WAITING_DOTS='
-    line: "COMPLETION_WAITING_DOTS=true"
-    state: present
-
-- name: Set Oh-my-zsh ENABLE_CORRECTION
-  lineinfile:
-    dest: /home/{{ admin_user }}/.zshrc
-    regexp: '^ENABLE_CORRECTION='
-    line: "ENABLE_CORRECTION=false"
-    state: present
-
-- name: Export oh-my-zsh home
-  lineinfile:
-    state: present
-    path: /home/{{ admin_user }}/.zshrc
-    line: "export ZSH=$HOME/.oh-my-zsh"
-
-- name: Source oh my zsh
-  lineinfile:
-    state: present
-    path: /home/{{ admin_user }}/.zshrc
-    line: "source $ZSH/oh-my-zsh.sh"
-
 - name: Clone powerlevel10k sources
   become_user: '{{ admin_user }}'
   git:
@@ -83,41 +29,48 @@
     dest: "/home/{{ admin_user }}/.oh-my-zsh/custom/themes/powerlevel10k"
     update: yes
 
+- name: Creating .zshrc
+  template:
+    src: templates/.zshrc.j2
+    dest: /home/{{ admin_user }}/.zshrc
+
 - name: Creating .p10k.zsh
   copy:
-    src: templates/.p10k.zsh
+    src: files/.p10k.zsh
     dest: /home/{{ admin_user }}/.p10k.zsh
 
-- name: Powerlevel10k config sourced
-  lineinfile:
-    state: present
-    path: /home/{{ admin_user }}/.zshrc
-    line: "source ~/.p10k.zsh"
+- name: Set p10k colors constants
+  replace:
+    path: /home/{{ admin_user }}/.p10k.zsh
+    regexp: ".*typeset -g {{ item.key }}=.*"
+    replace: "typeset -g {{ item.key }}={{ item.value }}"
+  loop:
+    - key: POWERLEVEL9K_BACKGROUND
+      value: "{{ 251 if temu_light_theme else 238 }}"
+    - key: POWERLEVEL9K_OS_ICON_FOREGROUND
+      value: "{{ 0 if temu_light_theme else 255 }}"
+    - key: POWERLEVEL9K_DIR_SHORTENED_FOREGROUND
+      value: "{{ 238 if temu_light_theme else 103 }}"
+    - key: POWERLEVEL9K_DIR_ANCHOR_FOREGROUND
+      value: "{{ 12 if temu_light_theme else 39 }}"
+    - key: POWERLEVEL9K_VCS_CLEAN_FOREGROUND
+      value: "{{ 16 if temu_light_theme else 76 }}"
+    - key: POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND
+      value: "{{ 16 if temu_light_theme else 76 }}"
+    - key: POWERLEVEL9K_STATUS_OK_FOREGROUND
+      value: "{{ 34 if temu_light_theme else 70 }}"
+    - key: POWERLEVEL9K_COMMAND_EXECUTION_TIME_FOREGROUND
+      value: "{{ 236 if temu_light_theme else 248 }}"
+    - key: POWERLEVEL9K_CONTEXT_FOREGROUND
+      value: "{{ 16 if temu_light_theme else 180 }}"
 
-- name: Check if powerlevel10k sourced
-  lineinfile:
-    state: present
-    insertbefore: BOF
-    path: /home/{{ admin_user }}/.zshrc
-    line: "source /home/{{ admin_user }}/.oh-my-zsh/custom/themes/powerlevel10k/powerlevel10k.zsh-theme"
-
-- name: Define source $HOME/.profile if undefined
-  lineinfile:
-    state: present
-    path: /home/{{ admin_user }}/.zshrc
-    line: "source $HOME/.profile"
-
-- name: Check if zsh-syntax-highlighting sourced
-  lineinfile:
-    state: present
-    insertbefore: BOF
-    path: /home/{{ admin_user }}/.zshrc
-    line: "source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-
-
-- name: Check if zsh-autosuggestions sourced
-  lineinfile:
-    state: present
-    insertbefore: BOF
-    path: /home/{{ admin_user }}/.zshrc
-    line: "source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
+- name: Set p10k colors
+  replace:
+    path: /home/{{ admin_user }}/.p10k.zsh
+    regexp: ".*{{ item.key }}.*"
+    replace: "{{ item.value }}"
+  loop:
+    - key: "clean=.*# green foreground"
+      value: "local clean={{ '%28F' if temu_light_theme else '%76F' }} # green foreground"
+    - key: "modified=.*# yellow foreground"
+      value: "local modified={{ '%226F' if temu_light_theme else '%178F' }} # yellow foreground"

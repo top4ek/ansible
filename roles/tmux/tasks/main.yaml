@@ -22,5 +22,5 @@
   systemd:
     name: "tmux@{{ admin_user }}"
     enabled: true
-    state: started
+    # state: started
     daemon_reload: true

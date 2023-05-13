@@ -1,0 +1,35 @@
+- name: Create directores
+  file:
+    path: "/home/{{ admin_user }}/pihole/{{ item }}"
+    state: directory
+  with_items:
+    - dnsmasq.d
+    - etc
+
+- name: Pull PiHole
+  shell: podman pull docker.io/pihole/pihole:latest
+
+- name: Start PiHole
+  shell: podman run -d --replace --restart unless-stopped -v /home/{{ admin_user }}/pihole/dnsmasq.d:/etc/dnsmasq.d -v /home/{{ admin_user }}/pihole/etc:/etc/pihole --name pihole -p 1153:53/tcp -p 1153:53/udp -p 8080:80/tcp --dns 127.0.0.1 --dns 8.8.8.8 --dns 1.1.1.1 -e INTERFACE=tap0 -e WEBPASSWORD=nimda -e TZ="Europe/Moscow" --label "io.containers.autoupdate=image" --network=slirp4netns:port_handler=slirp4netns docker.io/pihole/pihole:latest
+
+- name: Create systemd units directory
+  file:
+    path: "/home/{{ admin_user }}/.config/systemd/user"
+    state: directory
+    mode: '0755'
+
+- name: Generate systemd unit
+  shell: podman generate systemd --restart-policy=always --name pihole > /home/{{ admin_user }}/pihole/pihole.service
+
+- name: Create symlink to systemd
+  file:
+    src: /home/{{ admin_user }}/pihole/pihole.service
+    path: "/home/{{ admin_user }}/.config/systemd/user/pihole.service"
+    state: link
+
+- name: Reload systemd config
+  systemd:
+    name: pihole
+    daemon_reload: yes
+    enabled: yes
+    scope: user

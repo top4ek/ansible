@@ -1,7 +1,15 @@
 - name: Install latest NeoVim
   become: true
-  apt:
-    deb: https://github.com/neovim/neovim/releases/download/stable/nvim-linux64.deb
+  get_url:
+    url: https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
+    dest: /opt/nvim.appimage
+
+- name: Create a symbolic link
+  become: true
+  file:
+    src: /opt/nvim.appimage
+    dest: /usr/bin/nvim
+    state: link
 
 - name: Use Light configuration
   lineinfile:

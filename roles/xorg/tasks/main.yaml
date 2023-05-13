@@ -2,30 +2,36 @@
   become: yes
   package:
     name:
-      - ttf-terminus-nerd
-      - ttf-hack-nerd
+      - dkms
+      - linux-headers
       - noto-fonts
-      - ttf-jetbrains-mono
       - noto-fonts-cjk
       - noto-fonts-emoji
       - noto-fonts-extra
+      - otf-droid-nerd
       - otf-fira-mono
       - otf-fira-sans
-      - terminus-font
+      - otf-firamono-nerd
+      - ttf-bitstream-vera-mono-nerd
       - ttf-caladea
       - ttf-carlito
       - ttf-croscore
-      - ttf-dejavu
-      - ttf-droid
+      - ttf-dejavu-nerd
       - ttf-fira-code
-      - ttf-hack
+      - ttf-firacode-nerd
+      - ttf-hack-nerd
       - ttf-inconsolata
+      - ttf-jetbrains-mono-nerd
       - ttf-liberation
+      - ttf-liberation-mono-nerd
       - ttf-nerd-fonts-symbols-common
+      - ttf-nerd-fonts-symbols-mono
+      - ttf-noto-nerd
+      - ttf-roboto-mono-nerd
+      - ttf-terminus-nerd
       - ttf-ubuntu-font-family
       - v4l2loopback-dkms
       - v4l2loopback-utils
       - xclip
-      - xorg
       - xdg-desktop-portal
-
+      - xorg

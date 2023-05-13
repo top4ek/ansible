@@ -1,21 +1,29 @@
-window:
-  decorations: none
-  startup_mode: Maximized
-font:
-  size: 7
-  normal:
-    family: "{{ temu_font }}"
-    style: SemiBold
-  bold:
-    family: "{{ temu_font }}"
-    style: Bold
-  italic:
-    family: "{{ temu_font }}"
-    style: Italic
-  bold_italic:
-    family: "{{ temu_font }}"
-    style: BoldItalic
+{% if temu_light_theme is defined %}
+colors:
+  bright:
+    black:   '0x000000'
+    blue:    '0x2f5af3'
+    cyan:    '0x3e953a'
+    green:   '0x3e953a'
+    magenta: '0xa00095'
+    red:     '0xde3d35'
+    white:   '0xffffff'
+    yellow:  '0xd2b67b'
 
+  normal:
+    black:   '0x000000'
+    blue:    '0x181fba'
+    cyan:    '0x3e953a'
+    green:   '0x3e953a'
+    magenta: '0xa00095'
+    red:     '0xde3d35'
+    white:   '0xbbbbbb'
+    yellow:  '0xd2b67b'
+
+  primary:
+    background: '0xfafafa'
+    foreground: '0x383a42'
+{% else %}
 colors:
   primary:
     foreground: '0xe3e3e3'
@@ -66,3 +74,23 @@ colors:
     magenta: '0xb218b2'
     cyan:    '0x18b2b2'
     white:   '0xb2b2b2'
+{% endif %}
+
+font:
+  bold:
+    family: "{{ temu_font.family }}"
+    style: Bold
+  bold_italic:
+    family: "{{ temu_font.family }}"
+    style: BoldItalic
+  italic:
+    family: "{{ temu_font.family }}"
+    style: Italic
+  normal:
+    family: "{{ temu_font.family }}"
+    style: SemiBold
+  size: {{ temu_font.size }}
+
+window:
+  decorations: none
+  startup_mode: Maximized
