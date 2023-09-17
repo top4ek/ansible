@@ -79,7 +79,7 @@ colors:
 font:
   bold:
     family: "{{ temu_font.family }}"
-    style: Bold
+    style: ExtraBold
   bold_italic:
     family: "{{ temu_font.family }}"
     style: BoldItalic
@@ -94,3 +94,6 @@ font:
 window:
   decorations: none
   startup_mode: Maximized
+
+env:
+  TERM: "{{ temu_term }}"
