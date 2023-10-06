@@ -18,6 +18,12 @@
     line: "127.0.1.1 {{ hostname|default(inventory_hostname) }}.localdomain {{ hostname|default(inventory_hostname) }}"
     state: present
     path: "/etc/hosts"
-- name: Run distribution specific tasks
 
+- name: Disable PC speaker
+  become: true
+  copy:
+    content: "blacklist pcspkr\nblacklist snd_pcsp\n"
+    dest: "/etc/modprobe.d/nobeep.conf"
+
+- name: Run distribution specific tasks
   include_tasks: "{{ ansible_os_family }}.yaml"
