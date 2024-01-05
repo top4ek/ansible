@@ -1,0 +1,107 @@
+[colors]
+draw_bold_text_with_bright_colors = true
+
+{% if temu_light_theme|bool == true %}
+[colors.bright]
+black = "0x686868"
+blue = "0x2f5af3"
+cyan = "0x3e953a"
+green = "0x3e953a"
+magenta = "0xa00095"
+red = "0xde3d35"
+white = "0xffffff"
+yellow = "0xd2b67b"
+
+[colors.normal]
+black = "0x000000"
+blue = "0x181fba"
+cyan = "0x3e953a"
+green = "0x3e953a"
+magenta = "0xa00095"
+red = "0xde3d35"
+white = "0xbbbbbb"
+yellow = "0xd2b67b"
+
+[colors.primary]
+background = "0xfafafa"
+foreground = "0x383a42"
+{% else %}
+[colors.primary]
+foreground = "0xe3e3e3"
+bright_foreground = "0xffffff"
+dim_foreground = "0xe3e3e3"
+background = "0x1f1f1f"
+bright_background = "0x686868"
+dim_background = "0x1f1f1f"
+
+[colors.cursor]
+text = "0x191622"
+cursor = "0xf8f8f2"
+
+[colors.search.matches]
+foreground = '0xb2b2b2'
+background = '0xb26818'
+
+[colors.search.focused_match]
+foreground = "CellBackground"
+background = "CellForeground"
+
+[colors.normal]
+black = "0x000000"
+red = "0xb21818"
+green = "0x18b218"
+yellow = "0xb26818"
+blue = "0x1818b2"
+magenta = "0xb218b2"
+cyan = "0x18b2b2"
+white = "0xb2b2b2"
+
+[colors.bright]
+black = "0x686868"
+red = "0xff5454"
+green = "0x54ff54"
+yellow = "0xffff54"
+blue = "0x5454ff"
+magenta = "0xff54ff"
+cyan = "0x54ffff"
+white = "0xffffff"
+
+[colors.dim]
+black = "0x000000"
+red = "0xb21818"
+green = "0x18b218"
+yellow = "0xb26818"
+blue = "0x1818b2"
+magenta = "0xb218b2"
+cyan = "0x18b2b2"
+white = "0xb2b2b2"
+{% endif %}
+
+[env]
+TERM = "{{ temu_term }}"
+
+[font]
+size = 7
+
+[font.bold]
+family = "{{ temu_font.family }}"
+style = "ExtraBold"
+
+[font.bold_italic]
+family = "{{ temu_font.family }}"
+style = "BoldItalic"
+
+[font.italic]
+family = "{{ temu_font.family }}"
+style = "Italic"
+
+[font.normal]
+family = "{{ temu_font.family }}"
+style = "SemiBold"
+
+[mouse]
+hide_when_typing = true
+
+[window]
+decorations = "none"
+startup_mode = "Maximized"
