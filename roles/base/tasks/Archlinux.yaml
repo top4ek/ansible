@@ -58,6 +58,7 @@
       - mc
       - networkmanager
       - nfs-utils
+      - nnn
       - openssh
       - p7zip
       - sudo

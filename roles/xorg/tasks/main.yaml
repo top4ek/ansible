@@ -35,3 +35,15 @@
       - xclip
       - xdg-desktop-portal
       - xorg
+
+# modprobe v4l2loopback devices=1 video_nr=99 card_label='V4L2 Loopback' exclusive_caps=1
+# - name: Set v4l2loopback module options
+#   become: true
+#   copy:
+#     dest: '/etc/modprobe.d/v4l2loopback'
+#     content: "options v4l2loopback devices=1 video_nr=99 card_label='V4L2 Loopback' exclusive_caps=1\n"
+# - name: Enable v4l2loopback autostart
+#   become: true
+#   copy:
+#     dest: '/etc/modules-load.d/v4l2loopback.conf'
+#     content: "v4l2loopback\n"

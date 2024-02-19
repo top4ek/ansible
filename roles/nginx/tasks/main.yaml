@@ -88,6 +88,5 @@
   become: true
   service:
     name: nginx
-    state: restarted
+    state: reloaded
     enabled: yes
-

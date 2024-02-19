@@ -73,3 +73,11 @@
     ttl: 60
     state: absent
   when: acme_data is changed
+
+- name: Reload nginx
+  become: true
+  service:
+    name: nginx
+    state: reloaded
+    enabled: yes
+  when: acme_data is changed

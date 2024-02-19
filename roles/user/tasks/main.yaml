@@ -4,6 +4,21 @@
     dest: /home/{{ admin_user }}/.profile
     force: false
 
+# - name: Add light autosuggest option
+#   lineinfile:
+#     state: present
+#     path: /home/{{ admin_user }}/.profile
+#     regexp: "^export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="
+#     line: 'export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=#9f9f9f"'
+#     when: temu_light_theme|bool == true
+
+# - name: Remove light autosuggest option
+#   lineinfile:
+#     state: absent
+#     path: /home/{{ admin_user }}/.profile
+#     regexp: "^export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="
+#     when: temu_light_theme|bool == false
+
 - name: Define export EDITOR if undefined
   lineinfile:
     state: present

@@ -7,7 +7,7 @@
     create: yes
     section:
     option: legacy_version_file
-    value: yes
+    value: "yes"
 
 - name: Copy tool varsions
   template:

@@ -12,6 +12,7 @@
       - adm
       - games
       - sudo
+      - tty
 
 - name: Enable passwordless sudo
   become: true

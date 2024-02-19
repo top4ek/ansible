@@ -10,7 +10,6 @@
       - kde-gtk-config
       - kdeconnect
       - kdialog
-      - kimageformats
       - konsole
       - kscreen
       - libappindicator-gtk3

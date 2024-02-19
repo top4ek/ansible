@@ -1,0 +1,20 @@
+- name: Install nnn
+  become: true
+  package:
+    state: latest
+    name:
+      - nnn
+
+- name: Configure nnn binary options
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.profile
+    regexp: "^export NNN_OPTS="
+    line: "export NNN_OPTS=Herd"
+
+# - name: Configure nnn archives
+#   lineinfile:
+#     state: present
+#     path: /home/{{ admin_user }}/.profile
+#     regexp: "^export NNN_ARCHIVE="
+#     line: "export NNN_ARCHIVE="\\.(7z|a|ace|alz|arc|arj|bz|bz2|cab|cpio|deb|gz|jar|lha|lz|lzh|lzma|lzo|rar|rpm|rz|t7z|tar|tbz|tbz2|tgz|tlz|txz|tZ|tzo|war|xpi|xz|Z|zip)$"

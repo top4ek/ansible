@@ -1,8 +1,11 @@
-# TODO: Debian config
+# intel-media-driver
+# vulkan-intel
+# vulkan-mesa-layers
+#TODO: Debian config
 
 - name: Early KMS start
   become: yes
   lineinfile:
     dest: /etc/mkinitcpio.conf
-    regexp: '^MODULES=()'
+    regexp: '^MODULES=('
     line: 'MODULES=(i915)'
