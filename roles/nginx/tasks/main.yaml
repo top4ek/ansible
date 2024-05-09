@@ -74,9 +74,10 @@
     user: root
     job: "ansible-playbook --connection=local --inventory=127.0.0.1 /etc/pki/scripts/tasks.yaml"
     cron_file: lets_encrypt_update
+
 - name: Fetch certs
   include_tasks: fetch_certs.yaml
-  with_items: "{{ nginx_proxies }}"
+  with_items: "{{ nginx_zones }}"
 
 - name: Remove default config symbolic link
   become: true

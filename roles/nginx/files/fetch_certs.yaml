@@ -1,28 +1,31 @@
-- name: "{{ item.domain }}.{{ item.zone }}: Create directory"
+- name: "{{ item }}: Create directory"
   become: true
   file:
-    dest: "/etc/pki/{{ item.domain }}.{{ item.zone }}"
+    dest: "/etc/pki/{{ item }}"
     state: directory
 
-- name: "{{ item.domain }}.{{ item.zone }}: Generate certificate key"
+- name: "{{ item }}: Generate certificate key"
   become: true
   community.crypto.openssl_privatekey:
-    path: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.pem"
+    path: "/etc/pki/{{ item }}/private.pem"
 
-- name: "{{ item.domain }}.{{ item.zone }}: Generate CSR"
+- name: "{{ item }}: Generate CSR"
   become: true
   community.crypto.openssl_csr:
-    path: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.csr"
-    privatekey_path: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.pem"
-    common_name: "{{ item.domain }}.{{ item.zone }}"
+    path: "/etc/pki/{{ item }}/private.csr"
+    privatekey_path: "/etc/pki/{{ item }}/private.pem"
+    common_name: "{{ item }}"
+    subject_alt_name:
+        - "DNS:*.{{ item }}"
+        - "DNS:{{ item }}"
 
-- name: "{{ item.domain }}.{{ item.zone }}: Create a challenge"
+- name: "{{ item }}: Create a challenge"
   become: true
   community.crypto.acme_certificate:
     account_key_src: "/etc/pki/acme.pem"
     account_email: "{{ acme_email }}"
-    src: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.csr"
-    cert: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.crt"
+    src: "/etc/pki/{{ item }}/private.csr"
+    cert: "/etc/pki/{{ item }}/private.crt"
     challenge: dns-01
     # acme_directory: https://acme-staging-v02.api.letsencrypt.org/directory
     acme_directory: https://acme-v02.api.letsencrypt.org/directory
@@ -31,28 +34,34 @@
     terms_agreed: yes
   register: acme_data
 
-- name: "{{ item.domain }}.{{ item.zone }}: Create TXT record"
-  delegate_to: localhost
+- name: Set challenges variable
+  ansible.builtin.set_fact:
+    challenge_data_filtered: "{{ acme_data.challenge_data_dns | default({}) | dict2items | subelements('value') }}"
+
+- name: "{{ item }}: Create TXT record"
   community.general.cloudflare_dns:
-    zone: "{{ item.zone }}"
+    zone: "{{ item }}"
     account_email: "{{ dns_cloudflare_email }}"
-    account_api_key: "{{ dns_cloudflare_api_key }}"
+    api_token: "{{ dns_cloudflare_api_token }}"
     type: TXT
-    record: "{{ acme_data.challenge_data[item.domain + '.' + item.zone]['dns-01']['record'] }}"
-    value: "{{ acme_data.challenge_data[item.domain + '.' + item.zone]['dns-01']['resource_value'] }}"
-    ttl: 60
+    record: "{{ challenge.0.key }}"
+    value: "{{ challenge.1 }}"
+    ttl: 1
     state: present
+  loop: "{{ challenge_data_filtered }}"
+  loop_control:
+    loop_var: challenge
   when: acme_data is changed
 
-- name: "{{ item.domain }}.{{ item.zone }}: Validated and retrieve the certs"
+- name: "{{ item }}: Validated and retrieve the certs"
   become: true
   community.crypto.acme_certificate:
     account_key_src: "/etc/pki/acme.pem"
     account_email: "{{ acme_email }}"
-    src: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.csr"
-    cert: "/etc/pki/{{ item.domain }}.{{ item.zone }}/private.crt"
-    fullchain: "/etc/pki/{{ item.domain }}.{{ item.zone }}/fullchain.crt"
-    chain: "/etc/pki/{{ item.domain }}.{{ item.zone }}/intermediate.crt"
+    src: "/etc/pki/{{ item }}/private.csr"
+    cert: "/etc/pki/{{ item }}/private.crt"
+    fullchain: "/etc/pki/{{ item }}/fullchain.crt"
+    chain: "/etc/pki/{{ item }}/intermediate.crt"
     challenge: dns-01
     # acme_directory: https://acme-staging-v02.api.letsencrypt.org/directory
     acme_directory: https://acme-v02.api.letsencrypt.org/directory
@@ -62,16 +71,19 @@
     data: "{{ acme_data }}"
   when: acme_data is changed
 
-- name: "{{ item.domain }}.{{ item.zone }}: Remove TXT record"
+- name: "{{ item }}: Remove TXT records"
   delegate_to: localhost
   community.general.cloudflare_dns:
-    zone: "{{ item.zone }}"
+    zone: "{{ item }}"
     account_email: "{{ dns_cloudflare_email }}"
-    account_api_key: "{{ dns_cloudflare_api_key }}"
+    api_token: "{{ dns_cloudflare_api_token }}"
     type: TXT
-    record: "{{ acme_data.challenge_data[item.domain + '.' + item.zone]['dns-01']['record'] }}"
+    record: "{{ challenge.0.key }}"
     ttl: 60
     state: absent
+  loop: "{{ challenge_data_filtered }}"
+  loop_control:
+    loop_var: challenge
   when: acme_data is changed
 
 - name: Reload nginx
