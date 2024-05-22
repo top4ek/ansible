@@ -13,6 +13,8 @@ source $ZSH/oh-my-zsh.sh
 source ~/.p10k.zsh
 source $HOME/.profile
 
+setopt HIST_IGNORE_ALL_DUPS
+
 {% if ansible_os_family == 'Debian' %}
 source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
