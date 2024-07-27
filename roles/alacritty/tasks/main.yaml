@@ -4,31 +4,19 @@
     state: latest
     name:
       - alacritty
+      - nerd-fonts
       - noto-fonts
       - noto-fonts-cjk
       - noto-fonts-emoji
       - noto-fonts-extra
-      - otf-droid-nerd
       - otf-fira-mono
       - otf-fira-sans
-      - otf-firamono-nerd
-      - ttf-bitstream-vera-mono-nerd
       - ttf-caladea
       - ttf-carlito
       - ttf-croscore
-      - ttf-dejavu-nerd
       - ttf-fira-code
-      - ttf-firacode-nerd
-      - ttf-hack-nerd
       - ttf-inconsolata
-      - ttf-jetbrains-mono-nerd
       - ttf-liberation
-      - ttf-liberation-mono-nerd
-      - ttf-nerd-fonts-symbols-common
-      - ttf-nerd-fonts-symbols-mono
-      - ttf-noto-nerd
-      - ttf-roboto-mono-nerd
-      - ttf-terminus-nerd
       - ttf-ubuntu-font-family
 
 - name: Copy config file

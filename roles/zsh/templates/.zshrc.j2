@@ -1,17 +1,13 @@
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
-source /home/alex/.oh-my-zsh/custom/themes/powerlevel10k/powerlevel10k.zsh-theme
 plugins=(git docker colorize fzf{{ ' tmux' if 'tmux' in group_names }})
 ZSH_TMUX_AUTOSTART={{ 'true' if 'tmux' in group_names else 'false' }}
 zstyle ':omz:update' mode auto
 COMPLETION_WAITING_DOTS=true
 ENABLE_CORRECTION=false
 export ZSH=$HOME/.oh-my-zsh
+
 source $ZSH/oh-my-zsh.sh
-source ~/.p10k.zsh
 source $HOME/.profile
+eval "$(starship init zsh)"
 
 setopt HIST_IGNORE_ALL_DUPS
 

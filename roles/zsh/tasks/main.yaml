@@ -7,6 +7,9 @@
       - zsh-autosuggestions
       - zsh-syntax-highlighting
 
+- name: Run distribution specific tasks
+  include_tasks: "{{ ansible_os_family }}.yaml"
+
 - name: Clone oh my zsh sources
   git:
     repo: "https://github.com/robbyrussell/oh-my-zsh.git"
@@ -21,56 +24,12 @@
     path: '/home/{{ admin_user }}/.oh-my-zsh'
     mode: 'go-w'
 
-- name: Clone powerlevel10k sources
-  become_user: '{{ admin_user }}'
-  git:
-    depth: 1
-    repo: "https://github.com/romkatv/powerlevel10k.git"
-    dest: "/home/{{ admin_user }}/.oh-my-zsh/custom/themes/powerlevel10k"
-    update: yes
-
 - name: Creating .zshrc
   template:
     src: templates/.zshrc.j2
     dest: /home/{{ admin_user }}/.zshrc
 
-- name: Creating .p10k.zsh
-  copy:
-    src: files/.p10k.zsh
-    dest: /home/{{ admin_user }}/.p10k.zsh
-
-- name: Set p10k colors constants
-  replace:
-    path: /home/{{ admin_user }}/.p10k.zsh
-    regexp: ".*typeset -g {{ item.key }}=.*"
-    replace: "typeset -g {{ item.key }}={{ item.value }}"
-  loop:
-    - key: POWERLEVEL9K_BACKGROUND
-      value: "{{ 251 if temu_light_theme|bool else 238 }}"
-    - key: POWERLEVEL9K_OS_ICON_FOREGROUND
-      value: "{{ 0 if temu_light_theme|bool else 255 }}"
-    - key: POWERLEVEL9K_DIR_SHORTENED_FOREGROUND
-      value: "{{ 238 if temu_light_theme|bool else 103 }}"
-    - key: POWERLEVEL9K_DIR_ANCHOR_FOREGROUND
-      value: "{{ 12 if temu_light_theme|bool else 39 }}"
-    - key: POWERLEVEL9K_VCS_CLEAN_FOREGROUND
-      value: "{{ 16 if temu_light_theme|bool else 76 }}"
-    - key: POWERLEVEL9K_VCS_UNTRACKED_FOREGROUND
-      value: "{{ 16 if temu_light_theme|bool else 76 }}"
-    - key: POWERLEVEL9K_STATUS_OK_FOREGROUND
-      value: "{{ 34 if temu_light_theme|bool else 70 }}"
-    - key: POWERLEVEL9K_COMMAND_EXECUTION_TIME_FOREGROUND
-      value: "{{ 236 if temu_light_theme|bool else 248 }}"
-    - key: POWERLEVEL9K_CONTEXT_FOREGROUND
-      value: "{{ 16 if temu_light_theme|bool else 180 }}"
-
-- name: Set p10k colors
-  replace:
-    path: /home/{{ admin_user }}/.p10k.zsh
-    regexp: ".*{{ item.key }}.*"
-    replace: "{{ item.value }}"
-  loop:
-    - key: "clean=.*# green foreground"
-      value: "local clean={{ '%28F' if temu_light_theme|bool else '%76F' }} # green foreground"
-    - key: "modified=.*# yellow foreground"
-      value: "local modified={{ '%226F' if temu_light_theme|bool else '%178F' }} # yellow foreground"
+- name: Copy config
+  template:
+    src: starship.toml.j2
+    dest: /home/{{ admin_user }}/.config/starship.toml

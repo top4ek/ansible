@@ -3,6 +3,7 @@
   package:
     state: latest
     name:
+      - buildah
       - docker
       - docker-compose
 

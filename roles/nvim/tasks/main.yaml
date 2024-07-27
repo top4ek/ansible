@@ -3,6 +3,7 @@
   package:
     name:
       - ripgrep
+      - luarocks
     state: present
     update_cache: yes
 

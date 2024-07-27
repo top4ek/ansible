@@ -1,11 +1,19 @@
-# intel-media-driver
-# vulkan-intel
-# vulkan-mesa-layers
 #TODO: Debian config
 
+- name: Install drivers
+  become: true
+  package:
+    name:
+      - intel-media-driver
+      - lib32-vulkan-icd-loader
+      - vulkan-icd-loader
+      - vulkan-intel
+      - vulkan-tools
+    state: present
+
 - name: Early KMS start
-  become: yes
+  become: true
   lineinfile:
     dest: /etc/mkinitcpio.conf
-    regexp: '^MODULES=('
-    line: 'MODULES=(i915)'
+    regexp: "^MODULES="
+    line: "MODULES=(i915)"

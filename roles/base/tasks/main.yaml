@@ -19,6 +19,12 @@
     state: present
     path: "/etc/hosts"
 
+- name: Minimize swappines
+  become: true
+  copy:
+    content: "vm.swappiness = 1\n"
+    dest: "/etc/sysctl.d/swappiness.conf"
+
 - name: Disable PC speaker
   become: true
   copy:

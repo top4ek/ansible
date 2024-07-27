@@ -52,6 +52,7 @@
       - cdrtools
       - curl
       - diffutils
+      - fd
       - gnupg
       - go
       - gzip
