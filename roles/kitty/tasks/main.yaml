@@ -1,0 +1,25 @@
+- name: Install Kitty
+  become: true
+  package:
+    state: latest
+    name:
+      - kitty
+      - nerd-fonts
+      - noto-fonts
+      - noto-fonts-cjk
+      - noto-fonts-emoji
+      - noto-fonts-extra
+      - otf-fira-mono
+      - otf-fira-sans
+      - ttf-caladea
+      - ttf-carlito
+      - ttf-croscore
+      - ttf-fira-code
+      - ttf-inconsolata
+      - ttf-liberation
+      - ttf-ubuntu-font-family
+
+- name: Copy config file
+  template:
+    src: kitty.conf.j2
+    dest: ~/.config/kitty/kitty.conf
