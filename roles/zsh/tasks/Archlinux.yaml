@@ -1,4 +1,4 @@
-- name: Install Starship
+- name: Install Starship
   become: true
   package:
     name: starship
