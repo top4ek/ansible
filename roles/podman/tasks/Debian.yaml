@@ -3,9 +3,8 @@
   package:
     state: latest
     name:
-      - uidmap
-      - podman
-      - runc
-      - slirp4netns
+      - crun
       - fuse-overlayfs
-
+      - podman
+      - slirp4netns
+      - uidmap

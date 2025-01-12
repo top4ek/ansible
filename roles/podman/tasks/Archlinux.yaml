@@ -5,6 +5,7 @@
     name:
       - aardvark-dns
       - cni-plugins
+      - crun
       - fuse-overlayfs
       - podman
       - slirp4netns

@@ -1,6 +1,14 @@
 - name: Run distribution specific tasks
   include_tasks: "{{ ansible_os_family }}.yaml"
 
+- name: Ensure default runc absent
+  become: true
+  package:
+    state: absent
+    name:
+      - runc
+    update_cache: yes
+
 - name: Allow unprivileged users
   become: true
   sysctl:
@@ -37,6 +45,15 @@
     group: root
     mode: 0644
 
+- name: Set default runtime to crun
+  become: true
+  ini_file:
+    no_extra_spaces: false
+    path: /etc/containers/libpod.conf
+    section:
+    option: "runtime"
+    value: '"crun"'
+
 - name: Check if linger exists
   stat: path=/var/lib/systemd/linger/{{ admin_user }}
   register: linger
@@ -45,4 +62,3 @@
   become: true
   command: loginctl enable-linger {{ admin_user }}
   when: not linger.stat.exists
-
