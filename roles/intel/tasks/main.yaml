@@ -6,6 +6,7 @@
     name:
       - intel-media-driver
       - lib32-vulkan-icd-loader
+      - libva-intel-driver
       - vulkan-icd-loader
       - vulkan-intel
       - vulkan-tools
