@@ -1,4 +1,4 @@
-font_family family = "{{ temu_font.family }}"
+font_family family="{{ temu_font.family }}"
 bold_font ExtraBold
 italic_font Italic
 bold_italic_font BoldItalic
@@ -9,6 +9,10 @@ disable_ligatures always
 # cursor_blink_interval 1
 # cursor_stop_blinking_after 15.0
 mouse_hide_wait 3
+
+cursor_trail 1
+cursor_trail_decay 0.1 0.4
+cursor_trail_start_threshold 1
 
 draw_minimal_borders yes
 placement_strategy center
