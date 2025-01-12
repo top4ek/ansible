@@ -57,9 +57,9 @@
       - go
       - gzip
       - mc
+      - net-tools
       - networkmanager
       - nfs-utils
-      - nnn
       - openssh
       - p7zip
       - sudo
