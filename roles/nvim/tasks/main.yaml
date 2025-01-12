@@ -10,30 +10,38 @@
 - name: Run distribution specific tasks
   include_tasks: "{{ ansible_os_family }}.yaml"
 
-- name: Check if config already installed
-  stat:
-    path: [path to the file or directory you want to check]
-  register: vim_config
+# - name: Check if config already installed
+#   stat:
+#     path: [path to the file or directory you want to check]
+#   register: vim_config
+#
+# - name: Create config directory
+#   file:
+#     dest: "/home/{{ admin_user }}/.config/nvim"
+#     state: directory
+#   when: not vim_config.stat.exists
+#
+# - name: Clone NeoVim config
+#   git:
+#     repo: "https://github.com/top4ek/nvim.git"
+#     dest: "/home/{{ admin_user }}/.config/nvim"
+#     single_branch: yes
+#     force: yes
+#   when: not vim_config.stat.exists
+#
+# - name: Update NeoVim config
+#   git:
+#     repo: "https://github.com/top4ek/nvim.git"
+#     dest: "/home/{{ admin_user }}/.config/nvim"
+#     update: yes
+#     clone: no
+#     version: master
+#   when: vim_config.stat.exists
 
-- name: Create config directory
-  file:
-    dest: "/home/{{ admin_user }}/.config/nvim"
-    state: directory
-  when: not vim_config.stat.exists
-
-- name: Clone NeoVim config
-  git:
-    repo: "https://github.com/top4ek/nvim.git"
-    dest: "/home/{{ admin_user }}/.config/nvim"
-    single_branch: yes
-    force: yes
-  when: not vim_config.stat.exists
-
-- name: Update NeoVim config
-  git:
-    repo: "https://github.com/top4ek/nvim.git"
-    dest: "/home/{{ admin_user }}/.config/nvim"
-    update: yes
-    clone: no
-    version: master
-  when: vim_config.stat.exists
+- name: Define export NORG_DEFAULT if undefined
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.profile
+    regexp: "^export NORG_DEFAULT="
+    line: "export NORG_DEFAULT={{ norg.default }}"
+  when: "norg_default is defined"
