@@ -7,7 +7,10 @@ nginx_proxies:
 {% endfor %}
 
 acme_email: {{ acme_email }}
-acme_common_name: aleschenko.ru
+acme_common_name: {{ acme_common_name }}
 
 dns_cloudflare_email: {{ dns_cloudflare_email }}
 dns_cloudflare_api_token: {{ dns_cloudflare_api_token }}
+
+nginx_zones:
+  -  {{ acme_common_name }}
