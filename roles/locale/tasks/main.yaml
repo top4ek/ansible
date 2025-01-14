@@ -27,11 +27,13 @@
     src: "templates/locale.conf.j2"
     dest: "/etc/locale.conf"
 
-- name: Copy locale.gen
+- name: Ensure the locales exists
   become: true
-  copy:
-    src: "templates/locale.gen"
-    dest: "/etc"
+  locale_gen:
+    name:
+      - en_US.UTF-8
+      - ru_RU.UTF-8
+    state: present
 
 - name: Set timezone
   become: true
