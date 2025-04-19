@@ -1,22 +1,23 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
+palette = 'catppuccin_mocha'
+
 add_newline = false
 format = """
 $username\
 $hostname\
-[](fg:#4E4E4E bg:#3A3A3A)\
+[](fg:surface2 bg:surface0)\
 $directory\
-[ ](fg:#3A3A3A)\
+[](fg:surface0)\
 """
 
 right_format = """
 $character\
 $status\
-[](fg:#3A3A3A)\
+[](fg:surface0)\
 $git_branch\
 $git_status\
-[](fg:#4E4E4E bg:#3A3A3A)\
-[ ](bg:#4E4E4E)\
+[](fg:surface2 bg:surface0)\
 $ruby\
 $golang\
 $nodejs\
@@ -29,84 +30,86 @@ error_symbol = "[✘](fg:red)"
 
 [hostname]
 ssh_only = true
-style = "bg:#4E4E4E fg:#949494"
+style = "bg:surface2 fg:subtext1"
 format = "[@$hostname ]($style)"
 trim_at = "-"
 disabled = false
 
 [username]
 show_always = false
-style_user = "bg:#4E4E4E fg:#949494"
-style_root = "bold bg:#4E4E4E fg:red"
+style_user = "bg:surface2 fg:subtext1"
+style_root = "bold bg:surface2 fg:red"
 format = '[ ($user)]($style)'
 
 [directory]
-style = "bg:#3A3A3A fg:green"
+style = "bg:surface0 fg:green"
 format = "[ $path ]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
-home_symbol	= " "
+home_symbol	= ""
 
 [directory.substitutions]
-"Documents" = "󰈙 "
-"Downloads" = " "
-"Music" = " "
-"Pictures" = " "
+"Documents" = "󰈙"
+"Downloads" = ""
+"Music" = ""
+"Pictures" = ""
+"Syncthing" = "🗘"
+"atom" = "⚛"
 
 [aws]
-symbol = "  "
-style = "bg:#3A3A3A"
-format = '[[ $symbol $context ](bg:#3A3A3A)]($style) $path'
+symbol = ""
+style = "bg:surface0"
+format = '[[ $symbol $context ](bg:surface0)]($style) $path'
 
 [buf]
-symbol = " "
-style = "bg:#4E4E4E fg:#949494"
+symbol = ""
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [c]
-symbol = " "
-style = "bg:#4E4E4E fg:#949494"
+symbol = ""
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [conda]
-symbol = " "
-style = "bg:#4E4E4E fg:#949494"
+symbol = ""
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [dart]
-symbol = " "
-style = "bg:#4E4E4E fg:#949494"
+symbol = ""
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [docker_context]
-symbol = "🐳 "
-style = "bg:#3A3A3A"
-format = '[[ $symbol $context ](bg:#3A3A3A)]($style) $path'
+symbol = "🐳"
+style = "bg:surface0"
+format = '[[ $symbol $context ](bg:surface0)]($style) $path'
 
 [dotnet]
-symbol = " "
-style = "bg:#4E4E4E fg:#949494"
+symbol = ""
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [elixir]
-symbol = "💧 "
-style = "bg:#4E4E4E fg:#949494"
+symbol = "💧"
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [elm]
-symbol = "🌳 "
-style = "bg:#4E4E4E fg:#949494"
+symbol = "🌳"
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [git_branch]
 symbol = ""
-style = "bg:#3A3A3A"
-format = '[[ $symbol $branch ](fg:green bg:#3A3A3A)]($style)'
+style = "bg:surface0"
+format = '[[ $symbol $branch ](fg:green bg:surface0)]($style)'
 
 
 [git_status]
-style = "bg:#3A3A3A"
-format = '[[($all_status$ahead_behind)](fg:green bg:#3A3A3A)]($style)'
+style = "bg:surface0"
+format = '[[($all_status$ahead_behind)](fg:green bg:surface0)]($style)'
 ahead = "⇡ $count "
 behind = "⇣ $count "
 deleted = "🗑 $count "
@@ -118,58 +121,58 @@ renamed = " $count "
 untracked = "󰙌 ‍$count " # 🤷󱍊
 
 [golang]
-symbol = "🐹 "
-style = "bg:#4E4E4E fg:#949494"
+symbol = "🐹"
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [haskell]
-symbol = "λ "
-style = "bg:#4E4E4E fg:#949494"
+symbol = "λ"
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [hg_branch]
-symbol = " "
-style = "bg:#4E4E4E fg:#949494"
+symbol = ""
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [java]
-symbol = "☕ "
-style = "bg:#4E4E4E fg:#949494"
+symbol = "☕"
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [julia]
-symbol = "ஃ "
-style = "bg:#4E4E4E fg:#949494"
+symbol = "ஃ"
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [lua]
-symbol = " "
-style = "bg:#4E4E4E fg:#949494"
+symbol = ""
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [memory_usage]
-symbol = " "
-style = "bg:#4E4E4E fg:#949494"
+symbol = ""
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [meson]
-symbol = "󰈤 " # M
-style = "bg:#4E4E4E fg:#949494"
+symbol = "󰈤" # M
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [nim]
-symbol = "👑 "
-style = "bg:#4E4E4E fg:#949494"
+symbol = "👑"
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [nix_shell]
-symbol = " "
-style = "bg:#4E4E4E fg:#949494"
+symbol = ""
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [nodejs]
-symbol = "󰎙 " #󰎙 🔷
-style = "bg:#4E4E4E fg:#949494"
+symbol = "󰎙" #󰎙 🔷
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [os]
@@ -178,42 +181,42 @@ style = "fg:#ffffff bg:#33658A"
 disabled = false
 
 [os.symbols]
-Mint = " "#🌿
-Windows = " "
+Mint = ""#🌿
+Windows = ""
 
 [package]
-symbol = "󰏗 " # 
-style = "bg:#4E4E4E fg:#949494"
+symbol = "󰏗" # 
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [python]
-symbol = " "
-style = "bg:#4E4E4E fg:#949494"
+symbol = ""
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [rlang]
-symbol = "󰟔 " # R
-style = "bg:#4E4E4E fg:#949494"
+symbol = "󰟔" # R
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [ruby]
-symbol = " "
-style = "bg:#4E4E4E fg:#949494"
+symbol = ""
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [rust]
 symbol = "🦀"
-style = "bg:#4E4E4E fg:#949494"
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version]($style)'
 
 [scala]
-symbol = " "
-style = "bg:#4E4E4E fg:#949494"
+symbol = ""
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [vlang]
 symbol = ""
-style = "bg:#4E4E4E fg:#949494"
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [shell]
@@ -225,8 +228,8 @@ unknown_indicator = ''
 style = "fg:#ffffff bg:#33658A"
 
 [spack]
-symbol = "🅢 " # S
-style = "bg:#4E4E4E fg:#949494"
+symbol = "🅢" # S
+style = "bg:surface2 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [time]
@@ -238,3 +241,31 @@ format = '[[  $time ](fg:#ffffff bg:#33658A)]($style)'
 [status]
 disabled = false
 format = '[\[$status:$common_meaning\] ](fg:red)'
+
+[palettes.catppuccin_mocha]
+rosewater = "#f5e0dc"
+flamingo = "#f2cdcd"
+pink = "#f5c2e7"
+mauve = "#cba6f7"
+red = "#f38ba8"
+maroon = "#eba0ac"
+peach = "#fab387"
+yellow = "#f9e2af"
+green = "#a6e3a1"
+teal = "#94e2d5"
+sky = "#89dceb"
+sapphire = "#74c7ec"
+blue = "#89b4fa"
+lavender = "#b4befe"
+text = "#cdd6f4"
+subtext1 = "#bac2de"
+subtext0 = "#a6adc8"
+overlay2 = "#9399b2"
+overlay1 = "#7f849c"
+overlay0 = "#6c7086"
+surface2 = "#585b70"
+surface1 = "#45475a"
+surface0 = "#313244"
+base = "#1e1e2e"
+mantle = "#181825"
+crust = "#11111b"

@@ -29,7 +29,12 @@
     src: templates/.zshrc.j2
     dest: /home/{{ admin_user }}/.zshrc
 
-- name: Copy config
+- name: Create config directory
+  file:
+    path: "/home/{{ admin_user }}/.config"
+    state: directory
+
+- name: Copy starship config
   template:
     src: starship.toml.j2
     dest: /home/{{ admin_user }}/.config/starship.toml
