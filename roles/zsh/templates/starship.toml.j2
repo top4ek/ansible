@@ -6,9 +6,9 @@ add_newline = false
 format = """
 $username\
 $hostname\
-[](fg:surface2 bg:surface0)\
+[](fg:surface1 bg:surface0)\
 $directory\
-[](fg:surface0)\
+[](fg:surface0) \
 """
 
 right_format = """
@@ -17,11 +17,35 @@ $status\
 [](fg:surface0)\
 $git_branch\
 $git_status\
-[](fg:surface2 bg:surface0)\
-$ruby\
+[](fg:surface1 bg:surface0)\
+$aws\
+$buf\
+$c\
+$conda\
+$dart\
+$docker_context\
+$dotnet\
+$elixir\
+$elm\
 $golang\
-$nodejs\
+$haskell\
+$hg_branch\
+$java\
+$julia\
+$lua\
+$memory_usage\
+$meson\
+$nim\
+$nix_shell\
+$package\
+$python\
+$rlang\
+$ruby\
 $rust\
+$scala\
+$spack\
+$vlang\
+$nodejs\
 """
 
 [character]
@@ -30,20 +54,20 @@ error_symbol = "[✘](fg:red)"
 
 [hostname]
 ssh_only = true
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = "[@$hostname ]($style)"
 trim_at = "-"
 disabled = false
 
 [username]
 show_always = false
-style_user = "bg:surface2 fg:subtext1"
-style_root = "bold bg:surface2 fg:red"
+style_user = "bg:surface1 fg:subtext1"
+style_root = "bold bg:surface1 fg:red"
 format = '[ ($user)]($style)'
 
 [directory]
 style = "bg:surface0 fg:green"
-format = "[ $path ]($style)"
+format = "[ $path]($style)"
 truncation_length = 3
 truncation_symbol = "…/"
 home_symbol	= ""
@@ -59,120 +83,121 @@ home_symbol	= ""
 [aws]
 symbol = ""
 style = "bg:surface0"
-format = '[[ $symbol $context ](bg:surface0)]($style) $path'
+format = '[[ $symbol $context ]($style) $path'
 
 [buf]
 symbol = ""
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [c]
 symbol = ""
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [conda]
 symbol = ""
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [dart]
 symbol = ""
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [docker_context]
 symbol = "🐳"
 style = "bg:surface0"
-format = '[[ $symbol $context ](bg:surface0)]($style) $path'
+format = '[ $symbol $context ]($style) $path'
 
 [dotnet]
 symbol = ""
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [elixir]
 symbol = "💧"
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [elm]
 symbol = "🌳"
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [git_branch]
 symbol = ""
-style = "bg:surface0"
-format = '[[ $symbol $branch ](fg:green bg:surface0)]($style)'
-
+style = "fg:green bg:surface0"
+format = '[$symbol $branch ]($style)'
 
 [git_status]
-style = "bg:surface0"
-format = '[[($all_status$ahead_behind)](fg:green bg:surface0)]($style)'
-ahead = "⇡ $count "
-behind = "⇣ $count "
-deleted = "🗑 $count "
-diverged = "󰃻 $count " #
-stashed = "📦 $count "
-modified = "󰙏 $count " # 
-staged = '[ $count ](green)'
-renamed = " $count "
-untracked = "󰙌 ‍$count " # 🤷󱍊
+style = "fg:green bg:surface0"
+format = "[$all_status$ahead_behind]($style)"
+ahead = "⇡$count "
+behind = "⇣$count "
+conflicted = "$count "
+deleted = "🗑$count "
+diverged = "󰃻$count "
+modified = "󰙏$count "
+renamed = "$count "
+staged = "$count "
+stashed = "$count "
+typechanged = "$count "
+untracked = "󰙌$count "
 
 [golang]
 symbol = "🐹"
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [haskell]
 symbol = "λ"
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [hg_branch]
 symbol = ""
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [java]
 symbol = "☕"
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [julia]
 symbol = "ஃ"
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [lua]
 symbol = ""
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [memory_usage]
 symbol = ""
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [meson]
 symbol = "󰈤" # M
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [nim]
 symbol = "👑"
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [nix_shell]
 symbol = ""
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [nodejs]
-symbol = "󰎙" #󰎙 🔷
-style = "bg:surface2 fg:subtext1"
+symbol = "󰎙"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [os]
@@ -186,37 +211,37 @@ Windows = ""
 
 [package]
 symbol = "󰏗" # 
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [python]
 symbol = ""
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [rlang]
 symbol = "󰟔" # R
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [ruby]
 symbol = ""
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [rust]
 symbol = "🦀"
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version]($style)'
 
 [scala]
 symbol = ""
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [vlang]
 symbol = ""
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [shell]
@@ -229,7 +254,7 @@ style = "fg:#ffffff bg:#33658A"
 
 [spack]
 symbol = "🅢" # S
-style = "bg:surface2 fg:subtext1"
+style = "bg:surface1 fg:subtext1"
 format = '[$symbol $version ]($style)'
 
 [time]
