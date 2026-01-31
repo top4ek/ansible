@@ -16,8 +16,8 @@
     privatekey_path: "/etc/pki/{{ item }}/private.pem"
     common_name: "{{ item }}"
     subject_alt_name:
-        - "DNS:*.{{ item }}"
-        - "DNS:{{ item }}"
+      - "DNS:*.{{ item }}"
+      - "DNS:{{ item }}"
 
 - name: "{{ item }}: Create a challenge"
   become: true
@@ -42,7 +42,7 @@
   community.general.cloudflare_dns:
     zone: "{{ item }}"
     account_email: "{{ dns_cloudflare_email }}"
-    api_token: "{{ dns_cloudflare_api_token }}"
+    account_api_token: "{{ dns_cloudflare_api_token }}"
     type: TXT
     record: "{{ challenge.0.key }}"
     value: "{{ challenge.1 }}"
@@ -76,7 +76,7 @@
   community.general.cloudflare_dns:
     zone: "{{ item }}"
     account_email: "{{ dns_cloudflare_email }}"
-    api_token: "{{ dns_cloudflare_api_token }}"
+    account_api_token: "{{ dns_cloudflare_api_token }}"
     type: TXT
     record: "{{ challenge.0.key }}"
     ttl: 60
