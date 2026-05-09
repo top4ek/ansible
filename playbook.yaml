@@ -1,0 +1,32 @@
+---
+- name: Apply host roles
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Determine admin_user uid
+      become: true
+      become_user: "{{ admin_user }}"
+      ansible.builtin.command: "id -u"
+      register: admin_uid_result
+      changed_when: false
+
+    - name: Determine admin_user gid
+      become: true
+      become_user: "{{ admin_user }}"
+      ansible.builtin.command: "id -g"
+      register: admin_gid_result
+      changed_when: false
+
+    - name: Set admin uid/gid facts
+      ansible.builtin.set_fact:
+        admin_uid: "{{ admin_uid_result.stdout | int }}"
+        admin_gid: "{{ admin_gid_result.stdout | int }}"
+
+    - name: Include roles from host_vars
+      ansible.builtin.include_role:
+        name: "{{ role_item }}"
+      loop: "{{ host_roles | default([]) }}"
+      loop_control:
+        loop_var: role_item
+        label: "{{ role_item }}"
