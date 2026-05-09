@@ -1,9 +1,30 @@
+- name: Install common packages and update databases
+  become: true
+  package:
+    state: latest
+    update_cache: yes
+    name:
+      - ca-certificates
+      - curl
+      - sudo
+      - wget
+
+- name: Run distribution specific tasks
+  include_tasks: "{{ ansible_os_family }}.yaml"
+
 - name: Disable SSH password authentication
   become: true
   lineinfile:
     path: "/etc/ssh/sshd_config"
     regex: '^(\#|\s)*PasswordAuthentication\s*(yes|no)$'
     line: "PasswordAuthentication no"
+
+- name: Set SSH port
+  become: true
+  lineinfile:
+    path: "/etc/ssh/sshd_config"
+    regex: '^(\#|\s)*Port\s*\d+$'
+    line: "Port {{ ansible_port }}"
 
 - name: Set hostname in /etc/hostname
   become: true
@@ -15,7 +36,8 @@
   become: true
   lineinfile:
     regexp: "^127.0.1.1"
-    line: "127.0.1.1 {{ hostname|default(inventory_hostname) }}.localdomain {{ hostname|default(inventory_hostname) }}"
+    line: "127.0.1.1 {{ hostname|default(inventory_hostname) }}.localdomain {{
+      hostname|default(inventory_hostname) }}"
     state: present
     path: "/etc/hosts"
 
@@ -28,8 +50,107 @@
 - name: Disable PC speaker
   become: true
   copy:
-    content: "blacklist pcspkr\nblacklist snd_pcsp\n"
+    content: "blacklist pcspkr
+
+      blacklist snd_pcsp\n"
     dest: "/etc/modprobe.d/nobeep.conf"
 
-- name: Run distribution specific tasks
-  include_tasks: "{{ ansible_os_family }}.yaml"
+- name: Create timezone symbolic link
+  become: true
+  file:
+    src: "/usr/share/zoneinfo/{{ TIMEZONE }}"
+    dest: "/etc/localtime"
+    state: link
+
+- name: Create udev directory
+  become: true
+  file:
+    path: "/etc/udev/rules.d"
+    state: directory
+    mode: "0755"
+  when: ansible_facts['os_family'] != 'Alpine'
+
+- name: Set keymap via udev
+  become: true
+  template:
+    src: "templates/75-x11-input.rules.j2"
+    dest: "/etc/udev/rules.d/75-x11-input.rules"
+  when: ansible_facts['os_family'] != 'Alpine'
+
+- name: Copy locale.conf
+  become: true
+  template:
+    src: "templates/locale.conf.j2"
+    dest: "/etc/locale.conf"
+
+- name: Ensure the locales exists
+  become: true
+  locale_gen:
+    name:
+      - en_US.UTF-8
+      - ru_RU.UTF-8
+    state: present
+  when: ansible_facts['os_family'] != 'Alpine'
+
+- name: Set timezone
+  become: true
+  timezone:
+    name: "{{ TIMEZONE }}"
+    hwclock: UTC
+
+- name: Generate locale
+  become: true
+  locale_gen:
+    name: "{{ LC_ALL }}"
+  when: ansible_facts['os_family'] != 'Alpine'
+
+- name: Ensure .profile exists
+  copy:
+    content: ""
+    dest: /home/{{ admin_user }}/.profile
+    force: false
+
+- name: Define export EDITOR
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.profile
+    regexp: "^export EDITOR="
+    line: "export EDITOR=nvim"
+  when: "'nvim' in group_names"
+
+- name: Create directory
+  file:
+    path: "/home/{{ admin_user }}/.ssh"
+    state: directory
+    mode: '0700'
+
+- name: Add public key
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.ssh/authorized_keys
+    line: "{{ admin_public_key }}"
+
+- name: Define backward kill word if undefined
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.profile
+    line: "bindkey '^H' backward-kill-word"
+
+- name: Define cursor backward word if undefined
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.profile
+    line: "bindkey '^[[1;5D' backward-word"
+
+- name: Define forward word word if undefined
+  lineinfile:
+    state: present
+    path: /home/{{ admin_user }}/.profile
+    line: "bindkey '^[[1;5C' forward-word"
+
+- name: Set home permissions
+  file:
+    path: "/home/{{ admin_user }}"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "700"

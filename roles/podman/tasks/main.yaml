@@ -1,64 +1,84 @@
+- name: Install Podman packages (common)
+  become: true
+  package:
+    state: present
+    update_cache: yes
+    name:
+      - podman
+      - podman-compose
+      - crun
+      - slirp4netns
+      - fuse-overlayfs
+
+- name: Allow rootless bind to privileged ports (min 80)
+  become: true
+  ansible.builtin.sysctl:
+    name: net.ipv4.ip_unprivileged_port_start
+    sysctl_file: /etc/sysctl.d/rootless-ports.conf
+    value: "80"
+    state: present
+
 - name: Run distribution specific tasks
   include_tasks: "{{ ansible_os_family }}.yaml"
 
-- name: Ensure default runc absent
+- name: Ensure /etc/containers exists
   become: true
-  package:
-    state: absent
-    name:
-      - runc
-    update_cache: yes
-
-- name: Allow unprivileged users
-  become: true
-  sysctl:
-    name: kernel.unprivileged_userns_clone
-    value: '1'
-    state: present
-    sysctl_file: /etc/sysctl.d/userns.conf
-    sysctl_set: true
-
-- name: Create subuid
-  become: true
-  copy:
-    dest: /etc/subuid
-    content: "{{ admin_user }}:100000:65536"
+  file:
+    path: /etc/containers
+    state: directory
     owner: root
     group: root
-    mode: 0644
+    mode: "0755"
 
-- name: Create subgid
+- name: Configure system containers.conf
   become: true
-  copy:
-    dest: /etc/subgid
-    content: "{{ admin_user }}:100000:65536"
+  template:
+    src: templates/containers.conf.j2
+    dest: /etc/containers/containers.conf
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
 
-- name: Create containers.conf
+- name: Ensure user containers config directory exists
   become: true
-  copy:
-    src: "containers.conf"
-    dest: "/etc/containers/containers.conf"
-    owner: root
-    group: root
-    mode: 0644
+  file:
+    path: "/home/{{ admin_user }}/.config/containers"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
 
-- name: Set default runtime to crun
+- name: Configure user containers.conf (rootless)
   become: true
-  ini_file:
-    no_extra_spaces: false
-    path: /etc/containers/libpod.conf
-    section:
-    option: "runtime"
-    value: '"crun"'
+  template:
+    src: templates/containers.conf.j2
+    dest: "/home/{{ admin_user }}/.config/containers/containers.conf"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
 
-- name: Check if linger exists
-  stat: path=/var/lib/systemd/linger/{{ admin_user }}
-  register: linger
-
-- name: Enable linger {{ admin_user }}
+- name: Ensure subuid mapping for admin_user
   become: true
-  command: loginctl enable-linger {{ admin_user }}
-  when: not linger.stat.exists
+  lineinfile:
+    path: /etc/subuid
+    create: true
+    mode: "0644"
+    regexp: "^{{ admin_user }}:"
+    line: "{{ admin_user }}:100000:65536"
+
+- name: Ensure subgid mapping for admin_user
+  become: true
+  lineinfile:
+    path: /etc/subgid
+    create: true
+    mode: "0644"
+    regexp: "^{{ admin_user }}:"
+    line: "{{ admin_user }}:100000:65536"
+
+- name: Ensure container project directory exists
+  file:
+    path: "/home/{{ admin_user }}/containers"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"

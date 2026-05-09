@@ -2,39 +2,47 @@
 - name: Disable all apt recommendations and suggestions
   become: true
   copy:
-    src: 99local
     dest: /etc/apt/apt.conf.d/99local
+    content: |-
+      APT::Install-Recommends "0";
+      APT::Install-Suggests "0";
     owner: root
     group: root
-    mode: 0644
-
-- name: Upgrade the system
-  become: true
-  apt:
-    update_cache: yes
-    upgrade: dist
+    mode: 644
 
 - name: Install packages
   become: true
-  apt:
-    force_apt_get: yes
+  package:
     state: latest
-    update_cache: yes
     autoremove: yes
     purge: yes
     name:
       - apt-transport-https
-      - ca-certificates
-      - curl
       - gnupg2
       - openssh-client
       - p7zip-full
-      - wget
 
-- name: Generate chroot services file
-  when: chroot_services is defined
+- name: Update user
   become: true
-  template:
-    src: chroot-services.list.j2
-    dest: /chroot-services.list
-    mode: 0644
+  ignore_errors: true
+  user:
+    name: "{{ admin_user }}"
+    shell: "/bin/{{ 'zsh' if 'zsh' in group_names else 'bash' }}"
+    system: yes
+    create_home: yes
+    expires: -1
+    append: yes
+    groups:
+      - adm
+      - games
+      - sudo
+      - tty
+
+- name: Enable passwordless sudo
+  become: true
+  ignore_errors: true
+  lineinfile:
+    regexp: "^%sudo"
+    line: "%sudo ALL=(ALL) NOPASSWD: ALL"
+    state: present
+    path: "/etc/sudoers"

@@ -1,0 +1,6 @@
+---
+- name: Restart OpenRC container service
+  become: true
+  ansible.builtin.command: "service {{ container_name }} restart"
+  changed_when: true
+  when: ansible_facts['service_mgr'] in ['openrc', 'rc']

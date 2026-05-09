@@ -1,11 +1,8 @@
-- name: Install podman
+---
+- name: Install Archlinux-specific packages for rootless podman
   become: true
   package:
-    state: latest
+    state: present
+    update_cache: yes
     name:
-      - aardvark-dns
-      - cni-plugins
-      - crun
-      - fuse-overlayfs
-      - podman
-      - slirp4netns
+      - uidmap

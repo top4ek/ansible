@@ -1,0 +1,27 @@
+---
+- name: Ensure container project directory exists
+  become: true
+  file:
+    path: "{{ compose_project_dir }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+
+- name: Render compose.yaml
+  become: true
+  ansible.builtin.template:
+    src: "{{ podman_compose_template_src }}"
+    dest: "{{ podman_compose_dest }}"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  notify: Restart OpenRC container service
+
+- name: Run systemd-user unit setup
+  include_tasks: container_systemd_user_unit.yaml
+  when: ansible_facts['service_mgr'] == 'systemd'
+
+- name: Run OpenRC setup
+  include_tasks: container_openrc.yaml
+  when: ansible_facts['service_mgr'] in ['openrc', 'rc']

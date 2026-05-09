@@ -1,0 +1,63 @@
+---
+- name: Set repositories
+  become: true
+  copy:
+    dest: /etc/apk/repositories
+    content: |-
+      https://dl-cdn.alpinelinux.org/alpine/v3.23/main
+      https://dl-cdn.alpinelinux.org/alpine/v3.23/community
+    owner: root
+    group: root
+    mode: 644
+
+- name: Update apk index
+  become: true
+  package:
+    update_cache: yes
+
+- name: Upgrade the system
+  become: true
+  apk:
+    upgrade: yes
+
+- name: Remove motd
+  become: true
+  file:
+    path: "/etc/motd"
+    state: absent
+
+- name: Install packages
+  become: true
+  package:
+    state: present
+    name:
+      - ca-certificates
+      - openssh
+      - openssh-client
+      - p7zip
+      - tzdata
+
+- name: Update user
+  become: true
+  ignore_errors: true
+  user:
+    name: "{{ admin_user }}"
+    system: yes
+    create_home: yes
+    expires: -1
+    append: yes
+    groups:
+      - audio
+      - input
+      - netdev
+      - video
+      - wheel
+
+- name: Enable passwordless sudo
+  become: true
+  ignore_errors: true
+  lineinfile:
+    regexp: "^%wheel"
+    line: "%wheel ALL=(ALL) NOPASSWD: ALL"
+    state: present
+    path: "/etc/sudoers"

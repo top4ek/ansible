@@ -1,4 +1,4 @@
-- name: Pacman
+- name: Fancy Pacman
   become: true
   ini_file:
     path: /etc/pacman.conf
@@ -38,12 +38,6 @@
     option: CleanMethod
     value: KeepInstalled
 
-- name: Update packages
-  become: true
-  pacman:
-    update_cache: yes
-    upgrade: yes
-
 - name: Install packages
   become: true
   pacman:
@@ -76,3 +70,46 @@
     name: NetworkManager
     enabled: true
     state: started
+
+- name: Update user
+  become: true
+  user:
+    name: "{{ admin_user }}"
+    shell: "/bin/{{ 'zsh' if 'zsh' in group_names else 'bash' }}"
+    system: yes
+    create_home: yes
+    expires: -1
+    append: yes
+    groups:
+      - adm
+      - audio
+      - floppy
+      - games
+      - input
+      - kvm
+      - lock
+      - log
+      - mail
+      - mem
+      - network
+      - optical
+      - power
+      - render
+      - rfkill
+      - scanner
+      - storage
+      - systemd-journal
+      - tty
+      - users
+      - uucp
+      - video
+      - wheel
+
+- name: Enable passwordless sudo
+  become: true
+  ignore_errors: true
+  lineinfile:
+    regexp: "^%wheel"
+    line: "%wheel ALL=(ALL) NOPASSWD: ALL"
+    state: present
+    path: "/etc/sudoers"

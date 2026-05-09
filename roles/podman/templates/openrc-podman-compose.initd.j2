@@ -1,0 +1,39 @@
+#!/sbin/openrc-run
+
+name="{{ container_name }}"
+description="Podman compose {{ container_name }}"
+
+depend() {
+  need net
+}
+
+start_pre() {
+  uid=$(id -u {{ admin_user }})
+  runtime_dir="/run/user/$uid"
+  podman_runtime_dir="$runtime_dir/podman"
+
+  checkpath -d {{ compose_project_dir }}
+
+  mkdir -p "$podman_runtime_dir"
+  chown -R {{ admin_user }}:{{ admin_user }} "$runtime_dir"
+  chmod 700 "$runtime_dir" "$podman_runtime_dir"
+}
+
+start() {
+  ebegin "Starting {{ container_name }}"
+  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman system service --time 0 &"
+  sleep 2
+  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} up -d"
+  eend $?
+}
+
+stop() {
+  ebegin "Stopping {{ container_name }}"
+  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} down"
+  eend $?
+}
+
+restart() {
+  svc_stop
+  svc_start
+}

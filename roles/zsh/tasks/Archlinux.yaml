@@ -1,5 +1,0 @@
-- name: Install Starship
-  become: true
-  package:
-    name: starship
-    state: present

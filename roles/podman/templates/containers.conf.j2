@@ -1,9 +1,13 @@
 [engine]
-events_logger="journald"
+events_logger="file"
 cgroup_manager="cgroupfs"
 
 [storage]
 driver="overlay"
 
 [containers]
+log_driver="json-file"
 log_size_max=10485760
+
+[network]
+firewall_driver="nftables"

@@ -3,12 +3,10 @@
   package:
     name:
       - fzf
+      - starship
       - zsh
       - zsh-autosuggestions
       - zsh-syntax-highlighting
-
-- name: Run distribution specific tasks
-  include_tasks: "{{ ansible_os_family }}.yaml"
 
 - name: Clone oh my zsh sources
   git:
