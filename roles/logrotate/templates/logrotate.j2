@@ -1,0 +1,17 @@
+{{ item.path }} {
+{% for key, value in item.items() %}
+{% if key not in ['name', 'path'] %}
+{% if value is sameas true %}
+    {{ key }}
+{% elif value is string %}
+    {{ key }} {{ value }}
+{% elif value is iterable and value is not string %}
+    {{ key }}
+{% for line in value %}
+    {{ line }}
+{% endfor %}
+    endscript
+{% endif %}
+{% endif %}
+{% endfor %}
+}
