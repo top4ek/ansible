@@ -1,0 +1,8 @@
+---
+fail2ban_jails:
+  - name: sshd
+    enabled: true
+    port: ssh
+    filter: sshd
+    logpath: /var/log/messages
+    maxretry: 5

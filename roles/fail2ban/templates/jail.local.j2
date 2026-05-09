@@ -1,0 +1,18 @@
+[DEFAULT]
+banaction = nftables
+banaction_allports = nftables[type=allports]
+
+bantime = {{ fail2ban_bantime | default(3600) }}
+findtime = {{ fail2ban_findtime | default(600) }}
+maxretry = {{ fail2ban_maxretry | default(5) }}
+
+{% for jail in fail2ban_jails | default([]) %}
+[{{ jail.name }}]
+enabled = {{ jail.enabled | default(true) }}
+filter = {{ jail.filter }}
+port = {{ jail.port }}
+logpath = {{ jail.logpath }}
+{% if jail.maxretry is defined %}
+maxretry = {{ jail.maxretry }}
+{% endif %}
+{% endfor %}

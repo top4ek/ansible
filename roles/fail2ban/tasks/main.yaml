@@ -1,0 +1,20 @@
+---
+- name: Install fail2ban
+  become: true
+  package:
+    name: fail2ban
+    state: present
+
+- name: Deploy jail.local
+  become: true
+  template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    mode: "0644"
+  notify: Restart fail2ban
+
+- name: Ensure fail2ban enabled
+  become: true
+  service:
+    name: fail2ban
+    enabled: yes
