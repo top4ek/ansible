@@ -1,0 +1,22 @@
+services:
+  {{ postgresql_container_name }}:
+    container_name: {{ postgresql_container_name }}
+    image: mirror.gcr.io/library/postgres:18-alpine
+    restart: unless-stopped
+    userns_mode: keep-id
+    networks:
+      - postgres
+    shm_size: "{{ postgresql_shm_size }}"
+    environment:
+      POSTGRES_USER: "{{ postgresql_user }}"
+      POSTGRES_PASSWORD: "{{ postgresql_password }}"
+      PGDATA: /var/lib/postgresql/data
+      LANG: ru_RU.utf8
+    ports:
+      - "127.0.0.1:{{ postgresql_conf.port | default(5432) }}:{{ postgresql_conf.port | default(5432) }}"
+    volumes:
+      - "{{ compose_project_dir }}/data:/var/lib/postgresql/data"
+
+networks:
+  postgres:
+    name: postgres

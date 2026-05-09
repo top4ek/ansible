@@ -1,0 +1,7 @@
+---
+- name: Install PostgreSQL client
+  become: true
+  package:
+    name: python3-psycopg2
+    state: present
+    update_cache: yes

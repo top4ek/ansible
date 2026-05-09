@@ -1,119 +1,117 @@
 ---
-- name: Add Apt signing key from official Postgres repo
-  become: true
-  apt_key:
-    url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
-    state: present
+- name: Ensure container project directory exists
+  file:
+    path: "{{ postgresql_container_dir }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
 
-- name: Add postgres official repository
-  become: true
-  apt_repository:
-    repo: deb http://apt.postgresql.org/pub/repos/apt bullseye-pgdg main
-    state: present
+- name: Set PostgreSQL paths
+  set_fact:
+    postgresql_data_dir: "{{ postgresql_container_dir }}/data"
+    # postgresql_backup_dir: "{{ postgresql_compose_dir }}/backups"
 
-- name: Index new repo into the cache
-  become: true
-  apt:
-    name: "*"
-    state: latest
-    update_cache: yes
-    force_apt_get: yes
+- name: Run container
+  include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ postgresql_container_name }}"
 
-- name: Install PostgreSQL and pip
-  become: true
-  apt:
-    name:
-      - python3-psycopg2
-      - postgresql
-    state: latest
+- name: Wait for postgresql.conf to be created
+  wait_for:
+    path: "{{ postgresql_data_dir }}/postgresql.conf"
+    timeout: 120
 
-- name: Set config options
-  become: true
-  template:
-    src: custom.conf.j2
-    dest: "{{ postgresql_conf_dir }}/conf.d/custom.conf"
-    owner: "{{ postgresql_user_name }}"
-    group: "{{ postgresql_user_name }}"
-    mode: 0644
-    backup: true
-  notify: Reload PostgreSQL
-
-- name: Install pg_hba.conf
-  become: true
+- name: Deploy pg_hba.conf
   template:
     src: pg_hba.conf.j2
-    dest: "{{ postgresql_conf_dir }}/pg_hba.conf"
-    owner: "{{ postgresql_user_name }}"
-    group: "{{ postgresql_user_name }}"
-    mode: 0400
+    dest: "{{ postgresql_data_dir }}/pg_hba.conf"
+    mode: "0644"
   notify: Reload PostgreSQL
 
-- name: "Change superuser password"
-  become: true
-  become_user: postgres
-  vars:
-    ansible_ssh_pipelining: true
-  postgresql_user:
-    name: "{{ postgresql_user_name }}"
-    password: "{{ postgresql_user_password }}"
+- name: Ensure conf directory exists
+  file:
+    path: "{{ postgresql_data_dir }}/conf.d"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+
+- name: Deploy custom PostgreSQL config
+  template:
+    src: custom.conf.j2
+    dest: "{{ postgresql_data_dir }}/conf.d/custom.conf"
+    mode: "0644"
+  notify: Reload PostgreSQL
+
+- name: Include custom configs
+  lineinfile:
+    regexp: "^#include_dir = "
+    line: "include_dir = 'conf.d'"
+    state: present
+    path: "{{ postgresql_data_dir }}/postgresql.conf"
+  notify: Reload PostgreSQL
+
+- name: Flush handlers to force restart after config updates
+  ansible.builtin.meta: flush_handlers
+
+- name: Install distribution-specific packages
+  include_tasks: "{{ ansible_facts['os_family'] }}.yaml"
+
+- name: Wait for PostgreSQL to accept TCP connections on localhost
+  wait_for:
+    host: 127.0.0.1
+    port: "{{ postgresql_conf.port | default(5432) }}"
+    timeout: 120
+
+- name: Set superuser password
+  community.postgresql.postgresql_user:
+    name: "{{ postgresql_user }}"
+    password: "{{ postgresql_password }}"
+    state: present
+    login_host: localhost
+    login_port: "{{ postgresql_conf.port | default(5432) }}"
+    login_user: "{{ postgresql_user | default('postgres') }}"
+    login_password: "{{ postgresql_password }}"
     expires: infinity
 
-- name: "Create roles"
-  become: true
-  become_user: postgres
-  no_log: True
-  vars:
-    ansible_ssh_pipelining: true
-  postgresql_user:
-    name: "{{ item['user'] }}"
-    password: "{{ item['password'] }}"
+- name: Create roles
+  community.postgresql.postgresql_user:
+    name: "{{ item.user }}"
+    password: "{{ item.password }}"
     state: present
+    login_host: localhost
+    login_port: "{{ postgresql_conf.port | default(5432) }}"
+    login_user: "{{ postgresql_user | default('postgres') }}"
+    login_password: "{{ postgresql_password }}"
   loop: "{{ postgresql_databases }}"
 
-- name: "Create databases"
-  become: true
-  become_user: postgres
-  no_log: True
-  vars:
-    ansible_ssh_pipelining: true
-  postgresql_db:
-    name: "{{ item['database'] }}"
-    owner: "{{ item['user'] }}"
+- name: Create databases
+  community.postgresql.postgresql_db:
+    name: "{{ item.database }}"
+    owner: "{{ item.user }}"
+    encoding: "{{ item.encoding | default(omit) }}"
+    lc_collate: "{{ item.lc_collate | default(omit) }}"
+    lc_ctype: "{{ item.lc_ctype | default(omit) }}"
+    template: "{{ item.template | default(omit) }}"
     state: present
+    login_host: localhost
+    login_port: "{{ postgresql_conf.port | default(5432) }}"
+    login_user: "{{ postgresql_user | default('postgres') }}"
+    login_password: "{{ postgresql_password }}"
   loop: "{{ postgresql_databases }}"
 
-- name: "Set priviledges databases"
-  become: true
-  become_user: postgres
-  no_log: True
-  vars:
-    ansible_ssh_pipelining: true
-  postgresql_privs:
+- name: Grant database privileges
+  community.postgresql.postgresql_privs:
     type: database
-    database: "{{ item['database'] }}"
-    roles: "{{ item['user'] }}"
+    login_db: "{{ item.database }}"
+    roles: "{{ item.user }}"
     grant_option: no
     privs: all
+    login_host: localhost
+    login_port: "{{ postgresql_conf.port | default(5432) }}"
+    login_user: "{{ postgresql_user | default('postgres') }}"
+    login_password: "{{ postgresql_password }}"
   loop: "{{ postgresql_databases }}"
-
-# - name: "Back up the database"
-#   become: true
-#   become_user: postgres
-#   vars:
-#     ansible_ssh_pipelining: true
-#   postgresql_db:
-#     state: dump
-#     name: "{{ db_name }}"
-#     target: "/var/lib/{{ app_name }}/backups/{{ now }}/{{ db_name }}.dump.gz"
-#   loop: "{{ postgresql_databases }}"
-
-# - name: "Restore the database"
-#   become: true
-#   become_user: postgres
-#   vars:
-#     ansible_ssh_pipelining: true
-#   postgresql_db:
-#     state: restore
-#     name: "{{db_name}}"
-#     target: "/var/lib/{{ app_name }}/backups/uploads/{{ backup_file }}.dump.gz"
-#   loop: "{{ postgresql_databases }}"

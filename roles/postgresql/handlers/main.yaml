@@ -1,6 +1,6 @@
 ---
 - name: Reload PostgreSQL
-  become: yes
+  become: true
   service:
-    name: postgresql
+    name: "{{ postgresql_container_name }}"
     state: restarted

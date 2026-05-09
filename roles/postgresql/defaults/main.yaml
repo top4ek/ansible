@@ -1,0 +1,52 @@
+---
+postgresql_container_name: "postgresql"
+postgresql_container_dir: "/home/{{ admin_user }}/containers/{{ postgresql_container_name }}"
+
+postgresql_shm_size: "1g"
+
+postgresql_conf:
+  listen_addresses: "'*'"
+  max_connections: 250
+  password_encryption: scram-sha-256
+  port: 5432
+  shared_buffers: "1GB"
+  superuser_reserved_connections: 3
+  work_mem: "32MB"
+  maintenance_work_mem: "320MB"
+  huge_pages: "off"
+  effective_cache_size: "3GB"
+  effective_io_concurrency: 100
+  random_page_cost: 1.25
+  # Replication
+  wal_level: replica
+  max_wal_senders: 10
+  synchronous_commit: "on"
+  # Checkpointing (checkpoint_timeout: '15 min' — при необходимости раскомментировать в инвентаре)
+  checkpoint_completion_target: 0.9
+  max_wal_size: "1GB"
+  min_wal_size: "512MB"
+  # WAL archiving
+  archive_mode: "off"
+  # WAL writing
+  wal_compression: "on"
+  wal_buffers: -1
+  wal_writer_delay: "200ms"
+  wal_writer_flush_after: "1MB"
+  # Background writer
+  bgwriter_delay: "200ms"
+  bgwriter_flush_after: 0
+  bgwriter_lru_maxpages: 100
+  bgwriter_lru_multiplier: 2.0
+  # Parallel queries
+  max_parallel_maintenance_workers: 2
+  max_parallel_workers: 4
+  max_parallel_workers_per_gather: 2
+  max_worker_processes: 4
+  parallel_leader_participation: "on"
+  # Advanced features
+  enable_partitionwise_aggregate: "on"
+  enable_partitionwise_join: "on"
+  jit: "on"
+  maintenance_io_concurrency: 100
+  track_wal_io_timing: "on"
+  wal_recycle: "on"
