@@ -1,0 +1,31 @@
+#!/sbin/openrc-run
+
+name="{{ wg_iface_name }}"
+description="WireGuard {{ wg_iface_name }}"
+
+depend() {
+  need net
+  after firewall
+}
+
+start() {
+  ebegin "Starting WireGuard {{ wg_iface_name }}"
+  if ip link show "{{ wg_iface_name }}" >/dev/null 2>&1; then
+    ewarn "Interface {{ wg_iface_name }} already exists, bringing it down first"
+    wg-quick down "{{ wg_iface_name }}"
+  fi
+  wg-quick up "{{ wg_iface_name }}"
+  eend $?
+}
+
+stop() {
+  ebegin "Stopping WireGuard {{ wg_iface_name }}"
+  wg-quick down "{{ wg_iface_name }}"
+  eend $?
+}
+
+restart() {
+  svc_stop
+  svc_start
+}
+

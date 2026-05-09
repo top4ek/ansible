@@ -1,0 +1,22 @@
+[Interface]
+Address = {{ wg_iface_cfg.internal_ip }}
+ListenPort = {{ wg_iface_cfg.listen_port }}
+PrivateKey = {{ wireguard.private_key }}
+
+{% for peer in (wg_iface_cfg.peers | default([])) %}
+[Peer]
+PublicKey = {{ peer.public_key }}
+{% if peer.preshared_key is defined %}
+PresharedKey = {{ peer.preshared_key }}
+{% endif %}
+{% if peer.allowed_ips is defined %}
+AllowedIPs = {{ peer.allowed_ips | join(', ') }}
+{% endif %}
+{% if peer.endpoint is defined %}
+Endpoint = {{ peer.endpoint }}
+{% endif %}
+{% if peer.keep_alive is defined %}
+PersistentKeepalive = {{ peer.keep_alive }}
+{% endif %}
+
+{% endfor %}

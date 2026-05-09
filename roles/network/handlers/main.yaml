@@ -1,5 +1,5 @@
 ---
-- name: "Restarting firewall rules"
+- name: "Restarting firewall rules (Systemd)"
   become: true
   systemd:
     daemon_reload: yes
@@ -7,3 +7,23 @@
     enabled: yes
     masked: no
     state: restarted
+  when: ansible_facts['service_mgr'] == 'systemd'
+  listen: "Restarting firewall rules"
+
+- name: "Restarting firewall rules (OpenRC)"
+  become: true
+  service:
+    name: nftables
+    state: restarted
+  when: ansible_facts['service_mgr'] in ['openrc', 'rc']
+  listen: "Restarting firewall rules"
+
+- name: "Restarting wireguard interfaces"
+  become: true
+  ansible.builtin.service:
+    name: "{{ item.key }}"
+    state: restarted
+  loop: "{{ wireguard.interfaces | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  listen: "Restarting wireguard interfaces"

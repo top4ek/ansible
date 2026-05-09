@@ -1,0 +1,54 @@
+---
+- name: Install WireGuard packages
+  ansible.builtin.include_tasks: "{{ ansible_facts['os_family'] }}.yaml"
+
+- name: Ensure /etc/wireguard exists
+  become: true
+  file:
+    path: /etc/wireguard
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Render WireGuard interface configs
+  become: true
+  template:
+    src: wireguard.conf.j2
+    dest: "/etc/wireguard/{{ item.key }}.conf"
+    owner: root
+    group: root
+    mode: "0600"
+  loop: "{{ wireguard.interfaces | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  vars:
+    wg_iface_name: "{{ item.key }}"
+    wg_iface_cfg: "{{ item.value }}"
+  notify: "Restarting wireguard interfaces"
+
+- name: Install OpenRC WireGuard service scripts
+  become: true
+  template:
+    src: openrc-wireguard.initd.j2
+    dest: "/etc/init.d/wg-quick@{{ item.key }}"
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ wireguard.interfaces | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  vars:
+    wg_iface_name: "{{ item.key }}"
+  when: ansible_facts['service_mgr'] in ['openrc', 'rc']
+  notify: "Restarting wireguard interfaces"
+
+- name: Enable WireGuard services
+  service:
+    name: "wg-quick@{{ item.key }}"
+    enabled: true
+  loop: "{{ wireguard.interfaces | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  vars:
+    wg_iface_name: "{{ item.key }}"

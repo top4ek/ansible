@@ -1,0 +1,9 @@
+---
+- name: Install WireGuard packages
+  become: true
+  ansible.builtin.package:
+    state: present
+    update_cache: yes
+    name:
+      - wireguard-tools
+      - wireguard-tools-wg-quick

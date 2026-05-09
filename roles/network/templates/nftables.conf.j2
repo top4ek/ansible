@@ -7,8 +7,11 @@ table inet filter {
     type filter hook input priority filter; policy drop;
 
     iifname "lo" accept;
-{% if wireguard.mesh.internal_ip is defined %}
-    iifname "wg0" accept;
+
+{% if wireguard is defined and wireguard.interfaces is defined %}
+{% for iface_name in wireguard.interfaces %}
+    iifname "{{ iface_name }}" accept;
+{% endfor %}
 {% endif %}
 
     ct state related,established accept;
@@ -43,8 +46,17 @@ table inet filter {
     ct state { related, established } accept
     ct state invalid drop
 
-    iifname "wg0" oif "ens3" accept
-    iifname "ens3" oifname "wg0" ct state related,established accept
+{% if wireguard is defined and wireguard.interfaces is defined %}
+{% for iface_name, iface_cfg in wireguard.interfaces.items() %}
+{% if iface_cfg.forward is defined %}
+    iifname "{{ iface_name }}" oifname "{{ iface_name }}" accept
+{% endif %}
+{% if iface_cfg.snat_interface is defined %}
+    iifname "{{ iface_name }}" oifname "{{ iface_cfg.snat_interface }}" accept
+    iifname "{{ iface_cfg.snat_interface }}" oifname "{{ iface_name }}" ct state related,established accept
+{% endif %}
+{% endfor %}
+{% endif %}
   }
 
   chain output {
@@ -54,7 +66,9 @@ table inet filter {
   }
 }
 
-{% if wireguard.vpn.snat_interface is defined %}
+{% if wireguard is defined and wireguard.interfaces is defined %}
+{% set _snat_ifaces = wireguard.interfaces | dict2items | selectattr('value.snat_interface', 'defined') | selectattr('value.internal_ip', 'defined') | list %}
+{% if _snat_ifaces | length > 0 %}
 table ip nat {
   chain prerouting {
     type nat hook prerouting priority dstnat; policy accept;
@@ -63,7 +77,11 @@ table ip nat {
 
   chain postrouting {
     type nat hook postrouting priority srcnat; policy accept;
-    ip saddr {{ wireguard.vpn.range }} oif {{ wireguard.vpn.snat_interface }} snat to {{ ansible_host }};
+{% for item in _snat_ifaces %}
+{%   set _ext_if = interfaces | selectattr('iface', 'equalto', item.value.snat_interface) | list | first %}
+    ip saddr {{ item.value.internal_ip }} oif {{ item.value.snat_interface }} snat to {{ _ext_if.address }};
+{% endfor %}
   }
 }
+{% endif %}
 {% endif %}
