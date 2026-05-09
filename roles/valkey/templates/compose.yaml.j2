@@ -1,0 +1,14 @@
+services:
+  {{ valkey_container_name }}:
+    container_name: {{ valkey_container_name }}
+    image: docker.io/valkey/valkey:latest
+    restart: unless-stopped
+    userns_mode: keep-id
+    networks:
+      - valkey
+    volumes:
+      - "{{ compose_project_dir }}/data:/data"
+
+networks:
+  valkey:
+    name: valkey
