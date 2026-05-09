@@ -12,11 +12,11 @@
     dest: /etc/chrony/chrony.conf
     owner: root
     group: root
-    mode: 0644
-    backup: yes
+    mode: 644
+  notify: Restart chrony
 
-- name: Restart chronyd
+- name: Enable chronyd
   become: true
   service:
     name: chronyd
-    state: restarted
+    enabled: true
