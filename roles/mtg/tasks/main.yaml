@@ -1,38 +1,40 @@
-- name: Create directory
+---
+- name: Ensure container project directory exists
+  become: true
   file:
-    path: "/home/{{ admin_user }}/mtg"
+    path: "{{ mtg_container_dir }}"
     state: directory
-    mode: '0755'
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
 
-- name: Generate MTG config
-  copy:
-    content: "secret = \"{{ mtg.secret }}\"\nbind-to = \"{{ mtg.bind }}:{{ mtg.port}}\"\n"
-    dest: "/home/{{ admin_user }}/mtg/config.toml"
+- name: Derive mtg_sni from mtg.secret
+  command: "python3 {{ role_path }}/files/hex_sni.py {{ mtg.secret }}"
+  delegate_to: localhost
+  become: false
+  changed_when: false
+  register: mtg_sni_cmd
 
-- name: Pull MTG
-  shell: podman pull docker.io/nineseconds/mtg:stable
+- name: Set mtg_sni
+  ansible.builtin.set_fact:
+    mtg_sni: "{{ mtg_sni_cmd.stdout | trim }}"
 
-- name: Start MTG
-  shell: podman run -d --replace --restart unless-stopped --name mtg -p {{ mtg.port }}:{{ mtg.port }} -v /home/{{ admin_user }}/mtg/config.toml:/config.toml nineseconds/mtg:stable
+- name: Assert mtg_sni extracted
+  ansible.builtin.assert:
+    that:
+      - mtg_sni is defined
+      - mtg_sni | length > 0
+    success_msg: "Extracted SNI: {{ mtg_sni }}"
+    quiet: true
 
-- name: Create systemd units directory
-  file:
-    path: "/home/{{ admin_user }}/.config/systemd/user"
-    state: directory
-    mode: '0755'
+- name: Generate mtg config
+  template:
+    src: "config.toml.j2"
+    dest: "{{ mtg_container_dir }}/config.toml"
 
-- name: Generate systemd unit
-  shell: podman generate systemd --restart-policy=always --name mtg > /home/{{ admin_user }}/mtg/mtg.service
-
-- name: Create symlink to systemd
-  file:
-    src: /home/{{ admin_user }}/mtg/mtg.service
-    path: "/home/{{ admin_user }}/.config/systemd/user/mtg.service"
-    state: link
-
-- name: Reload systemd config
-  systemd:
-    name: mtg
-    daemon_reload: yes
-    scope: user
-    enabled: yes
+- name: Run container
+  include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: mtg

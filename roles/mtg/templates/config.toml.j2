@@ -1,0 +1,17 @@
+debug = true
+secret = "{{ mtg.secret }}"
+bind-to = "0.0.0.0:{{ mtg.port }}"
+prefer-ip = "only-ipv4"
+auto-update = false
+tolerate-time-skewness = "10s"
+
+{% if mtg.socks is defined %}
+[network]
+proxies = [ "socks5://{{ mtg.socks }}" ]
+{% endif %}
+
+[stats.statsd]
+enabled = false
+
+[stats.prometheus]
+enabled = false

@@ -1,0 +1,26 @@
+services:
+  mtg:
+    container_name: mtg
+    image: docker.io/nineseconds/mtg:stable
+    restart: unless-stopped
+    networks:
+      - proxy
+{% if host_roles is defined and 'traefik' in host_roles %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.tcp.routers.mtg.entrypoints=websecure"
+      - 'traefik.tcp.routers.mtg.rule=HostSNIRegexp(`^{{ mtg_sni | regex_replace("\\.", "\\\\.") }}$`) || HostSNIRegexp(`^[^.]+\\.{{ mtg_sni | regex_replace("\\.", "\\\\.") }}$`)'
+      - "traefik.tcp.routers.mtg.tls.passthrough=true"
+      - "traefik.tcp.services.mtg.loadbalancer.server.port={{ mtg.port }}"
+{% else %}
+    ports:
+      - "{{ mtg.port }}:{{ mtg.port }}"
+{% endif %}
+    volumes:
+      - "{{ compose_project_dir }}/config.toml:/config.toml"
+
+{% if host_roles is defined and 'traefik' in host_roles %}
+networks:
+  proxy:
+    external: true
+{% endif %}
