@@ -1,41 +1,15 @@
-- name: Create directory
+---
+- name: Ensure container project directory exists
   file:
-    path: "/home/{{ admin_user }}/wakapi"
+    path: "{{ wakapi_container_dir }}"
     state: directory
-    mode: '0755'
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
 
-- name: Generate Wakapi config
-  template:
-    src: env.j2
-    dest: "/home/{{ admin_user }}/wakapi/.env"
-
-- name: Pull Wakapi
-  shell: podman pull ghcr.io/muety/wakapi:latest
-
-- name: Start Wakapi
-  shell: podman run -d --replace --restart unless-stopped --name wakapi --env-file /home/{{ admin_user }}/wakapi/.env -p {{ wakapi.port }}:3000 -v /home/{{ admin_user }}/wakapi:/data muety/wakapi:latest
-
-# - name: Clean images
-#   shell: podman system prune -f
-
-- name: Create systemd units directory
-  file:
-    path: "/home/{{ admin_user }}/.config/systemd/user"
-    state: directory
-    mode: '0755'
-
-- name: Generate systemd unit
-  shell: podman generate systemd --restart-policy=always --name wakapi > /home/{{ admin_user }}/wakapi/wakapi.service
-
-- name: Create symlink to systemd
-  file:
-    src: /home/{{ admin_user }}/wakapi/wakapi.service
-    path: "/home/{{ admin_user }}/.config/systemd/user/wakapi.service"
-    state: link
-
-- name: Reload systemd config
-  systemd:
-    name: wakapi
-    daemon_reload: yes
-    scope: user
-    enabled: yes
+- name: Run container
+  include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ wakapi_container_name }}"

@@ -154,3 +154,9 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "700"
+
+- name: Create wakatime config
+  template:
+    dest: "/home/{{ admin_user }}/.wakatime.cfg"
+    src: ".wakatime.cfg.j2"
+  when: wakatime is defined && wakatime.key is defined

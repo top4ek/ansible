@@ -1,0 +1,40 @@
+services:
+  {{ wakapi_container_name }}:
+    container_name: {{ wakapi_container_name }}
+    image: ghcr.io/muety/wakapi:latest
+    restart: unless-stopped
+    userns_mode: keep-id
+    networks:
+      - proxy
+      - postgres
+    environment:
+      - WAKAPI_DB_TYPE=postgres
+      - WAKAPI_DB_HOST={{ wakapi.postgres.host }}
+      - WAKAPI_DB_PORT={{ wakapi.postgres.port }}
+      - WAKAPI_DB_USER={{ wakapi.postgres.user }}
+      - WAKAPI_DB_PASSWORD={{ wakapi.postgres.password }}
+      - WAKAPI_DB_NAME={{ wakapi.postgres.name }}
+      - WAKAPI_PASSWORD_SALT={{ wakapi.password_salt }}
+      - WAKAPI_PUBLIC_URL={{ wakapi.public_url }}
+      - WAKAPI_SENTRY_DSN={{ wakapi.sentry_dsn }}
+      - WAKAPI_MAIL_ENABLED={{ wakapi.email.enabled }}
+      - WAKAPI_MAIL_SMTP_HOST={{ wakapi.email.host }}
+      - WAKAPI_MAIL_SMTP_PORT={{ wakapi.email.port }}
+      - WAKAPI_MAIL_SMTP_USER={{ wakapi.email.user }}
+      - WAKAPI_MAIL_SMTP_PASS={{ wakapi.email.password }}
+      - WAKAPI_MAIL_SMTP_TLS={{ wakapi.email.tls }}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.wakapi.rule=Host(`{{ wakapi.public_url | regex_replace('^https?://', '') | regex_replace('/.*$', '') }}`)"
+      - "traefik.http.routers.wakapi.entrypoints=websecure"
+      - "traefik.http.routers.wakapi.tls=true"
+      - "traefik.http.routers.wakapi.tls.certresolver=letsencrypt"
+      - "traefik.http.services.wakapi.loadbalancer.server.port=3000"
+    volumes:
+      - "{{ compose_project_dir }}/data:/data"
+
+networks:
+  proxy:
+    external: true
+  postgres:
+    external: true
