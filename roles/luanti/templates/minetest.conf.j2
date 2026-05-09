@@ -1,0 +1,9 @@
+{% if luanti.configuration is mapping %}
+{% for item in (luanti.configuration | dict2items) %}
+{{ item.key }} = {{ item.value }}
+{% endfor %}
+{% else %}
+{% for item in (luanti.configuration | default([])) %}
+{{ item.option }} = {{ item.value }}
+{% endfor %}
+{% endif %}

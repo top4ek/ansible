@@ -1,6 +1,7 @@
 {
-	"configversion": 2,
-	"port": {{ minetest_map.port }},
+	"configversion": 1,
+	"port": 8888,
+	"localhostonly": false,
 	"enableprometheus": false,
 	"enablerendering": true,
 	"enablesearch": true,
@@ -10,19 +11,25 @@
 	"webdev": false,
 	"webapi": {
 		"enablemapblock": false,
-		"secretkey": "{{ minetest_map.password }}"
+		"secretkey": "{{ luanti_map.password }}"
 	},
 	"layers": [
 		{
 			"id": 0,
-			"name": "Base",
-			"from": -16,
-			"to": 160
+			"name": "Ground",
+			"from": -1,
+			"to": 10
+		},
+		{
+			"id": 1,
+			"name": "Sky",
+			"from": 11,
+			"to": 24
 		}
 	],
-	"renderingfetchlimit": 1000,
-	"renderingjobs": 2,
-	"renderingqueue": 100,
+	"renderingfetchlimit": 500,
+	"renderingjobs": 4,
+	"renderingqueue": 10,
 	"incrementalrenderingtimer": "5s",
 	"mapobjects": {
 		"areas": true,
@@ -54,20 +61,26 @@
 		"minecart": false,
 		"locator": false,
 		"signs": true,
-		"mapserver_airutils": true
+		"mapserver_airutils": true,
+		"phonograph": true,
+		"um_area_forsale": true
 	},
 	"mapblockaccessor": {
 		"expiretime": "10s",
 		"purgetime": "15s",
-		"maxitems": 5000
+		"maxitems": 50
 	},
 	"defaultoverlays": [
 		"mapserver_poi",
 		"mapserver_label",
 		"mapserver_player"
 	],
+	"pagename": "Minetest Mapserver",
 	"skins": {
 		"enableskinsdb": false,
 		"skinspath": ""
-	}
+	},
+	"worldpath": "./",
+	"datapath": "./",
+	"colorstxtpath": "./"
 }

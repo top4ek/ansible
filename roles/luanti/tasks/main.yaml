@@ -1,0 +1,84 @@
+---
+- name: Install git
+  become: true
+  package:
+    state: present
+    name:
+      - git
+
+- name: Ensure Luanti container project directory exists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  loop:
+    - "{{ luanti_map_container_dir }}"
+    - "{{ luanti_container_dir }}"
+    - "{{ luanti_container_dir }}/conf"
+    - "{{ luanti_container_dir }}/data"
+    - "{{ luanti_container_dir }}/data/mods"
+    - "{{ luanti_container_dir }}/data/games"
+    - "{{ luanti_container_dir }}/data/worlds/world"
+
+- name: Render Luanti minetest.conf
+  ansible.builtin.template:
+    src: "minetest.conf.j2"
+    dest: "{{ luanti_container_dir }}/conf/minetest.conf"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+
+- name: Render Luanti world.mt
+  template:
+    src: "world.mt.j2"
+    dest: "{{ luanti_container_dir }}/data/worlds/world/world.mt"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+
+- name: Render Luanti mapserver.json
+  ansible.builtin.template:
+    src: "mapserver.json.j2"
+    dest: "{{ luanti_container_dir }}/data/worlds/world/mapserver.json"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+
+- name: Clone Luanti games
+  ansible.builtin.git:
+    repo: "{{ item['repo'] }}"
+    dest: "{{ luanti_container_dir }}/data/games/{{ item['name'] }}"
+    update: true
+    version: "{{ item['version'] }}"
+    single_branch: true
+  loop: "{{ luanti.games | default([]) }}"
+
+- name: Clone Luanti mods
+  ansible.builtin.git:
+    repo: "{{ item['repo'] }}"
+    dest: "{{ luanti_container_dir }}/data/mods/{{ item['name'] }}"
+    update: true
+    version: "{{ item['version'] }}"
+    single_branch: true
+  loop: "{{ luanti.mods | default([]) }}"
+
+- name: Logrotate logs
+  include_role:
+    name: logrotate
+  vars:
+    entries:
+      - name: luanti
+        path: "{{ luanti_container_dir }}/data/debug.txt"
+        rotate: 7
+        daily: true
+        missingok: true
+        compress: true
+
+- name: Run Luanti server container
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ luanti_container_name }}"

@@ -1,0 +1,9 @@
+{% if luanti.world_options is mapping %}
+{% for item in (luanti.world_options | dict2items) %}
+{{ item.key }} = {{ item.value }}
+{% endfor %}
+{% else %}
+{% for item in (luanti.world_options | default([])) %}
+{{ item.option }} = {{ item.value }}
+{% endfor %}
+{% endif %}

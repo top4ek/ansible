@@ -1,0 +1,6 @@
+---
+luanti_container_name: "luanti"
+luanti_container_dir: "/home/{{ admin_user }}/containers/{{ luanti_container_name }}"
+
+luanti_map_container_name: "luanti-map"
+luanti_map_container_dir: "/home/{{ admin_user }}/containers/{{ luanti_map_container_name }}"

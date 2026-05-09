@@ -1,0 +1,51 @@
+services:
+  luanti:
+    container_name: luanti
+    image: "ghcr.io/luanti-org/luanti:{{ luanti.version | default('latest') }}"
+    restart: unless-stopped
+    userns_mode: keep-id
+    user: "{{ admin_uid }}:{{ admin_gid }}"
+    networks:
+      - postgres
+    ports:
+      - "{{ luanti.configuration.port }}:{{ luanti.configuration.port }}/udp"
+    volumes:
+      - "{{ compose_project_dir }}/data:/var/lib/minetest/.minetest:rw,z"
+      - "{{ compose_project_dir }}/conf:/etc/minetest/:ro,z"
+
+  luanti-map:
+    container_name: luanti-map
+    image: "ghcr.io/minetest-mapserver/mapserver:latest"
+    restart: unless-stopped
+    userns_mode: keep-id
+    user: "{{ admin_uid }}:{{ admin_gid }}"
+    networks:
+{% if luanti_map.host is defined %}
+      - proxy
+{% endif %}
+      - postgres
+{% if luanti_map.binding is defined %}
+    ports:
+      - "{{ luanti_map.binding }}:8888"
+{% endif %}
+{% if luanti_map.host is defined %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.luanti_map.entrypoints=websecure"
+      - "traefik.http.routers.luanti_map.rule=Host(`{{ luanti_map.host }}`)"
+      - "traefik.http.routers.luanti_map.tls=true"
+      - "traefik.http.routers.luanti_map.tls.certresolver=letsencrypt"
+      - "traefik.http.services.luanti_map.loadbalancer.server.port=8888"
+      - "traefik.docker.network=proxy"
+{% endif %}
+    working_dir: "/minetest"
+    volumes:
+      - "{{ compose_project_dir }}/data/worlds/{{ luanti.world | default('world') }}:/minetest:z"
+
+networks:
+{% if host_roles is defined and 'traefik' in host_roles %}
+  proxy:
+    external: true
+{% endif %}
+  postgres:
+    external: true
