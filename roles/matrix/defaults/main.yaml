@@ -1,0 +1,19 @@
+---
+matrix_container_name: "matrix"
+matrix_container_dir: "/home/{{ admin_user }}/containers/{{ matrix_container_name }}"
+
+matrix:
+  server_name: "example.com"
+  public_baseurl: "https://example.com"
+  element_domain: "im.example.com"
+  postgres_password: "passw0rd"
+  macaroon_secret_key: "u-secret-key"
+  form_secret: "LA-form-secret"
+  registration_shared_secret: "abrivalg"
+  livekit_api_key: "megasecretkey"
+  livekit_api_secret: "Eh+anotherkey="
+  livekit_wss_url: "wss://example.com"
+  db_host: "postgresql"
+  db_port: 5432
+  db_user: "matrix_user"
+  db_name: "matrix_production"

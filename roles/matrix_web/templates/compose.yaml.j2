@@ -1,0 +1,45 @@
+services:
+  admin:
+    container_name: matrix-admin
+    image: ghcr.io/etkecc/ketesa:latest
+    restart: unless-stopped
+    userns_mode: keep-id
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.matrix-admin.rule=Host(`{{ matrix.element_domain }}`) && PathPrefix(`/ketesa`)"
+      - "traefik.http.routers.matrix-admin.middlewares=matrix-admin-addslash,matrix-admin-stripprefix"
+      - "traefik.http.middlewares.matrix-admin-addslash.redirectregex.regex=^https?://([^/]+)/ketesa$$"
+      - "traefik.http.middlewares.matrix-admin-addslash.redirectregex.replacement=https://$${1}/ketesa/"
+      - "traefik.http.middlewares.matrix-admin-stripprefix.stripprefix.prefixes=/ketesa"
+      - "traefik.http.routers.matrix-admin.entrypoints=websecure"
+      - "traefik.http.routers.matrix-admin.tls=true"
+      - "traefik.http.routers.matrix-admin.tls.certresolver=letsencrypt"
+      - "traefik.http.services.matrix-admin.loadbalancer.server.port=8080"
+
+  element:
+    container_name: matrix-element
+    image: docker.io/vectorim/element-web:v1.11.96
+    restart: unless-stopped
+    userns_mode: keep-id
+    networks:
+      - proxy
+    environment:
+      ELEMENT_WEB_PORT: "8080"
+    volumes:
+      - ./element-config.json:/app/config.json:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.matrix-element.rule=Host(`{{ matrix.element_domain }}`)"
+      - "traefik.http.routers.matrix-element.entrypoints=websecure"
+      - "traefik.http.routers.matrix-element.tls=true"
+      - "traefik.http.routers.matrix-element.tls.certresolver=letsencrypt"
+      - "traefik.http.services.matrix-element.loadbalancer.server.port=8080"
+      - "traefik.http.routers.matrix-element-http.rule=Host(`{{ matrix.element_domain }}`)"
+      - "traefik.http.routers.matrix-element-http.entrypoints=web"
+      - "traefik.http.routers.matrix-element-http.middlewares=redirect-to-https"
+
+networks:
+  proxy:
+    external: true

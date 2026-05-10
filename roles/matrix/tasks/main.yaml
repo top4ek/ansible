@@ -1,0 +1,51 @@
+---
+- name: Ensure matrix project directory exists
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  loop:
+    - "{{ matrix_container_dir }}"
+    - "{{ matrix_container_dir }}/data"
+    - "{{ matrix_container_dir }}/data/media"
+    - "{{ matrix_container_dir }}/data/uploads"
+    - "{{ matrix_container_dir }}/modules"
+
+- name: Render homeserver.yaml
+  template:
+    src: homeserver.yaml.j2
+    dest: "{{ matrix_container_dir }}/data/homeserver.yaml"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  notify: Restart matrix
+
+- name: Copy room_restriction.py
+  copy:
+    src: room_restriction.py
+    dest: "{{ matrix_container_dir }}/modules/room_restriction.py"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  notify: Restart matrix
+
+- name: Render livekit.yaml
+  template:
+    src: livekit.yaml.j2
+    dest: "{{ matrix_container_dir }}/livekit.yaml"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  notify: Restart matrix
+
+- name: Run container
+  include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ matrix_container_name }}"
+    podman_compose_template_src: "compose.yaml.j2"
+    podman_compose_dest: "{{ matrix_container_dir }}/compose.yaml"
+    compose_project_dir: "{{ matrix_container_dir }}"

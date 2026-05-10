@@ -1,0 +1,27 @@
+---
+- name: Ensure matrix_web project directory exists
+  file:
+    path: "{{ matrix_web_container_dir }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+
+- name: Render element-config.json
+  template:
+    src: element-config.json.j2
+    dest: "{{ matrix_web_container_dir }}/element-config.json"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  notify: Restart matrix_web
+
+- name: Run container
+  include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ matrix_web_container_name }}"
+    podman_compose_template_src: "compose.yaml.j2"
+    podman_compose_dest: "{{ matrix_web_container_dir }}/compose.yaml"
+    compose_project_dir: "{{ matrix_web_container_dir }}"

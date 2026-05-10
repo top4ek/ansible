@@ -1,0 +1,81 @@
+services:
+  matrix:
+    container_name: matrix
+    image: docker.io/matrixdotorg/synapse:v1.152.0
+    restart: unless-stopped
+    userns_mode: keep-id
+    user: "{{ admin_uid }}:{{ admin_gid }}"
+    networks:
+      - proxy
+      - postgres
+    environment:
+      SYNAPSE_CONFIG_PATH: /data/homeserver.yaml
+      PYTHONPATH: /opt/synapse-modules
+    volumes:
+      - ./data:/data
+      - ./modules:/opt/synapse-modules:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.matrix.rule=Host(`{{ matrix.server_name }}`) && (PathPrefix(`/_matrix`) || PathPrefix(`/_synapse`) || PathPrefix(`/.well-known/matrix`))"
+      - "traefik.http.routers.matrix.entrypoints=websecure"
+      - "traefik.http.routers.matrix.tls=true"
+      - "traefik.http.routers.matrix.tls.certresolver=letsencrypt"
+      - "traefik.http.services.matrix.loadbalancer.server.port=8008"
+      - "traefik.http.routers.matrix-http.rule=Host(`{{ matrix.server_name }}`) && (PathPrefix(`/_matrix`) || PathPrefix(`/_synapse`) || PathPrefix(`/.well-known/matrix`))"
+      - "traefik.http.routers.matrix-http.entrypoints=web"
+      - "traefik.http.routers.matrix-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
+  lk-jwt-service:
+    container_name: matrix-lk-jwt-service
+    image: ghcr.io/element-hq/lk-jwt-service:latest
+    restart: unless-stopped
+    userns_mode: keep-id
+    networks:
+      - proxy
+    environment:
+      LIVEKIT_URL: "{{ matrix.livekit_wss_url }}"
+      LIVEKIT_KEY: "{{ matrix.livekit_api_key }}"
+      LIVEKIT_SECRET: "{{ matrix.livekit_api_secret }}"
+      LIVEKIT_JWT_BIND: ":8089"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.matrix-lk-jwt.rule=Host(`{{ matrix.server_name }}`) && (PathPrefix(`/livekit/jwt/`) || PathPrefix(`/sfu`))"
+      - "traefik.http.routers.matrix-lk-jwt.entrypoints=websecure"
+      - "traefik.http.routers.matrix-lk-jwt.tls=true"
+      - "traefik.http.routers.matrix-lk-jwt.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.matrix-lk-jwt.middlewares=matrix-lk-jwt-stripprefix"
+      - "traefik.http.middlewares.matrix-lk-jwt-stripprefix.stripprefix.prefixes=/livekit/jwt/"
+      - "traefik.http.services.matrix-lk-jwt.loadbalancer.server.port=8089"
+
+  livekit:
+    container_name: matrix-livekit
+    image: livekit/livekit-server:v1.8
+    restart: unless-stopped
+    userns_mode: keep-id
+    networks:
+      - proxy
+    command: --config /etc/livekit/livekit.yaml --node-ip {{ ansible_host }}
+    environment:
+      LIVEKIT_KEYS: "{{ matrix.livekit_api_key }}: {{ matrix.livekit_api_secret }}"
+      LIVEKIT_API_KEY: "{{ matrix.livekit_api_key }}"
+      LIVEKIT_API_SECRET: "{{ matrix.livekit_api_secret }}"
+    ports:
+      - "7882:7882/udp"
+    volumes:
+      - ./livekit.yaml:/etc/livekit/livekit.yaml:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.matrix-livekit.rule=Host(`{{ matrix.server_name }}`) && (PathPrefix(`/livekit/sfu/`) || PathPrefix(`/rtc`))"
+      - "traefik.http.routers.matrix-livekit.entrypoints=websecure"
+      - "traefik.http.routers.matrix-livekit.tls=true"
+      - "traefik.http.routers.matrix-livekit.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.matrix-livekit.middlewares=matrix-livekit-stripprefix"
+      - "traefik.http.middlewares.matrix-livekit-stripprefix.stripprefix.prefixes=/livekit/sfu/"
+      - "traefik.http.services.matrix-livekit.loadbalancer.server.port=7880"
+
+networks:
+  proxy:
+    external: true
+  postgres:
+    external: true

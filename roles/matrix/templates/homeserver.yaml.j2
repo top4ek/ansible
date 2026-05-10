@@ -1,0 +1,71 @@
+server_name: "{{ matrix.server_name }}"
+public_baseurl: "{{ matrix.public_baseurl }}"
+pid_file: /data/homeserver.pid
+
+experimental_features:
+  msc4143_enabled: true
+  msc3266_enabled: true
+  msc4222_enabled: true
+
+listeners:
+  - port: 8008
+    tls: false
+    bind_addresses: ["0.0.0.0"]
+    type: http
+    x_forwarded: true
+    resources:
+      - names: [client, federation]
+        compress: false
+
+database:
+  name: psycopg2
+  args:
+    user: "{{ matrix.db_user }}"
+    password: "{{ matrix.postgres_password }}"
+    database: "{{ matrix.db_name }}"
+    host: "{{ matrix.db_host }}"
+    port: {{ matrix.db_port }}
+    sslmode: disable
+    cp_min: 2
+    cp_max: 10
+
+signing_key_path: "/data/matrix.signing.key"
+
+macaroon_secret_key: "{{ matrix.macaroon_secret_key }}"
+form_secret: "{{ matrix.form_secret }}"
+registration_shared_secret: "{{ matrix.registration_shared_secret }}"
+
+enable_registration: false
+enable_registration_without_verification: false
+
+media_store_path: /data/media
+uploads_path: /data/uploads
+
+max_event_delay_duration: 24h
+rc_message:
+  per_second: 0.5
+  burst_count: 30
+rc_delayed_event_mgmt:
+  per_second: 1
+  burst_count: 20
+
+serve_server_wellknown: true
+extra_well_known_client_content:
+  "org.matrix.msc4143.rtc_foci":
+    - type: "livekit"
+      livekit_service_url: "{{ matrix.public_baseurl }}/livekit/jwt"
+    - type: "livekit"
+      livekit_service_url: "{{ matrix.public_baseurl }}"
+
+matrix_rtc:
+  transports:
+    - type: "livekit"
+      livekit_service_url: "{{ matrix.public_baseurl }}/livekit/jwt"
+    - type: "livekit"
+      livekit_service_url: "{{ matrix.public_baseurl }}"
+
+modules:
+  - module: room_restriction.RoomCreationRestriction
+    config: {}
+
+report_stats: false

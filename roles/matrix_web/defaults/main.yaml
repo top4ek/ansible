@@ -1,0 +1,3 @@
+---
+matrix_web_container_name: "matrix-web"
+matrix_web_container_dir: "/home/{{ admin_user }}/containers/{{ matrix_web_container_name }}"
