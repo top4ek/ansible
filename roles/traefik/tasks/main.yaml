@@ -1,0 +1,61 @@
+---
+- name: Ensure traefik project directory exists
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  loop:
+    - "{{ traefik_container_dir }}"
+    - "{{ traefik_container_dir }}/dynamic"
+
+- name: Render traefik dynamic configurations
+  copy:
+    content: "{{ item.value | to_nice_yaml }}"
+    dest: "{{ traefik_container_dir }}/dynamic/{{ item.key }}.yaml"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  loop: "{{ (traefik_dynamic | default({})) | dict2items }}"
+
+- name: Ensure acme.json exists with correct permissions
+  copy:
+    dest: "{{ traefik_container_dir }}/acme.json"
+    content: "{}"
+    force: false
+    mode: "0600"
+
+- name: Ensure traefik.log exists (file target for filePath)
+  copy:
+    dest: "{{ traefik_container_dir }}/traefik.log"
+    content: ""
+    force: false
+    mode: "0644"
+
+- name: Render traefik static configuration
+  template:
+    src: traefik.yaml.j2
+    dest: "{{ traefik_container_dir }}/traefik.yaml"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+
+- name: Logrotate logs
+  include_role:
+    name: logrotate
+  vars:
+    entries:
+      - name: traefik
+        path: "{{ traefik_container_dir}}/traefik.log"
+        rotate: 7
+        daily: true
+        missingok: true
+        compress: true
+
+- name: Run traefik container
+  include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: traefik

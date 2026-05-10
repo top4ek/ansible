@@ -1,0 +1,2 @@
+---
+traefik_container_dir: "/home/{{ admin_user }}/containers/traefik"

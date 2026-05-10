@@ -1,0 +1,49 @@
+services:
+  traefik:
+    container_name: traefik
+    image: mirror.gcr.io/traefik:v3
+    restart: unless-stopped
+    entrypoint:
+      - "traefik"
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - proxy
+    command:
+      - "--configFile=/etc/traefik/traefik.yaml"
+    volumes:
+      - "{{ compose_project_dir }}/traefik.yaml:/etc/traefik/traefik.yaml:ro"
+      - "{{ compose_project_dir }}/acme.json:/etc/traefik/acme.json:rw"
+      - "{{ compose_project_dir }}/traefik.log:/var/log/traefik.log:rw"
+      - "/run/user/{{ admin_uid }}/podman/podman.sock:/var/run/docker.sock:ro"
+      - "{{ compose_project_dir }}/dynamic:/etc/traefik/dynamic:ro"
+    environment:
+      CF_API_EMAIL: "{{ traefik.acme_email }}"
+      CF_API_KEY: "{{ traefik.dns_token }}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.catchall.rule=HostRegexp(`.*`)"
+      - "traefik.http.routers.catchall.entrypoints=websecure"
+      - "traefik.http.routers.catchall.tls=true"
+      - "traefik.http.routers.catchall.priority=1"
+      - "traefik.http.routers.catchall.middlewares=redirect-unknown"
+      - "traefik.http.routers.catchall.service=noop@internal"
+{% if traefik.zone is defined %}
+      - "traefik.http.middlewares.redirect-unknown.redirectregex.regex=.*"
+      - "traefik.http.middlewares.redirect-unknown.redirectregex.replacement=https://{{ traefik.zone }}"
+      - "traefik.tls.stores.default.defaultgeneratedcert.resolver=letsencrypt"
+      - "traefik.tls.stores.default.defaultgeneratedcert.domain.main={{ traefik.zone }}"
+      - "traefik.tls.stores.default.defaultgeneratedcert.domain.sans=*.{{ traefik.zone }}"
+      - "traefik.http.routers.acme_wildcard.entrypoints=websecure"
+      - "traefik.http.routers.acme_wildcard.rule=Host(`{{ traefik.zone }}`)"
+      - "traefik.http.routers.acme_wildcard.tls=true"
+      - "traefik.http.routers.acme_wildcard.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.acme_wildcard.tls.domains[0].main={{ traefik.zone }}"
+      - "traefik.http.routers.acme_wildcard.tls.domains[0].sans=*.{{ traefik.zone }}"
+      - "traefik.http.routers.acme_wildcard.service=noop@internal"
+{% endif %}
+
+networks:
+  proxy:
+    name: proxy
