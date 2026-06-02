@@ -8,10 +8,16 @@ services:
     ports:
       - "80:80"
       - "443:443"
+{% if host_roles is defined and 'matrix' in host_roles %}
+      - "7882:7882/udp"
+{% endif %}
     networks:
       - proxy
     command:
       - "--configFile=/etc/traefik/traefik.yaml"
+{% if host_roles is defined and 'matrix' in host_roles %}
+      - "--entrypoints.livekit-udp.address=:7882/udp"
+{% endif %}
     volumes:
       - "{{ compose_project_dir }}/traefik.yaml:/etc/traefik/traefik.yaml:ro"
       - "{{ compose_project_dir }}/acme.json:/etc/traefik/acme.json:rw"
@@ -26,12 +32,13 @@ services:
       - "traefik.http.routers.catchall.rule=HostRegexp(`.*`)"
       - "traefik.http.routers.catchall.entrypoints=websecure"
       - "traefik.http.routers.catchall.tls=true"
-      - "traefik.http.routers.catchall.priority=1"
+      - "traefik.http.routers.catchall.priority=-1"
       - "traefik.http.routers.catchall.middlewares=redirect-unknown"
       - "traefik.http.routers.catchall.service=noop@internal"
 {% if traefik.zone is defined %}
       - "traefik.http.middlewares.redirect-unknown.redirectregex.regex=.*"
       - "traefik.http.middlewares.redirect-unknown.redirectregex.replacement=https://{{ traefik.zone }}"
+      - "traefik.http.middlewares.redirect-unknown.redirectregex.permanent=true"
       - "traefik.tls.stores.default.defaultgeneratedcert.resolver=letsencrypt"
       - "traefik.tls.stores.default.defaultgeneratedcert.domain.main={{ traefik.zone }}"
       - "traefik.tls.stores.default.defaultgeneratedcert.domain.sans=*.{{ traefik.zone }}"
