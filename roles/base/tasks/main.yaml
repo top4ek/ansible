@@ -6,8 +6,14 @@
     name:
       - ca-certificates
       - curl
+      - fzf
+      - git
+      - starship
       - sudo
       - wget
+      - zsh
+      - zsh-autosuggestions
+      - zsh-syntax-highlighting
 
 - name: Run distribution specific tasks
   include_tasks: "{{ ansible_os_family }}.yaml"
@@ -122,7 +128,7 @@
   file:
     path: "/home/{{ admin_user }}/.ssh"
     state: directory
-    mode: '0700'
+    mode: "0700"
 
 - name: Add public key
   lineinfile:
@@ -130,23 +136,29 @@
     path: /home/{{ admin_user }}/.ssh/authorized_keys
     line: "{{ admin_public_key }}"
 
-- name: Define backward kill word if undefined
+- name: Define key bindings
   lineinfile:
     state: present
     path: /home/{{ admin_user }}/.profile
-    line: "bindkey '^H' backward-kill-word"
-
-- name: Define cursor backward word if undefined
-  lineinfile:
-    state: present
-    path: /home/{{ admin_user }}/.profile
-    line: "bindkey '^[[1;5D' backward-word"
-
-- name: Define forward word word if undefined
-  lineinfile:
-    state: present
-    path: /home/{{ admin_user }}/.profile
-    line: "bindkey '^[[1;5C' forward-word"
+    line: "bindkey '{{ item.key }}' {{ item.command }}"
+  loop:
+    - { key: "^H", command: "backward-kill-word" }
+    - { key: "^[[H", command: "beginning-of-line" }
+    - { key: "^[OH", command: "beginning-of-line" }
+    - { key: "^[[F", command: "end-of-line" }
+    - { key: "^[OF", command: "end-of-line" }
+    - { key: "^[[3~", command: "delete-char" }
+    - { key: "^[[5~", command: "up-line-or-history" }
+    - { key: "^[[6~", command: "down-line-or-history" }
+    - { key: "^[[A", command: "up-line-or-beginning-search" }
+    - { key: "^[OA", command: "up-line-or-beginning-search" }
+    - { key: "^[[B", command: "down-line-or-beginning-search" }
+    - { key: "^[OB", command: "down-line-or-beginning-search" }
+    - { key: "^[[Z", command: "reverse-menu-complete" }
+    - { key: "^[[2;5~", command: "copy-region-as-kill" }
+    - { key: "^[[3;5~", command: "kill-word" }
+    - { key: "^[[1;5C", command: "forward-word" }
+    - { key: "^[[1;5D", command: "backward-word" }
 
 - name: Set home permissions
   file:
@@ -159,4 +171,35 @@
   template:
     dest: "/home/{{ admin_user }}/.wakatime.cfg"
     src: ".wakatime.cfg.j2"
-  when: wakatime is defined && wakatime.key is defined
+  when:
+    - wakatime is defined
+    - wakatime.key is defined
+
+- name: Clone oh my zsh sources
+  git:
+    repo: "https://github.com/robbyrussell/oh-my-zsh.git"
+    dest: "/home/{{ admin_user }}/.oh-my-zsh"
+    single_branch: yes
+    depth: 1
+    update: yes
+
+- name: Set permissions of oh-my-zsh
+  become: true
+  file:
+    path: "/home/{{ admin_user }}/.oh-my-zsh"
+    mode: "go-w"
+
+- name: Creating .zshrc
+  template:
+    src: templates/.zshrc.j2
+    dest: /home/{{ admin_user }}/.zshrc
+
+- name: Create config directory
+  file:
+    path: "/home/{{ admin_user }}/.config"
+    state: directory
+
+- name: Copy starship config
+  template:
+    src: starship.toml.j2
+    dest: /home/{{ admin_user }}/.config/starship.toml

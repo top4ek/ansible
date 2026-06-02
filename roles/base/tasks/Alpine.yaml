@@ -42,6 +42,7 @@
   ignore_errors: true
   user:
     name: "{{ admin_user }}"
+    shell: "/bin/zsh"
     system: yes
     create_home: yes
     expires: -1
