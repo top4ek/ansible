@@ -13,7 +13,7 @@
     owner: root
     group: root
     mode: 644
-  notify: Restart chrony
+  notify: Restart Chrony
 
 - name: Enable chronyd
   become: true
