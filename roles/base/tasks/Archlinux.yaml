@@ -41,6 +41,8 @@
 - name: Install packages
   become: true
   pacman:
+    update_cache: yes
+    upgrade: yes
     name:
       - base-devel
       - cdrtools

@@ -10,12 +10,18 @@
     group: root
     mode: 644
 
-- name: Install packages
+- name: Upgrade system
   become: true
-  package:
-    state: latest
+  apt:
+    update_cache: yes
+    upgrade: full
     autoremove: yes
     purge: yes
+
+- name: Install packages
+  become: true
+  apt:
+    state: latest
     name:
       - apt-transport-https
       - gnupg2
