@@ -16,6 +16,13 @@ export KUBECONFIG=./kubeconfig
 
 source $ZSH/oh-my-zsh.sh
 source $HOME/.profile
+
+{% if zsh is defined and zsh.aliases is defined %}
+{% for name, command in zsh.aliases.items() %}
+alias {{ name }}='{{ command }}'
+{% endfor %}
+
+{% endif %}
 eval "$(starship init zsh)"
 
 setopt EXTENDED_HISTORY
