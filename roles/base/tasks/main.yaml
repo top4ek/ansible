@@ -197,6 +197,8 @@
 - name: Create config directory
   file:
     path: "/home/{{ admin_user }}/.config"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
     state: directory
 
 - name: Copy starship config
