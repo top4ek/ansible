@@ -46,6 +46,5 @@
     tasks_from: container.yaml
   vars:
     container_name: "{{ matrix_container_name }}"
-    podman_compose_template_src: "compose.yaml.j2"
     podman_compose_dest: "{{ matrix_container_dir }}/compose.yaml"
     compose_project_dir: "{{ matrix_container_dir }}"
