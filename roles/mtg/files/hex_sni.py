@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 import argparse
 import binascii
-import re
 import sys
 
-
-DOMAIN_RE = re.compile(r"([a-z0-9-]+(?:\.[a-z0-9-]+)+)")
-
-
 def extract_domain_from_hex(hex_str: str) -> str:
-    raw = binascii.unhexlify(hex_str.strip())
-    text = raw.decode("utf-8", errors="ignore")
-    matches = DOMAIN_RE.findall(text)
-    return matches[-1] if matches else ""
+    raw = binascii.unhexlify(hex_str.strip().lower())
+    start = len(raw)
+    while start > 0 and 0x20 <= raw[start - 1] < 0x7F:
+        start -= 1
+    return raw[start:].decode("ascii")
 
 
 def main() -> int:

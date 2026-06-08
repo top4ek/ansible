@@ -9,7 +9,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.tcp.routers.mtg.entrypoints=websecure"
-      - 'traefik.tcp.routers.mtg.rule=HostSNIRegexp(`^{{ mtg_sni | regex_replace("\\.", "\\\\.") }}$`) || HostSNIRegexp(`^[^.]+\\.{{ mtg_sni | regex_replace("\\.", "\\\\.") }}$`)'
+      - 'traefik.tcp.routers.mtg.rule=HostSNIRegexp(`^{{ mtg_sni | regex_replace("\\.", "\\\\.") }}$`)'
       - "traefik.tcp.routers.mtg.tls.passthrough=true"
       - "traefik.tcp.services.mtg.loadbalancer.server.port={{ mtg.port }}"
 {% else %}
