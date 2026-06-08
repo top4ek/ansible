@@ -1,0 +1,11 @@
+---
+- name: Reload Valkey
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/podman
+      - restart
+      - "{{ valkey_container_name }}"
+  changed_when: true

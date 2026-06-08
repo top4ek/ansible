@@ -1,3 +1,4 @@
 ---
 valkey_container_name: "valkey"
 valkey_container_dir: "/home/{{ admin_user }}/containers/{{ valkey_container_name }}"
+valkey_password: ""

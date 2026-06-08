@@ -1,13 +1,17 @@
 services:
   {{ valkey_container_name }}:
     container_name: {{ valkey_container_name }}
-    image: docker.io/valkey/valkey:latest
+    image: docker.io/valkey/valkey:9-alpine
     restart: unless-stopped
     userns_mode: keep-id
     networks:
       - valkey
     volumes:
       - "{{ compose_project_dir }}/data:/data"
+      - "{{ compose_project_dir }}/conf/valkey.conf:/usr/local/etc/valkey/valkey.conf:ro"
+    command:
+      - valkey-server
+      - /usr/local/etc/valkey/valkey.conf
 
 networks:
   valkey:

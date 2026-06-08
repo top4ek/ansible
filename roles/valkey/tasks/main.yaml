@@ -1,11 +1,23 @@
 ---
-- name: Ensure container project directory exists
+- name: Ensure container project directories exist
   file:
-    path: "{{ valkey_container_dir }}"
+    path: "{{ item }}"
     state: directory
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0755"
+  loop:
+    - "{{ valkey_container_dir }}"
+    - "{{ valkey_container_dir }}/conf"
+
+- name: Deploy Valkey config
+  template:
+    src: valkey.conf.j2
+    dest: "{{ valkey_container_dir }}/conf/valkey.conf"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  notify: Reload Valkey
 
 - name: Run container
   include_role:
@@ -13,6 +25,5 @@
     tasks_from: container.yaml
   vars:
     container_name: "{{ valkey_container_name }}"
-    podman_compose_template_src: "compose.yaml.j2"
     podman_compose_dest: "{{ valkey_container_dir }}/compose.yaml"
     compose_project_dir: "{{ valkey_container_dir }}"
