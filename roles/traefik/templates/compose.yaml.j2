@@ -8,20 +8,14 @@ services:
     ports:
       - "80:80"
       - "443:443"
-{% if host_roles is defined and 'matrix' in host_roles %}
-      - "7882:7882/udp"
-{% endif %}
     networks:
       - proxy
     command:
       - "--configFile=/etc/traefik/traefik.yaml"
-{% if host_roles is defined and 'matrix' in host_roles %}
-      - "--entrypoints.livekit-udp.address=:7882/udp"
-{% endif %}
     volumes:
       - "{{ compose_project_dir }}/traefik.yaml:/etc/traefik/traefik.yaml:ro"
       - "{{ compose_project_dir }}/acme.json:/etc/traefik/acme.json:rw"
-      - "{{ compose_project_dir }}/traefik.log:/var/log/traefik.log:rw"
+      - "{{ compose_project_dir }}/log:/var/log:rw"
       - "/run/user/{{ admin_uid }}/podman/podman.sock:/var/run/docker.sock:ro"
       - "{{ compose_project_dir }}/dynamic:/etc/traefik/dynamic:ro"
     environment:

@@ -9,6 +9,7 @@
   loop:
     - "{{ traefik_container_dir }}"
     - "{{ traefik_container_dir }}/dynamic"
+    - "{{ traefik_container_dir }}/log"
 
 - name: Render traefik dynamic configurations
   copy:
@@ -26,9 +27,24 @@
     force: false
     mode: "0600"
 
+- name: Check for legacy traefik.log
+  ansible.builtin.stat:
+    path: "{{ traefik_container_dir }}/traefik.log"
+  register: traefik_legacy_log
+
+- name: Migrate legacy traefik.log into log directory
+  ansible.builtin.command:
+    argv:
+      - mv
+      - "{{ traefik_container_dir }}/traefik.log"
+      - "{{ traefik_container_dir }}/log/traefik.log"
+  when: traefik_legacy_log.stat.exists
+  register: traefik_log_migrated
+  changed_when: traefik_log_migrated.rc == 0
+
 - name: Ensure traefik.log exists (file target for filePath)
   copy:
-    dest: "{{ traefik_container_dir }}/traefik.log"
+    dest: "{{ traefik_container_dir }}/log/traefik.log"
     content: ""
     force: false
     mode: "0644"
@@ -40,18 +56,6 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
-
-- name: Logrotate logs
-  include_role:
-    name: logrotate
-  vars:
-    entries:
-      - name: traefik
-        path: "{{ traefik_container_dir}}/traefik.log"
-        rotate: 7
-        daily: true
-        missingok: true
-        compress: true
 
 - name: Run traefik container
   include_role:
