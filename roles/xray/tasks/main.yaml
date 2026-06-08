@@ -1,0 +1,41 @@
+---
+- name: Ensure xray project directory exists
+  ansible.builtin.file:
+    path: "{{ xray_container_dir }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+
+- name: Download geoip.dat
+  ansible.builtin.get_url:
+    url: "https://cdn.jsdelivr.net/gh/v2fly/geoip@release/geoip.dat"
+    dest: "{{ xray_container_dir }}/geoip.dat"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  when: xray.upstream is defined
+
+- name: Download geosite.dat
+  ansible.builtin.get_url:
+    url: "https://cdn.jsdelivr.net/gh/v2fly/domain-list-community@release/dlc.dat"
+    dest: "{{ xray_container_dir }}/geosite.dat"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  when: xray.upstream is defined
+
+- name: Render xray config
+  ansible.builtin.template:
+    src: "config.json.j2"
+    dest: "{{ xray_container_dir}}/config.json"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+
+- name: Run xray container
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ xray_container_name }}"

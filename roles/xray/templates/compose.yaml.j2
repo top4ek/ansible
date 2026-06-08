@@ -1,0 +1,50 @@
+services:
+  {{ xray_container_name }}:
+    container_name: {{ xray_container_name }}
+    image: ghcr.io/xtls/xray-core:latest
+    restart: unless-stopped
+    userns_mode: keep-id
+    user: "{{ admin_uid }}:{{ admin_gid }}"
+    networks:
+      - proxy
+    volumes:
+      - "{{ compose_project_dir }}/config.json:/etc/xray/config.json:ro"
+{% if xray.upstream is defined %}
+      - "{{ compose_project_dir }}/geoip.dat:/usr/local/share/xray/geoip.dat:ro"
+      - "{{ compose_project_dir }}/geosite.dat:/usr/local/share/xray/geosite.dat:ro"
+    environment:
+      XRAY_LOCATION_ASSET: "/usr/local/share/xray"
+{% endif %}
+    command:
+      - "run"
+      - "-config"
+      - "/etc/xray/config.json"
+{% if host_roles is defined and 'traefik' in host_roles %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.xray.entrypoints=websecure"
+      - "traefik.http.routers.xray.rule=Host(`{{ xray.domain }}`) && PathPrefix(`{{ xray.path }}`)"
+      - "traefik.http.routers.xray.priority=100"
+      - "traefik.http.routers.xray.tls=true"
+      - "traefik.http.routers.xray.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.xray.tls.domains[0].main=*.{{ traefik.zone }}"
+      - "traefik.http.routers.xray.tls.domains[0].sans={{ traefik.zone }}"
+      - "traefik.http.services.xray.loadbalancer.server.port=8080"
+      - "traefik.http.services.xray.loadbalancer.server.scheme=h2c"
+{% if xray.socks is defined %}
+    ports:
+      - "{{ xray.socks.bind }}:8081"
+{% endif %}
+{% else %}
+    ports:
+      - "{{ xray.port }}:8080"
+{% if xray.socks is defined %}
+      - "{{ xray.socks.bind }}:8081"
+{% endif %}
+{% endif %}
+
+{% if host_roles is defined and 'traefik' in host_roles %}
+networks:
+  proxy:
+    external: true
+{% endif %}

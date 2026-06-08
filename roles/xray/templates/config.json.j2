@@ -1,0 +1,130 @@
+{
+  "log": {
+    "loglevel": "warning"
+  },
+  "inbounds": [
+    {
+      "listen": "0.0.0.0",
+      "port": 8080,
+      "protocol": "vless",
+      "settings": {
+        "decryption": "none",
+        "clients": [
+{% for user in xray.users %}
+          {
+            "id": "{{ user.uuid }}"
+          }{{ "," if not loop.last }}
+{% endfor %}
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "none",
+        "xhttpSettings": {
+          "mode": "stream-one",
+          "path": "{{ xray.path }}"
+        }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls",
+          "quic"
+        ]
+      }
+    }{% if xray.socks is defined %},
+    {
+      "listen": "0.0.0.0",
+      "port": 8081,
+      "protocol": "socks",
+      "settings": {
+        "auth": "noauth",
+        "udp": true
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls"
+        ]
+      }
+    }{% endif %}
+  ],
+  "outbounds": [
+    {
+      "tag": "direct",
+      "protocol": "freedom",
+      "settings": {}
+    },
+{% if xray.upstream is defined %}
+    {
+      "tag": "{{ xray.upstream.tag }}",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "{{ xray.upstream.host }}",
+            "port": {{ xray.upstream.port }},
+            "users": [
+              {
+                "id": "{{ xray.upstream.uuid }}",
+                "encryption": "none"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "xhttp",
+        "security": "tls",
+        "tlsSettings": {
+          "serverName": "{{ xray.upstream.host }}"
+        },
+        "xhttpSettings": {
+          "mode": "stream-one",
+          "path": "{{ xray.upstream.path }}"
+        }
+      }
+    },
+{% endif %}
+    {
+      "protocol": "blackhole",
+      "settings": {},
+      "tag": "blocked"
+    }
+  ]{% if xray.upstream is defined %},
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      {
+        "type": "field",
+        "ip": [
+          "geoip:private",
+          "geoip:ru"
+        ],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
+        "domain": [
+          "geosite:private",
+          "geosite:category-ru"
+        ],
+        "outboundTag": "direct"
+      },
+      {
+        "type": "field",
+        "ip": [
+          "geoip:!ru"
+        ],
+        "outboundTag": "{{ xray.upstream.tag }}"
+      },
+      {
+        "type": "field",
+        "network": "tcp,udp",
+        "outboundTag": "{{ xray.upstream.tag }}"
+      }
+    ]
+ }{% endif %}
+}

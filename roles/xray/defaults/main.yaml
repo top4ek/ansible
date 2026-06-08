@@ -1,0 +1,3 @@
+---
+xray_container_name: xray
+xray_container_dir: "/home/{{ admin_user }}/containers/{{ xray_container_name }}"
