@@ -1,4 +1,6 @@
 ---
 compose_project_dir: "/home/{{ admin_user }}/containers/{{ container_name }}"
-podman_compose_template_src: "roles/{{ container_name }}/templates/compose.yaml.j2"
 podman_compose_dest: "{{ compose_project_dir }}/compose.yaml"
+podman_rootless_environment:
+  HOME: "/home/{{ admin_user }}"
+  XDG_RUNTIME_DIR: "/run/user/{{ admin_uid }}"

@@ -1,20 +1,16 @@
 [Unit]
 Description=Podman compose {{ container_name }}
-Wants=network-online.target podman.socket
-After=network-online.target podman.socket
+Wants=network.target podman.socket
+After=network.target podman.socket
 
 [Service]
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory={{ compose_project_dir }}
-Environment="HOME=%h"
-Environment="XDG_RUNTIME_DIR=%t"
-ExecStart=/usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} up -d
-ExecStop=/usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} down
-TimeoutStartSec=5min
-Restart=on-failure
-RestartSec=10s
+ExecStart=/usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} start
+ExecStop=/usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} stop
+ExecReload=/bin/sh -c '/usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} pull && /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} down && /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} up -d'
+TimeoutStartSec=1min
 
 [Install]
 WantedBy=default.target
-

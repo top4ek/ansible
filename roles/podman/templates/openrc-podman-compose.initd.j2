@@ -23,13 +23,21 @@ start() {
   ebegin "Starting {{ container_name }}"
   su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman system service --time 0 &"
   sleep 2
-  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} up -d"
+  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} start"
   eend $?
 }
 
 stop() {
   ebegin "Stopping {{ container_name }}"
-  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} down"
+  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} stop"
+  eend $?
+}
+
+reload() {
+  ebegin "Reloading {{ container_name }}"
+  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman system service --time 0 &"
+  sleep 2
+  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} pull && /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} down && /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} up -d"
   eend $?
 }
 

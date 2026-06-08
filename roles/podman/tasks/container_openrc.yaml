@@ -1,24 +1,19 @@
 ---
 - name: Ensure OpenRC service script is installed
   become: true
-  ansible.builtin.template:
+  template:
     src: "templates/openrc-podman-compose.initd.j2"
     dest: "/etc/init.d/{{ container_name }}"
     owner: root
     group: root
     mode: "0755"
-  notify: Restart OpenRC container service
 
 - name: Enable OpenRC service at boot
   become: true
-  ansible.builtin.command: "rc-update add {{ container_name }} default"
+  command: "rc-update add {{ container_name }} default"
   register: openrc_enable
   changed_when: "'added to runlevel' in (openrc_enable.stdout | default(''))"
 
-- name: Flush handlers (apply container changes now)
-  ansible.builtin.meta: flush_handlers
-
-- name: Ensure OpenRC service is started
+- name: Reload compose project
   become: true
-  ansible.builtin.command: "service {{ container_name }} start"
-  changed_when: false
+  command: "service {{ container_name }} reload"

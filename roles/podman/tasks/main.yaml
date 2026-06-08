@@ -10,13 +10,22 @@
       - slirp4netns
       - fuse-overlayfs
 
-- name: Allow rootless bind to privileged ports (min 80)
+- name: Allow rootless bind to privileged ports
   become: true
   ansible.builtin.sysctl:
     name: net.ipv4.ip_unprivileged_port_start
     sysctl_file: /etc/sysctl.d/rootless-ports.conf
-    value: "80"
+    value: "{{ podman_unprivileged_port_start }}"
     state: present
+  when: podman_unprivileged_port_start is defined
+
+- name: Remove rootless privileged ports config
+  become: true
+  ansible.builtin.sysctl:
+    name: net.ipv4.ip_unprivileged_port_start
+    sysctl_file: /etc/sysctl.d/rootless-ports.conf
+    state: absent
+  when: podman_unprivileged_port_start is not defined
 
 - name: Run distribution specific tasks
   include_tasks: "{{ ansible_os_family }}.yaml"
@@ -82,3 +91,44 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0755"
+
+- name: Enable linger for admin_user (rootless on boot)
+  become: true
+  ansible.builtin.command: "loginctl enable-linger {{ admin_user }}"
+  changed_when: false
+  when: ansible_facts['service_mgr'] == 'systemd'
+
+- name: Enable and start podman socket (rootless API)
+  become: true
+  become_user: "{{ admin_user }}"
+  ansible.builtin.systemd:
+    name: podman.socket
+    state: started
+    enabled: true
+    scope: user
+  when: ansible_facts['service_mgr'] == 'systemd'
+
+- name: Ensure rootless runtime directory exists (OpenRC)
+  become: true
+  ansible.builtin.file:
+    path: "/run/user/{{ admin_uid }}/podman"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0700"
+  when: ansible_facts['service_mgr'] in ['openrc', 'rc']
+
+- name: Export XDG_RUNTIME_DIR in admin user profile
+  become: true
+  ansible.builtin.lineinfile:
+    path: "/home/{{ admin_user }}/.profile"
+    regexp: "^export XDG_RUNTIME_DIR="
+    line: 'export XDG_RUNTIME_DIR="/run/user/$(id -u)"'
+    create: true
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+
+- name: Publish podman rootless environment
+  ansible.builtin.set_fact:
+    podman_rootless_environment: "{{ podman_rootless_environment }}"

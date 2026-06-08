@@ -10,13 +10,12 @@
 
 - name: Render compose.yaml
   become: true
-  ansible.builtin.template:
-    src: "{{ podman_compose_template_src }}"
+  template:
+    src: compose.yaml.j2
     dest: "{{ podman_compose_dest }}"
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
-  notify: Restart OpenRC container service
 
 - name: Run systemd-user unit setup
   include_tasks: container_systemd_user_unit.yaml

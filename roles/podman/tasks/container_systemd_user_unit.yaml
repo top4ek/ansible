@@ -1,19 +1,8 @@
 ---
-- name: Enable linger for admin_user (rootless on boot)
-  become: true
-  ansible.builtin.command: "loginctl enable-linger {{ admin_user }}"
-  changed_when: false
-
-- name: Enable and start podman socket (rootless API)
-  become: true
-  become_user: "{{ admin_user }}"
-  ansible.builtin.command: "systemctl --user enable --now podman.socket"
-  changed_when: false
-
 - name: Ensure systemd user unit directory exists
   become: true
   become_user: "{{ admin_user }}"
-  ansible.builtin.file:
+  file:
     path: "/home/{{ admin_user }}/.config/systemd/user"
     state: directory
     mode: "0755"
@@ -21,19 +10,24 @@
 - name: Install systemd user unit for compose project
   become: true
   become_user: "{{ admin_user }}"
-  ansible.builtin.template:
+  template:
     src: "templates/podman-compose-user.service.j2"
     dest: "/home/{{ admin_user }}/.config/systemd/user/{{ container_name }}.service"
     mode: "0644"
 
-- name: Reload systemd user units
+- name: Enable compose unit for boot
   become: true
   become_user: "{{ admin_user }}"
-  ansible.builtin.command: "systemctl --user daemon-reload"
-  changed_when: false
+  ansible.builtin.systemd:
+    name: "{{ container_name }}.service"
+    enabled: true
+    daemon_reload: true
+    scope: user
 
-- name: Enable and start compose unit
+- name: Reload compose project
   become: true
   become_user: "{{ admin_user }}"
-  ansible.builtin.command: "systemctl --user enable --now {{ container_name }}.service"
-  changed_when: true
+  ansible.builtin.systemd:
+    name: "{{ container_name }}.service"
+    state: reloaded
+    scope: user
