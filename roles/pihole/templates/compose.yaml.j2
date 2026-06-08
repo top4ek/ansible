@@ -1,0 +1,73 @@
+x-podman:
+  in_pod: false
+
+services:
+  pihole:
+    container_name: pihole
+    image: ghcr.io/pi-hole/pihole:latest
+{% if pihole.unbound.enabled | default(true) %}
+    network_mode: host
+{% else %}
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "80:80/tcp"
+{% endif %}
+{% if pihole.unbound.enabled | default(true) %}
+    depends_on:
+      unbound:
+        condition: service_started
+{% endif %}
+    environment:
+      TZ: '{{ pihole.timezone }}'
+      FTLCONF_webserver_api_password: '{{ pihole.webpassword }}'
+      FTLCONF_dhcp_active: '{{ pihole.dhcp_active }}'
+{% if pihole.unbound.enabled | default(true) %}
+      FTLCONF_dns_upstreams: "127.0.0.1#5353"
+{% elif pihole.upstreams is defined and pihole.upstreams | length > 0 %}
+      FTLCONF_dns_upstreams: |-
+        {{ pihole.upstreams | join('\n        ') }}
+{% elif pihole.upstream_dns is defined %}
+      FTLCONF_dns_upstreams: '{{ pihole.upstream_dns }}'
+{% endif %}
+{% if pihole.hosts is defined and pihole.hosts | length > 0 %}
+      FTLCONF_dns_hosts: |-
+        {{ pihole.hosts | join('\n        ') }}
+{% endif %}
+    volumes:
+      - './etc-pihole:/etc/pihole'
+      - './etc-dnsmasq.d:/etc/dnsmasq.d'
+    cap_add:
+      - NET_ADMIN
+      - SYS_TIME
+      - SYS_NICE
+    restart: unless-stopped
+
+{% if pihole.unbound.enabled | default(true) %}
+  unbound:
+    container_name: unbound
+    image: ghcr.io/klutchell/unbound:latest
+    network_mode: host
+    volumes:
+      - './unbound:/etc/unbound'
+    restart: unless-stopped
+    userns_mode: keep-id
+{% endif %}
+
+{% if pihole.nebula_sync is defined %}
+  nebula-sync:
+    image: ghcr.io/lovelaze/nebula-sync:latest
+    container_name: nebula-sync
+    network_mode: host
+    depends_on:
+      pihole:
+        condition: service_started
+    restart: unless-stopped
+    userns_mode: keep-id
+    environment:
+      - PRIMARY={{ pihole.nebula_sync.primary }}
+      - REPLICAS={{ pihole.nebula_sync.replicas }}
+      - FULL_SYNC={{ pihole.nebula_sync.full_sync }}
+      - RUN_GRAVITY={{ pihole.nebula_sync.run_gravity }}
+      - CRON={{ pihole.nebula_sync.cron }}
+{% endif %}

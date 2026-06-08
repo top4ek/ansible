@@ -1,0 +1,92 @@
+---
+- name: Wait for Pi-hole web API
+  wait_for:
+    host: 127.0.0.1
+    port: 80
+    timeout: 120
+
+- name: Authenticate with Pi-hole API
+  uri:
+    method: POST
+    url: "http://127.0.0.1/api/auth"
+    body_format: json
+    body:
+      password: "{{ pihole.webpassword }}"
+    status_code: [200, 201]
+  register: pihole_auth
+  changed_when: false
+
+- name: Set Pi-hole API session id
+  set_fact:
+    pihole_api_sid: "{{ pihole_auth.json.session.sid }}"
+  failed_when: pihole_api_sid | length == 0
+
+- name: Get current Pi-hole blocklists
+  ansible.builtin.uri:
+    url: "http://127.0.0.1/api/lists?type=block"
+    headers:
+      X-FTL-SID: "{{ pihole_api_sid }}"
+    status_code: [200]
+  register: pihole_current_lists
+  changed_when: false
+
+- name: POST blocklist URLs to Pi-hole API
+  ansible.builtin.uri:
+    method: POST
+    url: "http://127.0.0.1/api/lists?type=block"
+    headers:
+      X-FTL-SID: "{{ pihole_api_sid }}"
+    body_format: json
+    body:
+      comment: Ansible
+      groups: [0]
+      enabled: true
+      address: "{{ item }}"
+    status_code: [200, 201, 400]
+  loop: >-
+    {{ pihole.lists
+       | map('trim')
+       | reject('equalto', '')
+       | difference(pihole_current_lists.json.lists | map(attribute='address') | list)
+       | list }}
+  loop_control:
+    label: "{{ item }}"
+  register: pihole_list_results
+  failed_when: false
+  changed_when: status is defined and status in [200, 201]
+
+- name: Log ignored blocklist API errors
+  ansible.builtin.debug:
+    msg: >-
+      Failed to add {{ item.item }}:
+      {{ item.json.error.message | default(item.json | to_json) }}
+      ({{ item.json.error.hint | default('no hint') }}) — ignored
+  loop: "{{ pihole_list_results.results | default([]) }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when:
+    - item.status == 400
+    - item.json.error.hint | default('') is not match('UNIQUE constraint failed.*')
+  changed_when: false
+
+- name: Update Pi-hole gravity
+  become: true
+  become_user: "{{ admin_user }}"
+  command:
+    argv:
+      - podman
+      - exec
+      - "{{ pihole_container_name }}"
+      - pihole
+      - updateGravity
+  when: pihole_list_results.results | default([]) | selectattr('status', 'in', [200, 201]) | list | length > 0
+  changed_when: true
+
+- name: Delete Pi-hole API session
+  ansible.builtin.uri:
+    method: DELETE
+    url: "http://127.0.0.1/api/auth"
+    headers:
+      X-FTL-SID: "{{ pihole_api_sid }}"
+    status_code: [204]
+  changed_when: false

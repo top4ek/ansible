@@ -1,0 +1,64 @@
+server:
+    do-ip4: yes
+    do-ip6: no
+    do-tcp: yes
+    do-udp: yes
+
+    access-control: 10.0.0.0/8 allow
+    access-control: 127.0.0.0/8 allow
+    access-control: 172.16.0.0/12 allow
+    access-control: 192.168.0.0/16 allow
+
+    aggressive-nsec: yes
+    auto-trust-anchor-file: "/etc/unbound/root.key"
+    chroot: ""
+    directory: "/etc/unbound"
+    do-daemonize: no
+    edns-buffer-size: 1232
+    harden-algo-downgrade: no
+    harden-dnssec-stripped: yes
+    harden-glue: yes
+    harden-referral-path: no
+    hide-identity: yes
+    hide-version: yes
+    infra-cache-numhosts: 10000
+    infra-cache-slabs: 2
+    interface: 127.0.0.1
+    key-cache-slabs: 2
+    msg-cache-size: 150m
+    msg-cache-slabs: 2
+    num-queries-per-thread: 4096
+    num-threads: 1
+    outgoing-range: 1024
+    pidfile: ""
+    port: 5353
+    prefer-ip6: no
+    prefetch-key: yes
+    prefetch: yes
+    qname-minimisation-strict: no
+    qname-minimisation: no
+    root-hints: "/etc/unbound/root.hints"
+    rrset-cache-size: 100m
+    rrset-cache-slabs: 2
+    rrset-roundrobin: yes
+    so-rcvbuf: 1m
+    use-caps-for-id: no
+    use-syslog: no
+    username: ""
+    verbosity: 0
+
+    private-address: 192.168.0.0/16
+    private-address: 169.254.0.0/16
+    private-address: 172.16.0.0/12
+    private-address: 10.0.0.0/8
+    private-address: fd00::/8
+    private-address: fe80::/10
+
+    private-address: 192.0.2.0/24
+    private-address: 198.51.100.0/24
+    private-address: 203.0.113.0/24
+    private-address: 255.255.255.255/32
+    private-address: 2001:db8::/32
+
+remote-control:
+    control-enable: no

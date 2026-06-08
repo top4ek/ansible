@@ -1,35 +1,59 @@
-- name: Create directores
+---
+- name: Ensure pihole project directory exists
   file:
-    path: "/home/{{ admin_user }}/pihole/{{ item }}"
+    path: "{{ item }}"
     state: directory
-  with_items:
-    - dnsmasq.d
-    - etc
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  loop:
+    - "{{ pihole_container_dir }}"
+    - "{{ pihole_container_dir }}/etc-pihole"
+    - "{{ pihole_container_dir }}/etc-dnsmasq.d"
+    - "{{ pihole_container_dir }}/unbound"
 
-- name: Pull PiHole
-  shell: podman pull docker.io/pihole/pihole:latest
+- name: Download root.hints for Unbound
+  get_url:
+    url: https://www.internic.net/domain/named.cache
+    dest: "{{ pihole_container_dir }}/unbound/root.hints"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  when: pihole.unbound.enabled | default(true)
 
-- name: Start PiHole
-  shell: podman run -d --replace --restart unless-stopped -v /home/{{ admin_user }}/pihole/dnsmasq.d:/etc/dnsmasq.d -v /home/{{ admin_user }}/pihole/etc:/etc/pihole --name pihole -p 1153:53/tcp -p 1153:53/udp -p 8080:80/tcp --dns 127.0.0.1 --dns 8.8.8.8 --dns 1.1.1.1 -e INTERFACE=tap0 -e WEBPASSWORD=nimda -e TZ="Europe/Moscow" --label "io.containers.autoupdate=image" --network=slirp4netns:port_handler=slirp4netns docker.io/pihole/pihole:latest
+- name: Render Unbound config
+  template:
+    src: unbound.conf.j2
+    dest: "{{ pihole_container_dir }}/unbound/unbound.conf"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  when: pihole.unbound.enabled | default(true)
 
-- name: Create systemd units directory
-  file:
-    path: "/home/{{ admin_user }}/.config/systemd/user"
-    state: directory
-    mode: '0755'
+- name: Stat Unbound root trust anchor
+  ansible.builtin.stat:
+    path: "{{ pihole_container_dir }}/unbound/root.key"
+  register: unbound_root_key
+  when: pihole.unbound.enabled | default(true)
 
-- name: Generate systemd unit
-  shell: podman generate systemd --restart-policy=always --name pihole > /home/{{ admin_user }}/pihole/pihole.service
+- name: Download root trust anchor for Unbound
+  ansible.builtin.get_url:
+    url: https://data.isc.org/unbound-anchor/root.key
+    dest: "{{ pihole_container_dir }}/unbound/root.key"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  when:
+    - pihole.unbound.enabled | default(true)
+    - not unbound_root_key.stat.exists or unbound_root_key.stat.size | default(0) == 0
 
-- name: Create symlink to systemd
-  file:
-    src: /home/{{ admin_user }}/pihole/pihole.service
-    path: "/home/{{ admin_user }}/.config/systemd/user/pihole.service"
-    state: link
+- name: Run container
+  include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ pihole_container_name }}"
 
-- name: Reload systemd config
-  systemd:
-    name: pihole
-    daemon_reload: yes
-    enabled: yes
-    scope: user
+- name: Configure Pi-hole blocklists
+  ansible.builtin.include_tasks: lists.yaml
+  when: pihole.lists is defined and pihole.lists | length > 0
