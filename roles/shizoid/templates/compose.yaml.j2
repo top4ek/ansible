@@ -1,0 +1,49 @@
+services:
+  app:
+    image: docker.io/top4ek/shizoid:latest
+    container_name: shizoid_app
+    restart: unless-stopped
+    working_dir: /opt/app/src
+    command: /opt/app/src/start.sh
+    networks:
+      - proxy
+      - postgres
+      - valkey
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.shizoid.rule=Host(`{{ shizoid.environment.WEBHOOK_URL | regex_replace('^https?://', '') | regex_replace('/.*$', '') }}`)"
+      - "traefik.http.routers.shizoid.entrypoints=websecure"
+      - "traefik.http.routers.shizoid.tls=true"
+      - "traefik.http.routers.shizoid.tls.certresolver=letsencrypt"
+      - "traefik.http.services.shizoid.loadbalancer.server.port={{ shizoid.ports.internal | default('3000') }}"
+{% if shizoid.environment is defined %}
+    environment:
+{% for var in shizoid.environment | sort %}
+      - {{ var }}={{ shizoid.environment[var] }}
+{% endfor %}
+{% endif %}
+
+  sidekiq:
+    image: docker.io/top4ek/shizoid:latest
+    container_name: shizoid_sidekiq
+    restart: unless-stopped
+    working_dir: /opt/app/src
+    command: bundle exec sidekiq -C config/sidekiq.yml
+    networks:
+      - postgres
+      - valkey
+{% if shizoid.environment is defined %}
+    environment:
+{% for var in shizoid.environment | sort %}
+      - {{ var }}={{ shizoid.environment[var] }}
+{% endfor %}
+{% endif %}
+
+networks:
+  proxy:
+    external: true
+  postgres:
+    external: true
+  valkey:
+    external: true

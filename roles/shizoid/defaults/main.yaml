@@ -1,0 +1,32 @@
+---
+shizoid_container_name: "shizoid"
+shizoid_container_dir: "/home/{{ admin_user }}/containers/{{ shizoid_container_name }}"
+
+shizoid:
+  environment:
+    RAILS_SECRET_KEY_BASE: 111111111111111111111111
+    RAILS_ENV: production
+
+    PUMA_MIN_THREADS: 2
+    PUMA_MAX_THREADS: 2
+    WEB_CONCURRENCY: 2
+
+    DATABASE_HOST: postgres
+    DATABASE_NAME: shizoid
+    DATABASE_PASSWORD: passw0rd
+    DATABASE_PORT: 5432
+    DATABASE_USERNAME: shizoid
+    DB_POOL_SIZE: 40
+
+    SIDEKIQ_CONCURRENCY: 25
+    REDIS_HOST: "valkey"
+    REDIS_PORT: 6379
+    REDIS_SIDEKIQ_DB: 1
+    REDIS_CONTEXT_DB: 2
+    REDIS_PASSWORD: "{{ valkey_password }}"
+    CONTEXT_SIZE: 50
+
+    WEBHOOK_URL: https://example.com
+    TELEGRAM_TOKEN: 11111111:AAAAAAAAAAAAAAAAAAAAA
+    BOT_OWNERS: 11111111
+    SENTRY_DSN: https://123123123@123123123.ingest.sentry.io/123123123
