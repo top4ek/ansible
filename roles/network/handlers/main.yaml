@@ -18,12 +18,98 @@
   when: ansible_facts['service_mgr'] in ['openrc', 'rc']
   listen: "Restarting firewall rules"
 
-- name: "Restarting wireguard interfaces"
+- name: Restarting network interfaces (NetworkManager reload)
+  become: true
+  ansible.builtin.command: nmcli connection reload
+  changed_when: true
+  when:
+    - network_use_networkmanager | default(false)
+    - interfaces is defined
+  listen: Restarting network interfaces
+
+- name: Restarting network interfaces (NetworkManager activate)
+  become: true
+  ansible.builtin.command: nmcli connection up {{ item.iface }}
+  changed_when: true
+  loop: "{{ interfaces | default([]) | rejectattr('type', 'equalto', 'loopback') | list }}"
+  loop_control:
+    label: "{{ item.iface }}"
+  when:
+    - network_use_networkmanager | default(false)
+    - interfaces is defined
+  listen: Restarting network interfaces
+
+- name: Restarting network interfaces (Systemd)
+  become: true
+  ansible.builtin.systemd:
+    name: networking
+    state: restarted
+  when:
+    - not (network_use_networkmanager | default(false))
+    - ansible_facts['service_mgr'] == 'systemd'
+    - interfaces is defined
+  listen: Restarting network interfaces
+
+- name: Restarting network interfaces (OpenRC)
   become: true
   ansible.builtin.service:
-    name: "{{ item.key }}"
+    name: networking
     state: restarted
-  loop: "{{ wireguard.interfaces | dict2items }}"
+  when:
+    - not (network_use_networkmanager | default(false))
+    - ansible_facts['service_mgr'] in ['openrc', 'rc']
+    - interfaces is defined
+  listen: Restarting network interfaces
+
+- name: Restarting wireguard interfaces (NetworkManager reload)
+  become: true
+  ansible.builtin.command: nmcli connection reload
+  changed_when: true
+  when:
+    - network_use_networkmanager | default(false)
+    - wireguard is defined
+    - wireguard.interfaces is defined
+  listen: Restarting wireguard interfaces
+
+- name: Restarting wireguard interfaces (NetworkManager activate)
+  become: true
+  ansible.builtin.command: nmcli connection up {{ item.key }}
+  changed_when: true
+  loop: "{{ wireguard.interfaces | default({}) | dict2items }}"
   loop_control:
     label: "{{ item.key }}"
-  listen: "Restarting wireguard interfaces"
+  when:
+    - network_use_networkmanager | default(false)
+    - wireguard is defined
+    - wireguard.interfaces is defined
+  listen: Restarting wireguard interfaces
+
+- name: Restarting wireguard interfaces (Systemd)
+  become: true
+  ansible.builtin.service:
+    name: "wg-quick@{{ item.key }}"
+    state: restarted
+  loop: "{{ wireguard.interfaces | default({}) | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - not (network_use_networkmanager | default(false))
+    - ansible_facts['service_mgr'] == 'systemd'
+    - wireguard is defined
+    - wireguard.interfaces is defined
+  listen: Restarting wireguard interfaces
+
+- name: Restarting wireguard interfaces (OpenRC)
+  become: true
+  ansible.builtin.service:
+    name: "wg-quick@{{ item.key }}"
+    state: restarted
+  loop: "{{ wireguard.interfaces | default({}) | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when:
+    - not (network_use_networkmanager | default(false))
+    - ansible_facts['service_mgr'] in ['openrc', 'rc']
+    - wireguard is defined
+    - wireguard.interfaces is defined
+  listen: Restarting wireguard interfaces

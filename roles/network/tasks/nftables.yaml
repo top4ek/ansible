@@ -1,0 +1,24 @@
+- name: Installing required packages
+  become: true
+  package:
+    name: nftables
+    state: present
+    update_cache: yes
+
+- name: "Generating nftables rules"
+  become: true
+  template:
+    src: "nftables.conf.j2"
+    dest: "{{ '/etc/nftables.nft' if ansible_facts['os_family'] == 'Alpine' else
+      '/etc/nftables.conf' }}"
+    owner: root
+    group: "{{ 'root' if ansible_facts['os_family'] == 'Alpine' else 'adm' }}"
+    mode: "0644"
+    validate: "nft --check --file %s"
+  notify: "Restarting firewall rules"
+
+- name: Enable nftables service
+  become: true
+  service:
+    name: nftables
+    enabled: true

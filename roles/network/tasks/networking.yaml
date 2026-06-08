@@ -1,0 +1,44 @@
+---
+- name: Configure interfaces via interfaces
+  when: not network_use_networkmanager
+  become: true
+  template:
+    src: interfaces.j2
+    dest: /etc/network/interfaces
+    mode: "0644"
+  notify: Restarting network interfaces
+
+- name: Configure interfaces via NetworkManager
+  when: network_use_networkmanager
+  block:
+    - name: Ensure NetworkManager is enabled and running
+      become: true
+      service:
+        name: NetworkManager
+        enabled: true
+        state: started
+
+    - name: Disable legacy networking services on Debian
+      become: true
+      service:
+        name: "{{ item }}"
+        enabled: false
+        state: stopped
+      loop:
+        - dhcpcd
+        - networking
+      when: ansible_facts['os_family'] == 'Debian'
+      failed_when: false
+
+    - name: Deploy NetworkManager connection profiles
+      become: true
+      template:
+        src: nmconnection.j2
+        dest: "/etc/NetworkManager/system-connections/{{ item.iface }}.nmconnection"
+        owner: root
+        group: root
+        mode: "0600"
+      loop: "{{ interfaces | rejectattr('type', 'equalto', 'loopback') | list }}"
+      loop_control:
+        label: "{{ item.iface }}"
+      notify: Restarting network interfaces

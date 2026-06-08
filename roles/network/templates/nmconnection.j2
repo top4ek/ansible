@@ -1,0 +1,31 @@
+[connection]
+id={{ item.iface }}
+type=ethernet
+interface-name={{ item.iface }}
+autoconnect=true
+
+[ethernet]
+
+[ipv4]
+{% if item.type == 'dhcp' %}
+method=auto
+{% else %}
+method=manual
+{% if item.address is defined and item.netmask is defined %}
+addresses={{ item.address }}/{{ item.netmask | netmask_prefix }}
+{% elif item.address is defined and item.prefix is defined %}
+addresses={{ item.address }}/{{ item.prefix }}
+{% endif %}
+{% if item.gateway is defined %}
+gateway={{ item.gateway }}
+{% endif %}
+{% if item.nameservers is defined %}
+dns={{ item.nameservers | dns_nameservers(';') }};
+{% endif %}
+{% if item.domain is defined %}
+dns-search={{ item.domain }};
+{% endif %}
+{% endif %}
+
+[ipv6]
+method=disabled

@@ -11,7 +11,10 @@ iface {{ interface.iface }} inet {{ interface.type }}
   gateway {{ interface.gateway }}
 {% endif %}
 {% if interface.nameservers is defined %}
-  dns-nameservers {{ interface.nameservers }}
+  dns-nameservers {{ interface.nameservers | dns_nameservers(' ') }}
+{% endif %}
+{% if interface.domain is defined %}
+  dns-domain {{ interface.domain }}
 {% endif %}
 
 {% endfor %}

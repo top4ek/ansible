@@ -1,0 +1,34 @@
+[connection]
+id={{ wg_iface_name }}
+type=wireguard
+interface-name={{ wg_iface_name }}
+autoconnect=true
+
+[wireguard]
+private-key={{ wireguard.private_key }}
+listen-port={{ wg_iface_cfg.listen_port }}
+
+{% for peer in (wg_iface_cfg.peers | default([])) %}
+[wireguard-peer.{{ peer.public_key }}]
+{% if peer.endpoint is defined %}
+endpoint={{ peer.endpoint }}
+{% endif %}
+{% if peer.preshared_key is defined %}
+preshared-key={{ peer.preshared_key }}
+preshared-key-flags=0
+{% endif %}
+{% if peer.allowed_ips is defined %}
+allowed-ips={{ peer.allowed_ips | join(';') }};
+{% endif %}
+{% if peer.keep_alive is defined %}
+persistent-keepalive={{ peer.keep_alive }}
+{% endif %}
+
+{% endfor %}
+[ipv4]
+method=manual
+address1={{ wg_iface_cfg.internal_ip }}
+dns-search=
+
+[ipv6]
+method=disabled

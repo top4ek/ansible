@@ -19,6 +19,12 @@ table inet filter {
 
     iifname != "lo" ip saddr 127.0.0.0/8 drop;
 
+{% if keepalived is defined and keepalived.vrrp_instances | default([]) | length > 0 %}
+{% for iface in keepalived.vrrp_instances | map(attribute='interface') | unique | list %}
+    iifname "{{ iface }}" ip protocol vrrp accept
+{% endfor %}
+{% endif %}
+
     fib daddr type broadcast drop;
     fib daddr type multicast drop;
     fib daddr type anycast drop;

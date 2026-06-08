@@ -1,0 +1,14 @@
+---
+network_backend: auto
+
+# Example interface structure for host_vars:
+# interfaces:
+#   - iface: eth0
+#     type: static
+#     address: 192.168.1.10
+#     netmask: 255.255.255.0
+#     gateway: 192.168.1.1
+#     nameservers:
+#       - 8.8.8.8
+#       - 8.8.4.4
+#       - 1.1.1.1

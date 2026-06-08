@@ -1,11 +1,3 @@
-- name: Create network files
-  become: true
-  template:
-    src: interfaces.j2
-    dest: /etc/network/interfaces
-    mode: 644
-  when: interfaces is defined
-
 - name: Set IPv4 forwarding flag
   become: true
   sysctl:
@@ -31,32 +23,42 @@
       - firewalld
     update_cache: yes
 
-- name: Installing required packages
-  become: true
-  package:
-    name: nftables
-    state: present
-    update_cache: yes
+- name: Gather service facts for NetworkManager detection
+  service_facts:
+  when: network_backend == 'auto'
 
-- name: Configure and start WireGuard
-  ansible.builtin.include_tasks: wireguard.yaml
-  when: wireguard is defined and wireguard.interfaces is defined
+- name: Detect NetworkManager backend
+  set_fact:
+    network_use_networkmanager: >-
+      {{
+        network_backend == 'networkmanager'
+        or (
+          network_backend == 'auto'
+          and (
+            'NetworkManager.service' in (ansible_facts.services | default({}))
+            or 'NetworkManager' in (ansible_facts.services | default({}))
+          )
+        )
+      }}
 
-- name: "Generating nftables rules"
+- name: Rename legacy /etc/network/interfaces when using NetworkManager
   become: true
-  template:
-    src: "nftables.conf.j2"
-    dest: "{{ '/etc/nftables.nft' if ansible_facts['os_family'] == 'Alpine' else
-      '/etc/nftables.conf' }}"
-    owner: root
-    group: "{{ 'root' if ansible_facts['os_family'] == 'Alpine' else 'adm' }}"
-    mode: "0644"
-    validate: "nft --check --file %s"
-  notify: "Restarting firewall rules"
+  command:
+    cmd: mv /etc/network/interfaces /etc/network/interfaces-old
+  args:
+    removes: /etc/network/interfaces
+    creates: /etc/network/interfaces-old
+  when: network_use_networkmanager
+  changed_when: true
+
+- name: Configure network interfaces
+  include_tasks: networking.yaml
   when: interfaces is defined
 
-- name: Enable nftables service
-  become: true
-  service:
-    name: nftables
-    enabled: true
+- name: Configure WireGuard
+  include_tasks: wireguard.yaml
+  when: wireguard is defined and wireguard.interfaces is defined
+
+- name: Configure nftables
+  include_tasks: nftables.yaml
+  when: interfaces is defined
