@@ -1,0 +1,8 @@
+---
+rustdesk_container_name: rustdesk
+rustdesk_container_dir: "/home/{{ admin_user }}/containers/{{ rustdesk_container_name }}"
+
+rustdesk:
+  image: docker.io/rustdesk/rustdesk-server:latest
+  network_mode: host
+  environment: {}

@@ -1,0 +1,30 @@
+x-podman:
+  in_pod: false
+
+services:
+  hbbr:
+    container_name: hbbr
+    image: {{ rustdesk.image }}
+    command: hbbr
+    volumes:
+      - ./data:/root
+    network_mode: "{{ rustdesk.network_mode }}"
+    restart: unless-stopped
+
+  hbbs:
+    container_name: hbbs
+    image: {{ rustdesk.image }}
+    command: hbbs
+    volumes:
+      - ./data:/root
+    network_mode: "{{ rustdesk.network_mode }}"
+    depends_on:
+      hbbr:
+        condition: service_started
+    restart: unless-stopped
+{% if rustdesk.environment is defined and rustdesk.environment | length > 0 %}
+    environment:
+{% for var in rustdesk.environment | sort %}
+      - {{ var }}={{ rustdesk.environment[var] }}
+{% endfor %}
+{% endif %}
