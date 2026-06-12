@@ -46,7 +46,6 @@ postgresql_conf:
   # Advanced features
   enable_partitionwise_aggregate: "on"
   enable_partitionwise_join: "on"
-  jit: "on"
   maintenance_io_concurrency: 100
   track_wal_io_timing: "on"
   wal_recycle: "on"
