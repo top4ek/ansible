@@ -1,7 +1,0 @@
-- name: Install latest NeoVim
-  become: true
-  package:
-    name:
-      - neovim
-    state: present
-    update_cache: yes
