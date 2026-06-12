@@ -38,6 +38,7 @@ services:
       LIVEKIT_KEY: "{{ matrix.livekit_api_key }}"
       LIVEKIT_SECRET: "{{ matrix.livekit_api_secret }}"
       LIVEKIT_JWT_BIND: ":8089"
+      LIVEKIT_FULL_ACCESS_HOMESERVERS: "{{ matrix.server_name }}"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.matrix-lk-jwt.rule=Host(`{{ matrix.server_name }}`) && (PathPrefix(`/livekit/jwt/`) || PathPrefix(`/sfu`))"
