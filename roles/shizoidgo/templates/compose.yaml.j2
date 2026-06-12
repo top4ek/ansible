@@ -1,0 +1,35 @@
+services:
+  app:
+    image: docker.io/top4ek/shizoid-go:latest
+    container_name: shizoidgo_app
+    restart: unless-stopped
+    networks:
+      - proxy
+      - postgres
+{% if host_roles is defined and 'llamacpp' in host_roles %}
+      - llama
+{% endif %}
+{% if shizoidgo.telegram.webhook_url %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.shizoidgo.rule=Host(`{{ shizoidgo.telegram.webhook_url | regex_replace('^https?://', '') | regex_replace('/.*$', '') }}`)"
+      - "traefik.http.routers.shizoidgo.entrypoints=websecure"
+      - "traefik.http.routers.shizoidgo.tls=true"
+      - "traefik.http.routers.shizoidgo.tls.certresolver=letsencrypt"
+      - "traefik.http.services.shizoidgo.loadbalancer.server.port={{ shizoidgo.app.bind_to }}"
+{% endif %}
+    volumes:
+      - "{{ compose_project_dir }}/config.yaml:/config.yaml:ro"
+
+networks:
+{% if shizoidgo.telegram.webhook_url %}
+  proxy:
+    external: true
+{% endif %}
+  postgres:
+    external: true
+{% if host_roles is defined and 'llamacpp' in host_roles %}
+  llama:
+    external: true
+{% endif %}

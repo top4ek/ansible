@@ -1,0 +1,76 @@
+---
+shizoidgo_container_name: "shizoidgo"
+shizoidgo_container_dir: "/home/{{ admin_user }}/containers/{{ shizoidgo_container_name }}"
+
+shizoidgo:
+  app_env: production
+  log_level: error
+
+  database:
+    host: postgres
+    port: "5432"
+    name: shizoid
+    user: shizoid
+    password: changeme
+
+  telegram:
+    token: "111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    webhook_url: ""
+    webhook_secret_token: ""
+
+  sentry:
+    dsn: ""
+    environment: production
+    release: ""
+
+  app:
+    allow_to_all: false
+    bot_owners:
+      - 11111111
+    bind_to: 8095
+    locale: ru
+    generation_mode: classic
+    winner_cron: "20 4 * * *"
+    idle_cron: "40 19 * * *"
+    memory_cron: "0 */6 * * *"
+
+  neural:
+    reply:
+      # - name: big_pickle
+      #   base_url: https://opencode.ai/zen/v1
+      #   api_key: sk-nG
+      #   context_size: 32000
+      #   model: big-pickle
+      #   timeout_seconds: 60
+      # - name: openrouter
+      #   base_url: https://openrouter.ai/api/v1
+      #   api_key: sk-or-v1-4
+      #   context_size: 32000
+      #   model: openrouter/free
+      #   daily_limit: 500
+      #   timeout_seconds: 60
+      - name: local
+        base_url: http://llama:3110/v1
+        model: Qwen3.5-4B-Q4_K_M.gguf
+        timeout_seconds: 600
+        context_size: 32000
+        slot_check: true
+    summary:
+      # - name: big_pickle
+      #   base_url: https://opencode.ai/zen/v1
+      #   api_key: sk-
+      #   context_size: 32000
+      #   model: big-pickle
+      #   timeout_seconds: 60
+      # - name: openrouter
+      #   base_url: https://openrouter.ai/api/v1
+      #   api_key: sk-or-
+      #   model: openrouter/free
+      #   daily_limit: 500
+      #   timeout_seconds: 600
+      - name: local
+        base_url: http://llama:3110/v1
+        model: Qwen3.5-4B-Q4_K_M.gguf
+        timeout_seconds: 600
+        context_size: 32000
+        slot_check: true
