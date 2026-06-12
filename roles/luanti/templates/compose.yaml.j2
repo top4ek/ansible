@@ -33,6 +33,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.luanti_map.entrypoints=websecure"
       - "traefik.http.routers.luanti_map.rule=Host(`{{ luanti_map.host }}`)"
+      - "traefik.http.routers.luanti_map.priority=10"
       - "traefik.http.routers.luanti_map.tls=true"
       - "traefik.http.routers.luanti_map.tls.certresolver=letsencrypt"
       - "traefik.http.services.luanti_map.loadbalancer.server.port=8888"
