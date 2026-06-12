@@ -1,0 +1,24 @@
+---
+- name: Ensure container project directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  loop:
+    - "{{ llamacpp_container_dir }}"
+    - "{{ llamacpp_container_dir }}/models"
+
+- name: Set model filename
+  ansible.builtin.set_fact:
+    llamacpp_model_filename: "{{ llamacpp.model.filename }}"
+
+- name: Run container
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ llamacpp_container_name }}"
+    podman_compose_dest: "{{ llamacpp_container_dir }}/compose.yaml"
+    compose_project_dir: "{{ llamacpp_container_dir }}"

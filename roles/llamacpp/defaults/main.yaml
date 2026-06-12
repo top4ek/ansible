@@ -1,0 +1,13 @@
+---
+llamacpp_container_name: llama
+llamacpp_container_dir: "/home/{{ admin_user }}/containers/{{ llamacpp_container_name }}"
+
+llamacpp:
+  image: ghcr.io/ggml-org/llama.cpp:server
+  port: 3110
+  mem_limit: 5000
+  ctx_size: 32000
+  n_parallel: 3
+  threads: 4
+  model:
+    filename: Qwen3-4B-Q4_K_M.gguf

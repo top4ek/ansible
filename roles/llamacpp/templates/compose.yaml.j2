@@ -1,0 +1,38 @@
+services:
+  llama:
+    container_name: llama
+    image: {{ llamacpp.image }}
+    restart: unless-stopped
+    networks:
+      - llama
+    volumes:
+      - "{{ compose_project_dir }}/models:/models"
+    command:
+      - --model
+      - "/models/{{ llamacpp_model_filename }}"
+      - --host
+      - 0.0.0.0
+      - --port
+      - "{{ llamacpp.port }}"
+      - --ctx-size
+      - "{{ llamacpp.ctx_size }}"
+      - --parallel
+      - "{{ llamacpp.n_parallel }}"
+      - --threads
+      - "{{ llamacpp.threads }}"
+      - --cache-ram
+      - "{{ llamacpp.mem_limit }}"
+      - --jinja
+      - --reasoning
+      - "off"
+      - --reasoning-format
+      - none
+      - --reasoning-budget
+      - "0"
+      - --chat-template-kwargs
+      - '{"enable_thinking": false}'
+      - --slots
+
+networks:
+  llama:
+    name: llama
