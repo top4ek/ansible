@@ -132,3 +132,30 @@
 - name: Publish podman rootless environment
   ansible.builtin.set_fact:
     podman_rootless_environment: "{{ podman_rootless_environment }}"
+
+- name: Prune stopped containers
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/podman
+      - container
+      - prune
+      - -f
+  register: podman_container_prune
+  changed_when: podman_container_prune.stdout | trim | length > 0
+
+- name: Prune unused images
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/podman
+      - image
+      - prune
+      - -a
+      - -f
+  register: podman_image_prune
+  changed_when: podman_image_prune.stdout | trim | length > 0
