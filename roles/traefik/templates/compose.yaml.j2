@@ -36,13 +36,6 @@ services:
       - "traefik.tls.stores.default.defaultgeneratedcert.resolver=letsencrypt"
       - "traefik.tls.stores.default.defaultgeneratedcert.domain.main={{ traefik.zone }}"
       - "traefik.tls.stores.default.defaultgeneratedcert.domain.sans=*.{{ traefik.zone }}"
-      - "traefik.http.routers.acme_wildcard.entrypoints=websecure"
-      - "traefik.http.routers.acme_wildcard.rule=Host(`{{ traefik.zone }}`)"
-      - "traefik.http.routers.acme_wildcard.tls=true"
-      - "traefik.http.routers.acme_wildcard.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.acme_wildcard.tls.domains[0].main={{ traefik.zone }}"
-      - "traefik.http.routers.acme_wildcard.tls.domains[0].sans=*.{{ traefik.zone }}"
-      - "traefik.http.routers.acme_wildcard.service=noop@internal"
 {% endif %}
 
 networks:
