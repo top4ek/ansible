@@ -8,8 +8,8 @@
     mode: "0755"
 
 - name: Generate config.yaml
-  template:
-    src: config.yaml.j2
+  copy:
+    content: "{{ shizoidgo | to_nice_yaml }}"
     dest: "{{ shizoidgo_container_dir }}/config.yaml"
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
