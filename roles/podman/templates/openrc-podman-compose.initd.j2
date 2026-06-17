@@ -3,45 +3,61 @@
 name="{{ container_name }}"
 description="Podman compose {{ container_name }}"
 
+ADMIN_USER="{{ admin_user }}"
+ADMIN_UID="$(id -u "$ADMIN_USER")"
+XDG_RUNTIME_DIR="/run/user/$ADMIN_UID"
+COMPOSE_FILE="{{ podman_compose_dest }}"
+COMPOSE_CMD="/usr/bin/podman-compose --in-pod=false -f $COMPOSE_FILE"
+
 depend() {
   need net
 }
 
+ensure_podman_service() {
+  if [ ! -S "$XDG_RUNTIME_DIR/podman/podman.sock" ]; then
+    mkdir -p "$XDG_RUNTIME_DIR/podman"
+    chown -R "$ADMIN_USER:$ADMIN_USER" "$XDG_RUNTIME_DIR"
+    chmod 700 "$XDG_RUNTIME_DIR" "$XDG_RUNTIME_DIR/podman"
+    su -l "$ADMIN_USER" -c "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR /usr/bin/podman system service --time 0 &"
+    _i=0
+    while [ ! -S "$XDG_RUNTIME_DIR/podman/podman.sock" ] && [ "$_i" -lt 10 ]; do
+      sleep 1
+      _i=$((_i + 1))
+    done
+  fi
+}
+
+run_compose() {
+  su -l "$ADMIN_USER" -c "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR $COMPOSE_CMD $*"
+}
+
 start_pre() {
-  uid=$(id -u {{ admin_user }})
-  runtime_dir="/run/user/$uid"
-  podman_runtime_dir="$runtime_dir/podman"
-
   checkpath -d {{ compose_project_dir }}
-
-  mkdir -p "$podman_runtime_dir"
-  chown -R {{ admin_user }}:{{ admin_user }} "$runtime_dir"
-  chmod 700 "$runtime_dir" "$podman_runtime_dir"
+  ensure_podman_service
 }
 
 start() {
   ebegin "Starting {{ container_name }}"
-  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman system service --time 0 &"
-  sleep 2
-  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} start"
+  run_compose up -d
   eend $?
 }
 
 stop() {
   ebegin "Stopping {{ container_name }}"
-  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} stop"
+  run_compose stop
   eend $?
 }
 
 reload() {
   ebegin "Reloading {{ container_name }}"
-  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman system service --time 0 &"
-  sleep 2
-  su -l {{ admin_user }} -c "XDG_RUNTIME_DIR=/run/user/$(id -u {{ admin_user }}) /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} pull && /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} down && /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} up -d"
+  ensure_podman_service
+  run_compose pull && run_compose down && run_compose up -d
   eend $?
 }
 
 restart() {
-  svc_stop
-  svc_start
+  ebegin "Restarting {{ container_name }}"
+  ensure_podman_service
+  run_compose down && run_compose up -d
+  eend $?
 }
