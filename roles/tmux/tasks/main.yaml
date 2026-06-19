@@ -1,15 +1,14 @@
-- name: Install tmux
-  include_role:
-    name: yay
-  vars:
-    packages:
+- name: Install packages
+  become: true
+  pacman:
+    name:
       - tmux
 
 - name: Create plugins directories
   file:
     path: "/home/{{ admin_user }}/.config/tmux/plugins/{{ item }}"
     state: directory
-    mode: '0755'
+    mode: "0755"
   loop:
     - catppuccin
 
@@ -19,7 +18,7 @@
     dest: "/home/{{ admin_user }}/.config/tmux/plugins/catppuccin/tmux"
     single_branch: yes
     update: yes
-    version: "v2.1.3"
+    version: "v2.3"
 
 - name: Copy unit file
   become: true
