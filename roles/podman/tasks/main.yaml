@@ -8,6 +8,7 @@
       - podman-compose
       - crun
       - slirp4netns
+      - passt
       - fuse-overlayfs
 
 - name: Allow rootless bind to privileged ports
