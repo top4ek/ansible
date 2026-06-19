@@ -38,11 +38,15 @@
     option: CleanMethod
     value: KeepInstalled
 
-- name: Install packages
+- name: Upgrade system
   become: true
   pacman:
     update_cache: yes
     upgrade: yes
+
+- name: Install packages
+  become: true
+  pacman:
     name:
       - base-devel
       - cdrtools
@@ -115,3 +119,6 @@
     line: "%wheel ALL=(ALL) NOPASSWD: ALL"
     state: present
     path: "/etc/sudoers"
+
+- name: Run distribution specific tasks
+  include_tasks: "yay.yaml"
