@@ -4,21 +4,43 @@
   copy:
     dest: /etc/apk/repositories
     content: |-
-      https://dl-cdn.alpinelinux.org/alpine/v3.23/main
-      https://dl-cdn.alpinelinux.org/alpine/v3.23/community
+      https://dl-cdn.alpinelinux.org/alpine/v3.24/main
+      https://dl-cdn.alpinelinux.org/alpine/v3.24/community
     owner: root
     group: root
     mode: 644
+  register: alpine_repositories
 
 - name: Update apk index
   become: true
   package:
     update_cache: yes
 
+- name: Upgrade apk-tools after repository change
+  become: true
+  apk:
+    name: apk-tools
+    state: latest
+  when: alpine_repositories.changed
+
 - name: Upgrade the system
   become: true
   apk:
     upgrade: yes
+    available: "{{ alpine_repositories.changed | bool }}"
+
+- name: Reset connection after system upgrade
+  meta: reset_connection
+
+- name: Rediscover Python interpreter
+  setup:
+    gather_subset: "!all,min"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+- name: Update Python interpreter fact
+  set_fact:
+    ansible_python_interpreter: "{{ ansible_facts.discovered_interpreter_python }}"
 
 - name: Remove motd
   become: true
