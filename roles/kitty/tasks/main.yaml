@@ -23,4 +23,4 @@
 - name: Copy config file
   template:
     src: kitty.conf.j2
-    dest: ~/.config/kitty/kitty.conf
+    dest: /home/{{ admin_user }}/.config/kitty/kitty.conf

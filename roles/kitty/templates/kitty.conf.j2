@@ -1,14 +1,17 @@
-font_family family="{{ temu_font.family }}"
-font_size {{ temu_font.size }}
+font_family family="{{ temu.font }}"
+font_size {{ temu.size }}
 
 disable_ligatures always
-# cursor_blink_interval 1
-# cursor_stop_blinking_after 15.0
+cursor_blink_interval 1
+cursor_stop_blinking_after 15.0
 mouse_hide_wait 3
 
 cursor_trail 1
 cursor_trail_decay 0.1 0.4
 cursor_trail_start_threshold 0
+
+background_blur 1
+background_opacity 0.95
 
 draw_minimal_borders yes
 placement_strategy center
@@ -24,7 +27,11 @@ selection_background    #f5e0dc
 cursor                  #f5e0dc
 cursor_text_color       #1e1e2e
 
-# URL underline color when hovering with mouse
+# Scrollbar colors
+scrollbar_handle_color  #9399b2
+scrollbar_track_color   #45475a
+
+# URL color when hovering with mouse
 url_color               #f5e0dc
 
 # Kitty window border colors
