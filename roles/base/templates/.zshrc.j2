@@ -1,4 +1,4 @@
-plugins=(git docker colorize fzf{{ ' tmux' if 'tmux' in group_names }})
+plugins=(git docker colorize fzf{{ ' tmux' if 'tmux' in host_roles }})
 
 export FZF_DEFAULT_OPTS="
 --color=bg+:#313244,bg:#1e1e2e,spinner:#f5e0dc,hl:#f38ba8 \
@@ -7,12 +7,12 @@ export FZF_DEFAULT_OPTS="
 --color=selected-bg:#45475a \
 --color=border:#313244,label:#cdd6f4"
 
-# ZSH_TMUX_AUTOSTART={{ 'true' if 'tmux' in group_names else 'false' }}
+ZSH_TMUX_DEFAULT_SESSION_NAME={{ admin_user }}
 zstyle ':omz:update' mode auto
 COMPLETION_WAITING_DOTS=true
 ENABLE_CORRECTION=false
 export ZSH=$HOME/.oh-my-zsh
-export KUBECONFIG=./kubeconfig
+export KUBECONFIG=./kubeconfig # TODO: Rethink it.
 
 source $ZSH/oh-my-zsh.sh
 source $HOME/.profile
