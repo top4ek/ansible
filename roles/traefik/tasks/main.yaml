@@ -25,6 +25,8 @@
     dest: "{{ traefik_container_dir }}/acme.json"
     content: "{}"
     force: false
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
     mode: "0600"
 
 - name: Check for legacy traefik.log
