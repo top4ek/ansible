@@ -20,6 +20,7 @@ services:
 {% endif %}
     environment:
       TZ: '{{ pihole.timezone }}'
+      FTLCONF_webserver_port: '80'
       FTLCONF_webserver_api_password: '{{ pihole.webpassword }}'
       FTLCONF_dhcp_active: '{{ pihole.dhcp_active }}'
 {% if pihole.unbound.enabled | default(true) %}
