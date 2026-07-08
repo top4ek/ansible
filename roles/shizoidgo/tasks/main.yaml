@@ -14,6 +14,7 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
+  register: shizoidgo_config
 
 - name: Run container
   include_role:
@@ -23,3 +24,4 @@
     container_name: "{{ shizoidgo_container_name }}"
     podman_compose_dest: "{{ shizoidgo_container_dir }}/compose.yaml"
     compose_project_dir: "{{ shizoidgo_container_dir }}"
+    podman_recreate: "{{ shizoidgo_config is changed }}"
