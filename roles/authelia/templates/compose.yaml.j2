@@ -1,0 +1,24 @@
+version: "3"
+
+services:
+  authelia:
+    image: "{{ authelia_image }}"
+    container_name: "{{ authelia_container_name }}"
+    volumes:
+      - "{{ authelia_container_dir }}/config:/config"
+    networks:
+      - proxy
+    restart: unless-stopped
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.authelia.rule: "Host(`auth.{{ traefik.zone }}`)"
+      traefik.http.routers.authelia.entrypoints: "websecure"
+      traefik.http.routers.authelia.tls.certresolver: "letsencrypt"
+      traefik.http.services.authelia.loadbalancer.server.port: "9091"
+      traefik.http.middlewares.authelia.forwardAuth.address: "https://auth.{{ traefik.zone }}/api/verify?rd=https://auth.{{ traefik.zone }}"
+      traefik.http.middlewares.authelia.forwardAuth.trustForwardHeader: "true"
+      traefik.http.middlewares.authelia.forwardAuth.authResponseHeaders: "Remote-User,Remote-Groups,Remote-Name,Remote-Email"
+
+networks:
+  proxy:
+    external: true

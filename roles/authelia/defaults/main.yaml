@@ -1,0 +1,4 @@
+---
+authelia_container_name: authelia
+authelia_container_dir: "/home/{{ admin_user }}/containers/authelia"
+authelia_image: docker.io/authelia/authelia:latest

@@ -1,0 +1,52 @@
+---
+server:
+  host: 0.0.0.0
+  port: 9091
+
+theme: auto
+
+log:
+  level: info
+
+authentication_backend:
+  ldap:
+    implementation: glauth
+    url: ldap://glauth:3893
+    base_dn: "{{ glauth.base_dn }}"
+    username_attribute: cn
+    additional_users_dn: ""
+    users_filter: "(&({username_attribute}={input})(objectClass=posixAccount))"
+    additional_groups_dn: ""
+    groups_filter: "(&(uniqueMember={dn})(objectClass=posixGroup))"
+    group_name_attribute: cn
+    mail_attribute: mail
+    display_name_attribute: givenname
+    user: "cn=svc_binder,{{ glauth.base_dn }}"
+    password: "{{ authelia.ldap_password }}"
+
+session:
+  secret: "{{ authelia.session_secret }}"
+  domain: "{{ traefik.zone }}"
+  expiration: 1h
+  inactivity: 5m
+
+storage:
+  encryption_key: "{{ authelia.storage_key }}"
+  local:
+    path: /config/db.sqlite3
+
+notifier:
+  filesystem:
+    filename: /config/notification.txt
+
+access_control:
+  default_policy: deny
+  rules:
+    - domain: "auth.{{ traefik.zone }}"
+      policy: bypass
+    - domain: "*.{{ traefik.zone }}"
+      policy: one_factor
+
+identity_validation:
+  reset_password:
+    jwt_secret: "{{ authelia.jwt_secret }}"

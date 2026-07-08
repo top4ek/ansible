@@ -1,0 +1,38 @@
+---
+- name: Ensure required authelia host variables are defined
+  assert:
+    that:
+      - authelia is defined
+      - authelia.ldap_password is defined
+      - authelia.session_secret is defined
+      - authelia.storage_key is defined
+      - authelia.jwt_secret is defined
+    fail_msg: "authelia host_vars incomplete"
+
+- name: Create authelia config directory
+  file:
+    path: "{{ authelia_container_dir }}/config"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: 0755
+
+- name: Render authelia configuration
+  template:
+    src: configuration.yml.j2
+    dest: "{{ authelia_container_dir }}/config/configuration.yml"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: 0644
+  register: authelia_config
+
+- name: Set podman_recreate flag if config changed
+  set_fact:
+    podman_recreate: "{{ authelia_config.changed }}"
+
+- name: Deploy authelia container
+  include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ authelia_container_name }}"
