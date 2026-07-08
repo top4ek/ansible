@@ -14,7 +14,7 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
-  notify: Restart matrix_web
+  register: matrix_web_config
 
 - name: Run container
   include_role:
@@ -24,3 +24,4 @@
     container_name: "{{ matrix_web_container_name }}"
     podman_compose_dest: "{{ matrix_web_container_dir }}/compose.yaml"
     compose_project_dir: "{{ matrix_web_container_dir }}"
+    podman_recreate: "{{ matrix_web_config is changed }}"

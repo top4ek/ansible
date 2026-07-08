@@ -20,7 +20,7 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
-  notify: Restart matrix
+  register: matrix_homeserver
 
 - name: Copy room_restriction.py
   copy:
@@ -29,7 +29,7 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
-  notify: Restart matrix
+  register: matrix_module
 
 - name: Render livekit.yaml
   template:
@@ -38,7 +38,7 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
-  notify: Restart matrix
+  register: matrix_livekit
 
 - name: Run container
   include_role:
@@ -48,3 +48,4 @@
     container_name: "{{ matrix_container_name }}"
     podman_compose_dest: "{{ matrix_container_dir }}/compose.yaml"
     compose_project_dir: "{{ matrix_container_dir }}"
+    podman_recreate: "{{ (matrix_homeserver is changed) or (matrix_module is changed) or (matrix_livekit is changed) }}"

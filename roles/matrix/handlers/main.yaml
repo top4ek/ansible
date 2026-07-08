@@ -1,5 +1,0 @@
----
-- name: Restart matrix
-  command: podman-compose restart
-  args:
-    chdir: "{{ matrix_container_dir }}"
