@@ -31,6 +31,7 @@
   template:
     src: "config.toml.j2"
     dest: "{{ mtg_container_dir }}/config.toml"
+  register: mtg_config
 
 - name: Run container
   include_role:
@@ -38,3 +39,4 @@
     tasks_from: container.yaml
   vars:
     container_name: mtg
+    podman_recreate: "{{ mtg_config is changed }}"
