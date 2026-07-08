@@ -11,6 +11,14 @@ entryPoints:
   websecure:
     address: ":443"
 
+{% if traefik.ldap | default(false) %}
+  ldap:
+    address: ":636"
+
+{% endif %}
+serversTransport:
+  insecureSkipVerify: true
+
 providers:
   docker:
     endpoint: "unix:///var/run/docker.sock"

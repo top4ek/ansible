@@ -58,6 +58,7 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
+  register: traefik_static_config
 
 - name: Run traefik container
   include_role:
@@ -65,3 +66,4 @@
     tasks_from: container.yaml
   vars:
     container_name: traefik
+    podman_recreate: "{{ traefik_static_config is changed }}"
