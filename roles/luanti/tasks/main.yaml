@@ -29,6 +29,7 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
+  register: luanti_minetest_conf
 
 - name: Render Luanti world.mt
   template:
@@ -37,6 +38,7 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
+  register: luanti_world_mt
 
 - name: Render Luanti mapserver.json
   ansible.builtin.template:
@@ -45,6 +47,7 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
+  register: luanti_mapserver_json
 
 - name: Clone Luanti games
   ansible.builtin.git:
@@ -54,6 +57,7 @@
     version: "{{ item['version'] }}"
     single_branch: true
   loop: "{{ luanti.games | default([]) }}"
+  register: luanti_games
 
 - name: Clone Luanti mods
   ansible.builtin.git:
@@ -63,6 +67,7 @@
     version: "{{ item['version'] }}"
     single_branch: true
   loop: "{{ luanti.mods | default([]) }}"
+  register: luanti_mods
 
 - name: Logrotate logs
   include_role:
@@ -82,3 +87,4 @@
     tasks_from: container.yaml
   vars:
     container_name: "{{ luanti_container_name }}"
+    podman_recreate: "{{ (luanti_minetest_conf is changed) or (luanti_world_mt is changed) or (luanti_mapserver_json is changed) or (luanti_games is changed) or (luanti_mods is changed) }}"
