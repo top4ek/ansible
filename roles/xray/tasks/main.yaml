@@ -15,6 +15,7 @@
     group: "{{ admin_user }}"
     mode: "0644"
   when: xray.upstream is defined
+  register: xray_geoip
 
 - name: Download geosite.dat
   ansible.builtin.get_url:
@@ -24,6 +25,7 @@
     group: "{{ admin_user }}"
     mode: "0644"
   when: xray.upstream is defined
+  register: xray_geosite
 
 - name: Render xray config
   ansible.builtin.template:
@@ -32,6 +34,7 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
+  register: xray_config
 
 - name: Run xray container
   ansible.builtin.include_role:
@@ -39,3 +42,4 @@
     tasks_from: container.yaml
   vars:
     container_name: "{{ xray_container_name }}"
+    podman_recreate: "{{ (xray_config is changed) or (xray_geoip is changed) or (xray_geosite is changed) }}"
