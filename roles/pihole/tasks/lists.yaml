@@ -29,6 +29,9 @@
     status_code: [200]
   register: pihole_current_lists
   changed_when: false
+  retries: 10
+  delay: 6
+  until: pihole_current_lists.status == 200
 
 - name: POST blocklist URLs to Pi-hole API
   ansible.builtin.uri:
