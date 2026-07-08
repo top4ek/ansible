@@ -10,21 +10,7 @@ COMPOSE_FILE="{{ podman_compose_dest }}"
 COMPOSE_CMD="/usr/bin/podman-compose --in-pod=false -f $COMPOSE_FILE"
 
 depend() {
-  need net
-}
-
-ensure_podman_service() {
-  if [ ! -S "$XDG_RUNTIME_DIR/podman/podman.sock" ]; then
-    mkdir -p "$XDG_RUNTIME_DIR/podman"
-    chown -R "$ADMIN_USER:$ADMIN_USER" "$XDG_RUNTIME_DIR"
-    chmod 700 "$XDG_RUNTIME_DIR" "$XDG_RUNTIME_DIR/podman"
-    su -l "$ADMIN_USER" -c "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR /usr/bin/podman system service --time 0 &"
-    _i=0
-    while [ ! -S "$XDG_RUNTIME_DIR/podman/podman.sock" ] && [ "$_i" -lt 10 ]; do
-      sleep 1
-      _i=$((_i + 1))
-    done
-  fi
+  need net podman-api
 }
 
 run_compose() {
@@ -33,7 +19,6 @@ run_compose() {
 
 start_pre() {
   checkpath -d {{ compose_project_dir }}
-  ensure_podman_service
 }
 
 start() {
@@ -50,14 +35,12 @@ stop() {
 
 reload() {
   ebegin "Reloading {{ container_name }}"
-  ensure_podman_service
   run_compose pull && run_compose down && run_compose up -d
   eend $?
 }
 
 restart() {
   ebegin "Restarting {{ container_name }}"
-  ensure_podman_service
   run_compose down && run_compose up -d
   eend $?
 }

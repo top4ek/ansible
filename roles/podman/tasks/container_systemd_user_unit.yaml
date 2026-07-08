@@ -15,19 +15,21 @@
     dest: "/home/{{ admin_user }}/.config/systemd/user/{{ container_name }}.service"
     mode: "0644"
 
-- name: Enable compose unit for boot
+- name: Enable and start compose unit
   become: true
   become_user: "{{ admin_user }}"
   ansible.builtin.systemd:
     name: "{{ container_name }}.service"
     enabled: true
     daemon_reload: true
+    state: started
     scope: user
 
-- name: Reload compose project
+- name: Apply changes to compose project
   become: true
   become_user: "{{ admin_user }}"
   ansible.builtin.systemd:
     name: "{{ container_name }}.service"
     state: reloaded
     scope: user
+  when: podman_apply | default(false) | bool

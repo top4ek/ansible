@@ -8,12 +8,15 @@
     group: root
     mode: "0755"
 
-- name: Enable OpenRC service at boot
+- name: Enable and start OpenRC service
   become: true
-  command: "rc-update add {{ container_name }} default"
-  register: openrc_enable
-  changed_when: "'added to runlevel' in (openrc_enable.stdout | default(''))"
+  ansible.builtin.service:
+    name: "{{ container_name }}"
+    enabled: true
+    state: started
 
-- name: Reload compose project
+- name: Apply changes to compose project
   become: true
-  command: "service {{ container_name }} reload"
+  ansible.builtin.command: "service {{ container_name }} reload"
+  when: podman_apply | default(false) | bool
+  changed_when: true

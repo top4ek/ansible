@@ -119,6 +119,33 @@
     mode: "0700"
   when: ansible_facts['service_mgr'] in ['openrc', 'rc']
 
+- name: Install rootless Podman API socket service (OpenRC)
+  become: true
+  ansible.builtin.template:
+    src: templates/openrc-podman-api.initd.j2
+    dest: /etc/init.d/podman-api
+    owner: root
+    group: root
+    mode: "0755"
+  when: ansible_facts['service_mgr'] in ['openrc', 'rc']
+
+- name: Enable and start rootless Podman API socket service (OpenRC)
+  become: true
+  ansible.builtin.service:
+    name: podman-api
+    enabled: true
+    state: started
+  when: ansible_facts['service_mgr'] in ['openrc', 'rc']
+
+- name: Disable stock podman OpenRC service (replaced by podman-api)
+  become: true
+  ansible.builtin.service:
+    name: podman
+    enabled: false
+    state: stopped
+  when: ansible_facts['service_mgr'] in ['openrc', 'rc']
+  failed_when: false
+
 - name: Export XDG_RUNTIME_DIR in admin user profile
   become: true
   ansible.builtin.lineinfile:

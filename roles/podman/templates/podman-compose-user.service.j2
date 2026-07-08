@@ -7,7 +7,7 @@ After=network.target podman.socket
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory={{ compose_project_dir }}
-ExecStart=/usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} start
+ExecStart=/usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} up -d
 ExecStop=/usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} stop
 ExecReload=/bin/sh -c '/usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} pull && /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} down && /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} up -d'
 TimeoutStartSec=1min

@@ -1,0 +1,25 @@
+#!/sbin/openrc-run
+
+name="podman-api"
+description="Rootless Podman API socket for {{ admin_user }}"
+
+admin_user="{{ admin_user }}"
+admin_uid="$(id -u "$admin_user")"
+runtime_dir="/run/user/$admin_uid"
+
+supervisor="supervise-daemon"
+command="/usr/bin/podman"
+command_args="system service --time 0"
+command_user="$admin_user:$admin_user"
+pidfile="/run/${RC_SVCNAME}.pid"
+supervise_daemon_args="--env HOME=/home/$admin_user --env XDG_RUNTIME_DIR=$runtime_dir"
+
+depend() {
+  need net cgroups
+}
+
+start_pre() {
+  checkpath --directory --owner root:root --mode 0755 /run/user
+  checkpath --directory --owner "$admin_user:$admin_user" --mode 0700 "$runtime_dir"
+  checkpath --directory --owner "$admin_user:$admin_user" --mode 0700 "$runtime_dir/podman"
+}

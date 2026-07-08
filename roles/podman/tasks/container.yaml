@@ -16,6 +16,40 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
+  register: compose_render
+
+- name: Snapshot local image ids before pull
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command: /usr/bin/podman images -q
+  register: podman_images_before
+  changed_when: false
+
+- name: Pull latest images
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/podman-compose
+      - --in-pod=false
+      - -f
+      - "{{ podman_compose_dest }}"
+      - pull
+  changed_when: false
+
+- name: Snapshot local image ids after pull
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command: /usr/bin/podman images -q
+  register: podman_images_after
+  changed_when: false
+
+- name: Decide whether the project must be recreated
+  ansible.builtin.set_fact:
+    podman_apply: "{{ (compose_render is changed) or (podman_images_before.stdout != podman_images_after.stdout) or (podman_recreate | default(false) | bool) }}"
 
 - name: Run systemd-user unit setup
   include_tasks: container_systemd_user_unit.yaml
