@@ -1,0 +1,28 @@
+services:
+  {{ glauth_container_name }}:
+    container_name: {{ glauth_container_name }}
+    image: {{ glauth_image }}
+    restart: unless-stopped
+    volumes:
+      - "{{ compose_project_dir }}/data/config.cfg:/app/config/config.cfg:ro"
+{% if traefik is defined %}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.tcp.routers.glauth.entrypoints=ldap"
+      - "traefik.tcp.routers.glauth.rule=HostSNI(`{{ glauth.domain }}`)"
+      - "traefik.tcp.routers.glauth.tls=true"
+      - "traefik.tcp.routers.glauth.tls.certresolver=letsencrypt"
+      - "traefik.tcp.services.glauth.loadbalancer.server.port=3893"
+    networks:
+      - proxy
+{% else %}
+    ports:
+      - "389:3893"
+{% endif %}
+{% if traefik is defined %}
+
+networks:
+  proxy:
+    external: true
+{% endif %}

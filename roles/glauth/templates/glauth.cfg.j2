@@ -1,0 +1,86 @@
+debug = {{ glauth.debug | default(false) | lower }}
+
+[ldap]
+  enabled = true
+  listen = "0.0.0.0:3893"
+  tls = false
+
+[ldaps]
+  enabled = false
+
+[backend]
+  datastore = "config"
+  baseDN = "{{ glauth.base_dn }}"
+  anonymousdse = {{ glauth.anonymous | default(false) | lower }}
+{% for u in glauth.users %}
+
+[[users]]
+  name = "{{ u.name }}"
+  uidnumber = {{ u.uidnumber }}
+  primarygroup = {{ u.primarygroup }}
+  passsha256 = "{{ u.password | hash('sha256') }}"
+{% if u.othergroups is defined %}
+  othergroups = {{ u.othergroups }}
+{% endif %}
+{% if u.givenname is defined %}
+  givenname = "{{ u.givenname }}"
+{% endif %}
+{% if u.sn is defined %}
+  sn = "{{ u.sn }}"
+{% endif %}
+{% if u.mail is defined %}
+  mail = "{{ u.mail }}"
+{% endif %}
+{% if u.loginshell is defined %}
+  loginShell = "{{ u.loginshell }}"
+{% endif %}
+{% if u.homedir is defined %}
+  homeDir = "{{ u.homedir }}"
+{% endif %}
+{% if u.disabled is defined %}
+  disabled = {{ u.disabled | lower }}
+{% endif %}
+{% if u.otpsecret is defined %}
+  otpsecret = "{{ u.otpsecret }}"
+{% endif %}
+{% if u.yubikey is defined %}
+  yubikey = "{{ u.yubikey }}"
+{% endif %}
+{% if u.sshkeys is defined %}
+  sshkeys = {{ u.sshkeys }}
+{% endif %}
+{% if u.passappsha256 is defined %}
+  passappsha256 = {{ u.passappsha256 }}
+{% endif %}
+{% if u.passappbcrypt is defined %}
+  passappbcrypt = {{ u.passappbcrypt }}
+{% endif %}
+{% for cap in u.capabilities | default([]) %}
+
+  [[users.capabilities]]
+    action = "{{ cap.action }}"
+    object = "{{ cap.object }}"
+{% endfor %}
+{% if u.customattributes is defined %}
+
+  [users.customattributes]
+{% for key, value in u.customattributes.items() %}
+    {{ key }} = {{ value }}
+{% endfor %}
+{% endif %}
+{% endfor %}
+{% for g in glauth.groups %}
+
+[[groups]]
+  name = "{{ g.name }}"
+  gidnumber = {{ g.gidnumber }}
+{% if g.includegroups is defined %}
+  includegroups = {{ g.includegroups }}
+{% endif %}
+{% for cap in g.capabilities | default([]) %}
+
+  [[groups.capabilities]]
+    action = "{{ cap.action }}"
+    object = "{{ cap.object }}"
+{% endfor %}
+{% endfor %}

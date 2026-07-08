@@ -1,0 +1,80 @@
+---
+glauth_container_name: glauth
+glauth_container_dir: "/home/{{ admin_user }}/containers/{{ glauth_container_name }}"
+glauth_image: docker.io/glauth/glauth:latest
+
+# Reference example of the `glauth` host_var. Override it in host_vars.
+# Field reference: https://glauth.github.io/docs/file.html
+#
+# The role renders this into a TOML config.cfg using the "config" backend.
+# Sections the role fixes and does NOT expose as variables:
+#   [ldap]   -> enabled, listen "0.0.0.0:3893", tls = false (plaintext;
+#               TLS is terminated by traefik on the host)
+#   [ldaps]  -> disabled (not needed behind traefik)
+#   [backend]-> datastore = "config", baseDN, anonymousdse
+#               (optional glauth keys not used here: nameformat = "uid",
+#                groupformat = "cn", sshkeyattr = "ipaSshPubKey")
+#   [behaviors], [api], and the globals syslog / structuredlog / watchconfig
+#               are left at glauth defaults.
+glauth:
+  # REQUIRED when traefik is used: HostSNI matched by the traefik LDAP router.
+  domain: "ldap.example.com"
+
+  # OPTIONAL global: glauth debug logging. Default false.
+  debug: false
+
+  # OPTIONAL: maps to [backend] anonymousdse. Allow anonymous RootDSE reads.
+  # Default false.
+  anonymous: false
+
+  # REQUIRED: maps to [backend] baseDN.
+  base_dn: "dc=example,dc=com"
+
+  groups:
+    - name: admins # REQUIRED: group name (-> cn).
+      gidnumber: 5501 # REQUIRED: numeric group id.
+      # OPTIONAL: nest other groups by gidnumber (members inherit).
+      includegroups: [5502]
+      # OPTIONAL: per-group search capabilities.
+      capabilities:
+        - action: search # currently only "search" is supported.
+          object: "*" # DN scope, or "*" for everything.
+    - name: users
+      gidnumber: 5502
+
+  users:
+    - name: admin # REQUIRED: login name (-> cn).
+      uidnumber: 5001 # REQUIRED: numeric user id (unique).
+      primarygroup: 5501 # REQUIRED: gidnumber of the primary group.
+      password:
+        "changeme" # REQUIRED: plaintext here, rendered to
+        # passsha256. (Native glauth fields are
+        # passsha256 / passbcrypt - mutually exclusive,
+        # and not required when chained behind another
+        # backend.)
+      # --- everything below is OPTIONAL ---
+      othergroups: [5502] # additional group gidnumbers.
+      givenname: "Admin" # first name. Default blank.
+      sn: "User" # last name. Default blank.
+      mail: "admin@example.com" # Default blank.
+      loginshell: "/bin/bash" # Default /bin/bash.
+      homedir: "/home/admin" # Default /home/<name>.
+      disabled: false # mark entry inactive. Default false.
+      otpsecret: "3hngd6s25j4dougs3rk" # TOTP secret. Default blank.
+      yubikey: "vvjrchlaa" # Yubikey id for OTP. Default blank.
+      sshkeys: # SSH public keys. Default blank.
+        - "ssh-rsa AA3..."
+      passappsha256: # app passwords (sha256) that bypass OTP.
+        - "c36fd5524..."
+      passappbcrypt: # app passwords (bcrypt) that bypass OTP.
+        - "$2a$10$Gwcez..."
+      capabilities: # per-user search capabilities.
+        - action: search
+          object: "ou=users,dc=example,dc=com"
+      customattributes: # arbitrary extra LDAP attributes.
+        employeetype: ["Intern", "Temp"]
+        employeenumber: [12345, 54321]
+    - name: reader
+      uidnumber: 5002
+      primarygroup: 5502
+      password: "changeme"
