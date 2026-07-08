@@ -17,7 +17,7 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
-  notify: Reload Valkey
+  register: valkey_config
 
 - name: Run container
   include_role:
@@ -27,3 +27,4 @@
     container_name: "{{ valkey_container_name }}"
     podman_compose_dest: "{{ valkey_container_dir }}/compose.yaml"
     compose_project_dir: "{{ valkey_container_dir }}"
+    podman_recreate: "{{ valkey_config is changed }}"
