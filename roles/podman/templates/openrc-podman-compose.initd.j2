@@ -10,7 +10,9 @@ COMPOSE_FILE="{{ podman_compose_dest }}"
 COMPOSE_CMD="/usr/bin/podman-compose --in-pod=false -f $COMPOSE_FILE"
 
 depend() {
-  need net podman-api
+  need net cgroups
+  use podman-api
+  after podman-api
 }
 
 run_compose() {
