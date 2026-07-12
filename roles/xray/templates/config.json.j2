@@ -79,10 +79,11 @@
         "network": "xhttp",
         "security": "tls",
         "tlsSettings": {
-          "serverName": "{{ xray.upstream.host }}"
+          "serverName": "{{ xray.upstream.host }}"{% if xray.upstream.alpn is defined %},
+          "alpn": {{ xray.upstream.alpn | to_json }}{% endif %}
         },
         "xhttpSettings": {
-          "mode": "stream-one",
+          "mode": "{{ xray.upstream.mode | default('stream-one') }}",
           "path": "{{ xray.upstream.path }}"
         }
       }
