@@ -10,6 +10,7 @@ entryPoints:
 
   websecure:
     address: ":443"
+    http3: {}
 
 {% if traefik.ldap | default(false) %}
   ldap:
@@ -21,7 +22,7 @@ serversTransport:
 
 providers:
   docker:
-    endpoint: "unix:///var/run/docker.sock"
+    endpoint: "unix:///run/podman/podman.sock"
     exposedByDefault: false
     watch: true
   file:

@@ -8,6 +8,7 @@ services:
     ports:
       - "80:80"
       - "443:443"
+      - "443:443/udp"
 {% if traefik.ldap | default(false) %}
       - "636:636"
 {% endif %}
@@ -19,7 +20,7 @@ services:
       - "{{ compose_project_dir }}/traefik.yaml:/etc/traefik/traefik.yaml:ro"
       - "{{ compose_project_dir }}/acme.json:/etc/traefik/acme.json:rw"
       - "{{ compose_project_dir }}/log:/var/log:rw"
-      - "/run/user/{{ admin_uid }}/podman/podman.sock:/var/run/docker.sock:ro"
+      - "/run/user/{{ admin_uid }}/podman:/run/podman:ro"
       - "{{ compose_project_dir }}/dynamic:/etc/traefik/dynamic:ro"
     environment:
       CF_API_EMAIL: "{{ traefik.acme_email }}"
