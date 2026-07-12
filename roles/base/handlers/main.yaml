@@ -1,0 +1,5 @@
+- name: Reload sshd
+  become: true
+  service:
+    name: "{{ 'ssh' if ansible_facts['os_family'] == 'Debian' else 'sshd' }}"
+    state: reloaded

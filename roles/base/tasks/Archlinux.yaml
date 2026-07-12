@@ -113,12 +113,12 @@
 
 - name: Enable passwordless sudo
   become: true
-  ignore_errors: true
   lineinfile:
     regexp: "^%wheel"
     line: "%wheel ALL=(ALL) NOPASSWD: ALL"
     state: present
     path: "/etc/sudoers"
+    validate: "/usr/sbin/visudo -cf %s"
 
 - name: Run distribution specific tasks
   include_tasks: "yay.yaml"

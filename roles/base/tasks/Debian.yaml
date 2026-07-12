@@ -8,7 +8,7 @@
       APT::Install-Suggests "0";
     owner: root
     group: root
-    mode: 644
+    mode: "0644"
 
 - name: Upgrade system
   become: true
@@ -46,9 +46,9 @@
 
 - name: Enable passwordless sudo
   become: true
-  ignore_errors: true
   lineinfile:
     regexp: "^%sudo"
     line: "%sudo ALL=(ALL) NOPASSWD: ALL"
     state: present
     path: "/etc/sudoers"
+    validate: "/usr/sbin/visudo -cf %s"
