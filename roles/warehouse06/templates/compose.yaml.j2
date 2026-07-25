@@ -1,0 +1,29 @@
+services:
+  warehouse06:
+    container_name: warehouse06
+    image: "docker.io/top4ek/warehouse06:{{ warehouse06.version | default('latest') }}"
+    restart: unless-stopped
+    userns_mode: keep-id
+    user: "{{ admin_uid }}:{{ admin_gid }}"
+    healthcheck:
+      disable: true
+    networks:
+      - proxy
+    environment:
+      ENV: production
+      CONFIG_PATH: /app/config.yaml
+    volumes:
+      - "{{ compose_project_dir }}/config.yaml:/app/config.yaml:ro"
+      - "{{ compose_project_dir }}/storage:/app/storage:rw,z"
+      - "{{ compose_project_dir }}/data:/app/data:rw,z"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.warehouse06.rule=Host(`{{ warehouse06.host }}`)"
+      - "traefik.http.routers.warehouse06.entrypoints=websecure"
+      - "traefik.http.routers.warehouse06.tls=true"
+      - "traefik.http.routers.warehouse06.tls.certresolver=letsencrypt"
+      - "traefik.http.services.warehouse06.loadbalancer.server.port={{ warehouse06.config.server.port }}"
+
+networks:
+  proxy:
+    external: true

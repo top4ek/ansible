@@ -1,0 +1,18 @@
+---
+warehouse06_container_name: "warehouse06"
+warehouse06_container_dir: "/home/{{ admin_user }}/containers/{{ warehouse06_container_name }}"
+
+warehouse06:
+  version: latest
+  host: "retro.example.com"
+  config:
+    env: production
+    storage_dir: "storage"
+    storage_url: "https://github.com/top4ek/retro_files"
+    server:
+      port: 8080
+    database:
+      driver: "sqlite3"
+      dsn: ":memory:"
+    sync:
+      interval_hours: 0

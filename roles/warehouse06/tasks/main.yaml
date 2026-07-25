@@ -1,0 +1,29 @@
+---
+- name: Ensure warehouse06 container project directory exists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  loop:
+    - "{{ warehouse06_container_dir }}"
+    - "{{ warehouse06_container_dir }}/storage"
+    - "{{ warehouse06_container_dir }}/data"
+
+- name: Render warehouse06 config.yaml
+  ansible.builtin.copy:
+    content: "{{ warehouse06.config | to_nice_yaml }}"
+    dest: "{{ warehouse06_container_dir }}/config.yaml"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  register: warehouse06_config
+
+- name: Run warehouse06 container
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ warehouse06_container_name }}"
+    podman_recreate: "{{ warehouse06_config is changed }}"
