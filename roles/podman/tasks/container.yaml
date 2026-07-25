@@ -38,6 +38,7 @@
       - "{{ podman_compose_dest }}"
       - pull
   changed_when: false
+  when: not (podman_skip_pull | default(false) | bool)
 
 - name: Snapshot local image ids after pull
   become: true
