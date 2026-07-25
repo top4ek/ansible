@@ -22,6 +22,10 @@ services:
       - "{{ llamacpp.threads }}"
       - --cache-ram
       - "{{ llamacpp.mem_limit }}"
+      - --cache-type-k
+      - "{{ llamacpp.cache_type.k }}"
+      - --cache-type-v
+      - "{{ llamacpp.cache_type.v }}"
       - --jinja
       - --reasoning
       - "off"

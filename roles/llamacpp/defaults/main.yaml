@@ -9,5 +9,8 @@ llamacpp:
   ctx_size: 32000
   n_parallel: 3
   threads: 4
+  cache_type:
+    k: q8_0
+    v: q8_0
   model:
     filename: Qwen3-4B-Q4_K_M.gguf
