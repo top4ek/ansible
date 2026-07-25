@@ -8,6 +8,16 @@
     mode: "0644"
   notify: Restarting network interfaces
 
+- name: Configure resolv.conf
+  when:
+    - not network_use_networkmanager
+    - interfaces | selectattr('nameservers', 'defined') | list | length > 0
+  become: true
+  template:
+    src: resolv.conf.j2
+    dest: /etc/resolv.conf
+    mode: "0644"
+
 - name: Configure interfaces via NetworkManager
   when: network_use_networkmanager
   block:

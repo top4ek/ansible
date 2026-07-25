@@ -1,0 +1,8 @@
+{% for interface in interfaces if interface.domain is defined %}
+search {{ interface.domain }}
+{% endfor %}
+{% for interface in interfaces if interface.nameservers is defined %}
+{% for nameserver in interface.nameservers %}
+nameserver {{ nameserver }}
+{% endfor %}
+{% endfor %}
