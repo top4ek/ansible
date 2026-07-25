@@ -1,0 +1,23 @@
+---
+olcrtc_container_name: "olcrtc"
+olcrtc_container_dir: "/home/{{ admin_user }}/containers/{{ olcrtc_container_name }}"
+olcrtc_src_url: "https://github.com/openlibrecommunity/olcrtc.git"
+olcrtc_image_repo: "localhost/olcrtc"
+olcrtc_build_root: "{{ lookup('env', 'HOME') }}/.cache/olcrtc-ansible"
+
+olcrtc:
+  version: master
+  config:
+    mode: srv
+    auth:
+      provider: jitsi
+      # token: ""
+    room:
+      id: "https://meet.small-dm.ru/olcrtc-example"
+    crypto:
+      key: "0000000000000000000000000000000000000000000000000000000000000000" # openssl rand -hex 32
+    net:
+      transport: datachannel # datachannel | videochannel | seichannel | vp8channel
+      dns: "1.1.1.1:53"
+    data: data
+    debug: false

@@ -1,0 +1,12 @@
+services:
+  olcrtc:
+    container_name: {{ olcrtc_container_name }}
+    image: "{{ olcrtc_image_tag }}"
+    restart: unless-stopped
+    command: ["config.yaml"]
+    volumes:
+      - "{{ olcrtc_container_dir }}/config.yaml:/app/config.yaml:ro,Z"
+{% if olcrtc.config.mode == 'cnc' %}
+    ports:
+      - "{{ olcrtc.config.socks.host | default('127.0.0.1') }}:{{ olcrtc.config.socks.port }}:{{ olcrtc.config.socks.port }}"
+{% endif %}

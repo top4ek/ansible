@@ -1,0 +1,127 @@
+---
+- name: Resolve upstream commit SHA
+  ansible.builtin.command: "git ls-remote {{ olcrtc_src_url }} {{ olcrtc.version }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  changed_when: false
+  register: olcrtc_lsremote
+
+- name: Set image tag from resolved SHA
+  ansible.builtin.set_fact:
+    olcrtc_src_sha: >-
+      {{ (olcrtc_lsremote.stdout_lines[0].split()[0])
+         if (olcrtc_lsremote.stdout_lines | length > 0)
+         else olcrtc.version }}
+
+- name: Set image tag
+  ansible.builtin.set_fact:
+    olcrtc_image_tag: "{{ olcrtc_image_repo }}:{{ olcrtc_src_sha[:12] }}"
+
+- name: Check whether image already loaded on server
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command: "podman image exists {{ olcrtc_image_tag }}"
+  register: olcrtc_remote_image
+  changed_when: false
+  failed_when: false
+
+- name: Build image on controller and transfer to server
+  when: olcrtc_remote_image.rc != 0
+  block:
+    - name: Ensure controller build root exists
+      ansible.builtin.file:
+        path: "{{ olcrtc_build_root }}"
+        state: directory
+        mode: "0755"
+      delegate_to: localhost
+      become: false
+      run_once: true
+
+    - name: Checkout olcrtc source at resolved SHA
+      ansible.builtin.git:
+        repo: "{{ olcrtc_src_url }}"
+        dest: "{{ olcrtc_build_root }}/src"
+        version: "{{ olcrtc_src_sha }}"
+        force: true
+      delegate_to: localhost
+      become: false
+      run_once: true
+
+    - name: Place Containerfile into build context
+      ansible.builtin.copy:
+        src: "Containerfile"
+        dest: "{{ olcrtc_build_root }}/src/Containerfile"
+        mode: "0644"
+      delegate_to: localhost
+      become: false
+      run_once: true
+
+    - name: Build image on controller
+      ansible.builtin.command: "podman build -t {{ olcrtc_image_tag }} -f Containerfile ."
+      args:
+        chdir: "{{ olcrtc_build_root }}/src"
+      delegate_to: localhost
+      become: false
+      run_once: true
+      changed_when: true
+
+    - name: Save image to tar on controller
+      ansible.builtin.command: >-
+        podman save -o {{ olcrtc_build_root }}/olcrtc-{{ olcrtc_src_sha[:12] }}.tar {{ olcrtc_image_tag }}
+      args:
+        creates: "{{ olcrtc_build_root }}/olcrtc-{{ olcrtc_src_sha[:12] }}.tar"
+      delegate_to: localhost
+      become: false
+      run_once: true
+
+    - name: Copy image tar to server
+      ansible.builtin.copy:
+        src: "{{ olcrtc_build_root }}/olcrtc-{{ olcrtc_src_sha[:12] }}.tar"
+        dest: "/tmp/olcrtc-{{ olcrtc_src_sha[:12] }}.tar"
+        owner: "{{ admin_user }}"
+        group: "{{ admin_user }}"
+        mode: "0600"
+
+    - name: Load image on server
+      become: true
+      become_user: "{{ admin_user }}"
+      environment: "{{ podman_rootless_environment }}"
+      ansible.builtin.command: "podman load -i /tmp/olcrtc-{{ olcrtc_src_sha[:12] }}.tar"
+      changed_when: true
+
+    - name: Remove image tar from server
+      ansible.builtin.file:
+        path: "/tmp/olcrtc-{{ olcrtc_src_sha[:12] }}.tar"
+        state: absent
+
+    - name: Mark image as freshly loaded
+      ansible.builtin.set_fact:
+        olcrtc_image_loaded: true
+
+- name: Ensure olcrtc container project directory exists
+  ansible.builtin.file:
+    path: "{{ olcrtc_container_dir }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+
+- name: Render olcrtc config.yaml
+  ansible.builtin.copy:
+    content: "{{ olcrtc.config | to_nice_yaml }}"
+    dest: "{{ olcrtc_container_dir }}/config.yaml"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0600"
+  register: olcrtc_config
+
+- name: Run olcrtc container
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ olcrtc_container_name }}"
+    podman_skip_pull: true
+    podman_recreate: "{{ (olcrtc_image_loaded | default(false)) or (olcrtc_config is changed) }}"
