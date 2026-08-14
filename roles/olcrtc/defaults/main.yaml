@@ -19,5 +19,4 @@ olcrtc:
     net:
       transport: datachannel # datachannel | videochannel | seichannel | vp8channel
       dns: "1.1.1.1:53"
-    data: data
     debug: false

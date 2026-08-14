@@ -8,6 +8,5 @@ FROM docker.io/library/alpine:3.22
 RUN apk add --no-cache ffmpeg ca-certificates
 WORKDIR /app
 COPY --from=build /app/olcrtc /app/olcrtc
-COPY --from=build /app/data /app/data
 ENTRYPOINT ["/app/olcrtc"]
 CMD ["config.yaml"]
