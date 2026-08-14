@@ -1,5 +1,6 @@
 ---
 network_backend: auto
+network_ipv6_enabled: false
 
 # Example interface structure for host_vars:
 # interfaces:

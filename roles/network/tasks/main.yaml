@@ -15,6 +15,19 @@
     value: "0"
     state: present
 
+- name: Set IPv6 stack enable/disable flags
+  become: true
+  ignore_errors: true
+  sysctl:
+    name: "net.ipv6.conf.{{ item }}.disable_ipv6"
+    sysctl_file: /etc/sysctl.d/99-ipv6.conf
+    value: "{{ '0' if network_ipv6_enabled else '1' }}"
+    state: present
+  loop:
+    - all
+    - default
+    - lo
+
 - name: Deleting old firewall daemons
   become: true
   package:
