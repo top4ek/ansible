@@ -3,6 +3,6 @@ fail2ban_jails:
   - name: sshd
     enabled: true
     port: ssh
-    filter: sshd
-    logpath: /var/log/messages
+    filter: "{{ 'alpine-sshd' if ansible_facts['os_family'] == 'Alpine' else 'sshd' }}"
+    logpath: "{{ '/var/log/messages' if ansible_facts['os_family'] == 'Alpine' else '/var/log/auth.log' }}"
     maxretry: 5
