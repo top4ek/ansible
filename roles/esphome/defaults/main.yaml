@@ -1,0 +1,7 @@
+---
+esphome_container_name: "esphome"
+esphome_container_dir: "/home/{{ admin_user }}/containers/{{ esphome_container_name }}"
+
+esphome:
+  version: stable
+  port: 6052

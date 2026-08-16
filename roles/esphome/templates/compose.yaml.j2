@@ -1,0 +1,10 @@
+services:
+  {{ esphome_container_name }}:
+    container_name: {{ esphome_container_name }}
+    image: "ghcr.io/esphome/esphome:{{ esphome.version | default('stable') }}"
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TZ: "{{ TIMEZONE }}"
+    volumes:
+      - "{{ compose_project_dir }}/config:/config:rw,z"
