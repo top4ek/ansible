@@ -63,6 +63,8 @@ services:
       LIVEKIT_API_SECRET: "{{ matrix.livekit_api_secret }}"
     ports:
       - "7882:7882/udp"
+      - "3478:3478/udp"
+      - "49152-49200:49152-49200/udp"
     volumes:
       - ./livekit.yaml:/etc/livekit/livekit.yaml:ro
     labels:
@@ -74,6 +76,11 @@ services:
       - "traefik.http.routers.matrix-livekit.middlewares=matrix-livekit-stripprefix"
       - "traefik.http.middlewares.matrix-livekit-stripprefix.stripprefix.prefixes=/livekit/sfu/"
       - "traefik.http.services.matrix-livekit.loadbalancer.server.port=7880"
+      - "traefik.http.routers.matrix-livekit-twirp.rule=Host(`{{ matrix.server_name }}`) && PathPrefix(`/twirp`)"
+      - "traefik.http.routers.matrix-livekit-twirp.entrypoints=websecure"
+      - "traefik.http.routers.matrix-livekit-twirp.tls=true"
+      - "traefik.http.routers.matrix-livekit-twirp.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.matrix-livekit-twirp.service=matrix-livekit"
 
 networks:
   proxy:
