@@ -14,9 +14,14 @@
          if (olcrtc_lsremote.stdout_lines | length > 0)
          else olcrtc.version }}
 
+- name: Set image version from source SHA and Containerfile
+  ansible.builtin.set_fact:
+    olcrtc_image_version: >-
+      {{ olcrtc_src_sha[:12] }}-{{ (lookup('file', role_path ~ '/files/Containerfile') | hash('sha1'))[:7] }}
+
 - name: Set image tag
   ansible.builtin.set_fact:
-    olcrtc_image_tag: "{{ olcrtc_image_repo }}:{{ olcrtc_src_sha[:12] }}"
+    olcrtc_image_tag: "{{ olcrtc_image_repo }}:{{ olcrtc_image_version }}"
 
 - name: Check whether image already loaded on server
   become: true
@@ -69,17 +74,17 @@
 
     - name: Save image to tar on controller
       ansible.builtin.command: >-
-        podman save -o {{ olcrtc_build_root }}/olcrtc-{{ olcrtc_src_sha[:12] }}.tar {{ olcrtc_image_tag }}
+        podman save -o {{ olcrtc_build_root }}/olcrtc-{{ olcrtc_image_version }}.tar {{ olcrtc_image_tag }}
       args:
-        creates: "{{ olcrtc_build_root }}/olcrtc-{{ olcrtc_src_sha[:12] }}.tar"
+        creates: "{{ olcrtc_build_root }}/olcrtc-{{ olcrtc_image_version }}.tar"
       delegate_to: localhost
       become: false
       run_once: true
 
     - name: Copy image tar to server
       ansible.builtin.copy:
-        src: "{{ olcrtc_build_root }}/olcrtc-{{ olcrtc_src_sha[:12] }}.tar"
-        dest: "/tmp/olcrtc-{{ olcrtc_src_sha[:12] }}.tar"
+        src: "{{ olcrtc_build_root }}/olcrtc-{{ olcrtc_image_version }}.tar"
+        dest: "/tmp/olcrtc-{{ olcrtc_image_version }}.tar"
         owner: "{{ admin_user }}"
         group: "{{ admin_user }}"
         mode: "0600"
@@ -88,12 +93,12 @@
       become: true
       become_user: "{{ admin_user }}"
       environment: "{{ podman_rootless_environment }}"
-      ansible.builtin.command: "podman load -i /tmp/olcrtc-{{ olcrtc_src_sha[:12] }}.tar"
+      ansible.builtin.command: "podman load -i /tmp/olcrtc-{{ olcrtc_image_version }}.tar"
       changed_when: true
 
     - name: Remove image tar from server
       ansible.builtin.file:
-        path: "/tmp/olcrtc-{{ olcrtc_src_sha[:12] }}.tar"
+        path: "/tmp/olcrtc-{{ olcrtc_image_version }}.tar"
         state: absent
 
     - name: Mark image as freshly loaded
@@ -125,3 +130,93 @@
     container_name: "{{ olcrtc_container_name }}"
     podman_skip_pull: true
     podman_recreate: "{{ (olcrtc_image_loaded | default(false)) or (olcrtc_config is changed) }}"
+
+- name: Find stale olcrtc image tarballs on controller
+  ansible.builtin.find:
+    paths: "{{ olcrtc_build_root }}"
+    patterns: "olcrtc-*.tar"
+    excludes: "olcrtc-{{ olcrtc_image_version }}.tar"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  when: olcrtc_build_root is exists
+  register: olcrtc_stale_tars
+
+- name: Remove stale olcrtc image tarballs on controller
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ olcrtc_stale_tars.files | default([]) }}"
+  loop_control:
+    label: "{{ item.path }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+
+- name: List olcrtc images on controller
+  ansible.builtin.command:
+    argv:
+      - podman
+      - image
+      - ls
+      - "--filter"
+      - "reference={{ olcrtc_image_repo }}"
+      - "--format"
+      - "{% raw %}{{.Repository}}:{{.Tag}}{% endraw %}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  changed_when: false
+  register: olcrtc_controller_images
+
+- name: Remove stale olcrtc images on controller
+  ansible.builtin.command:
+    argv:
+      - podman
+      - rmi
+      - "{{ item }}"
+  loop: "{{ olcrtc_controller_images.stdout_lines | difference([olcrtc_image_tag]) }}"
+  loop_control:
+    label: "{{ item }}"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  changed_when: true
+
+- name: Prune dangling build images on controller
+  ansible.builtin.command: "podman image prune -f"
+  delegate_to: localhost
+  become: false
+  run_once: true
+  register: olcrtc_prune
+  changed_when: olcrtc_prune.stdout | length > 0
+
+- name: List olcrtc images on server
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command:
+    argv:
+      - podman
+      - image
+      - ls
+      - "--filter"
+      - "reference={{ olcrtc_image_repo }}"
+      - "--format"
+      - "{% raw %}{{.Repository}}:{{.Tag}}{% endraw %}"
+  changed_when: false
+  register: olcrtc_server_images
+
+- name: Remove stale olcrtc images on server
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command:
+    argv:
+      - podman
+      - rmi
+      - "{{ item }}"
+  loop: "{{ olcrtc_server_images.stdout_lines | difference([olcrtc_image_tag]) }}"
+  loop_control:
+    label: "{{ item }}"
+  changed_when: true
