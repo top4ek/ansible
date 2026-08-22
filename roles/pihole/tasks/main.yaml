@@ -10,45 +10,6 @@
     - "{{ pihole_container_dir }}"
     - "{{ pihole_container_dir }}/etc-pihole"
     - "{{ pihole_container_dir }}/etc-dnsmasq.d"
-    - "{{ pihole_container_dir }}/unbound"
-
-- name: Download root.hints for Unbound
-  get_url:
-    url: https://www.internic.net/domain/named.cache
-    dest: "{{ pihole_container_dir }}/unbound/root.hints"
-    owner: "{{ admin_user }}"
-    group: "{{ admin_user }}"
-    mode: "0644"
-  when: pihole.unbound.enabled | default(true)
-  register: pihole_root_hints
-
-- name: Render Unbound config
-  template:
-    src: unbound.conf.j2
-    dest: "{{ pihole_container_dir }}/unbound/unbound.conf"
-    owner: "{{ admin_user }}"
-    group: "{{ admin_user }}"
-    mode: "0644"
-  when: pihole.unbound.enabled | default(true)
-  register: pihole_unbound_conf
-
-- name: Stat Unbound root trust anchor
-  ansible.builtin.stat:
-    path: "{{ pihole_container_dir }}/unbound/root.key"
-  register: unbound_root_key
-  when: pihole.unbound.enabled | default(true)
-
-- name: Download root trust anchor for Unbound
-  ansible.builtin.get_url:
-    url: https://data.isc.org/unbound-anchor/root.key
-    dest: "{{ pihole_container_dir }}/unbound/root.key"
-    owner: "{{ admin_user }}"
-    group: "{{ admin_user }}"
-    mode: "0644"
-  when:
-    - pihole.unbound.enabled | default(true)
-    - not unbound_root_key.stat.exists or unbound_root_key.stat.size | default(0) == 0
-  register: pihole_root_key
 
 - name: Run container
   include_role:
@@ -56,7 +17,6 @@
     tasks_from: container.yaml
   vars:
     container_name: "{{ pihole_container_name }}"
-    podman_recreate: "{{ (pihole_unbound_conf is changed) or (pihole_root_hints is changed) or (pihole_root_key is changed) }}"
 
 - name: Configure Pi-hole blocklists
   ansible.builtin.include_tasks: lists.yaml

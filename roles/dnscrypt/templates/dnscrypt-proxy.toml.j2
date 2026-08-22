@@ -1,0 +1,33 @@
+listen_addresses = ['{{ dnscrypt.listen_address }}:{{ dnscrypt.port }}']
+server_names = [{{ dnscrypt.server_names | map('to_json') | join(', ') }}]
+
+ipv4_servers = true
+ipv6_servers = false
+dnscrypt_servers = {{ dnscrypt.dnscrypt_servers | lower }}
+doh_servers = {{ dnscrypt.doh_servers | lower }}
+odoh_servers = false
+
+require_dnssec = {{ dnscrypt.require_dnssec | lower }}
+require_nolog = {{ dnscrypt.require_nolog | lower }}
+require_nofilter = {{ dnscrypt.require_nofilter | lower }}
+
+lb_strategy = 'p2'
+timeout = 5000
+keepalive = 30
+cache = {{ dnscrypt.cache | lower }}
+log_level = {{ dnscrypt.log_level }}
+
+ignore_system_dns = true
+bootstrap_resolvers = [{{ dnscrypt.bootstrap_resolvers | map('to_json') | join(', ') }}]
+netprobe_address = '{{ dnscrypt.netprobe_address }}'
+netprobe_timeout = 60
+
+[sources]
+  [sources.public-resolvers]
+  urls = [
+    'https://download.dnscrypt.info/resolvers-list/v3/public-resolvers.md',
+    'https://raw.githubusercontent.com/DNSCrypt/dnscrypt-resolvers/master/v3/public-resolvers.md',
+  ]
+  cache_file = '/config/public-resolvers.md'
+  minisign_key = 'RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3'
+  refresh_delay = 72

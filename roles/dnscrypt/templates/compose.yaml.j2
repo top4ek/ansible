@@ -1,0 +1,12 @@
+services:
+  {{ dnscrypt_container_name }}:
+    container_name: {{ dnscrypt_container_name }}
+    image: "{{ dnscrypt_image }}"
+    restart: unless-stopped
+    network_mode: host
+    userns_mode: keep-id
+    user: "{{ admin_uid }}:{{ admin_gid }}"
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - "{{ compose_project_dir }}/config:/config:rw,z"

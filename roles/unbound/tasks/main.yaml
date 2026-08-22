@@ -1,0 +1,68 @@
+---
+- name: Ensure unbound project directory exists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  loop:
+    - "{{ unbound_container_dir }}"
+    - "{{ unbound_container_dir }}/etc-unbound"
+
+- name: Download root.hints for Unbound
+  ansible.builtin.get_url:
+    url: https://www.internic.net/domain/named.cache
+    dest: "{{ unbound_container_dir }}/etc-unbound/root.hints"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  register: unbound_root_hints
+
+- name: Render Unbound config
+  ansible.builtin.copy:
+    content: |
+      {% for section, options in unbound.items() %}
+      {{ section }}:
+      {% for key, value in options.items() %}
+      {% for entry in ([value] if (value is string or value is not sequence) else value) %}
+          {{ key }}: {{ entry }}
+      {% endfor %}
+      {% endfor %}
+      {% endfor %}
+    dest: "{{ unbound_container_dir }}/etc-unbound/unbound.conf"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  register: unbound_conf
+
+- name: Set up root trust anchor for Unbound
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/podman
+      - run
+      - --rm
+      - --entrypoint
+      - unbound-anchor
+      - --volume
+      - "{{ unbound_container_dir }}/etc-unbound:/etc/unbound:rw,z"
+      - "{{ unbound_image }}"
+      - -a
+      - /etc/unbound/root.key
+  register: unbound_root_key
+  changed_when: unbound_root_key.rc == 1
+  failed_when: unbound_root_key.rc not in [0, 1]
+
+- name: Run container
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ unbound_container_name }}"
+    podman_recreate: >-
+      {{ (unbound_conf is changed)
+         or (unbound_root_hints is changed)
+         or (unbound_root_key is changed) }}

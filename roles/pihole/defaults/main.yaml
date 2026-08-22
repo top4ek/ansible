@@ -1,14 +1,17 @@
 ---
 pihole_container_name: pihole
 pihole_container_dir: "/home/{{ admin_user }}/containers/{{ pihole_container_name }}"
+pihole_api_timeout: 30
+pihole_api_retries: 20
+pihole_api_delay: 15
 
 pihole:
   timezone: Europe/Moscow
   webpassword: admin
   dhcp_active: "false"
   upstreams: []
-  unbound:
-    enabled: true
+  dnsmasq_lines: []
+  host_network: true
   hosts: []
   nebula_sync:
     primary: "http://192.168.1.2|admin"

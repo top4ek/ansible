@@ -5,7 +5,7 @@ services:
   pihole:
     container_name: pihole
     image: ghcr.io/pi-hole/pihole:latest
-{% if pihole.unbound.enabled | default(true) %}
+{% if pihole.host_network | default(true) %}
     network_mode: host
 {% else %}
     ports:
@@ -13,19 +13,12 @@ services:
       - "53:53/udp"
       - "80:80/tcp"
 {% endif %}
-{% if pihole.unbound.enabled | default(true) %}
-    depends_on:
-      unbound:
-        condition: service_started
-{% endif %}
     environment:
       TZ: '{{ pihole.timezone }}'
       FTLCONF_webserver_port: '80'
       FTLCONF_webserver_api_password: '{{ pihole.webpassword }}'
       FTLCONF_dhcp_active: '{{ pihole.dhcp_active }}'
-{% if pihole.unbound.enabled | default(true) %}
-      FTLCONF_dns_upstreams: "127.0.0.1#5353"
-{% elif pihole.upstreams is defined and pihole.upstreams | length > 0 %}
+{% if pihole.upstreams is defined and pihole.upstreams | length > 0 %}
       FTLCONF_dns_upstreams: |-
         {{ pihole.upstreams | join('\n        ') }}
 {% elif pihole.upstream_dns is defined %}
@@ -35,6 +28,10 @@ services:
       FTLCONF_dns_hosts: |-
         {{ pihole.hosts | join('\n        ') }}
 {% endif %}
+{% if pihole.dnsmasq_lines is defined and pihole.dnsmasq_lines | length > 0 %}
+      FTLCONF_misc_dnsmasq_lines: |-
+        {{ pihole.dnsmasq_lines | join('\n        ') }}
+{% endif %}
     volumes:
       - './etc-pihole:/etc/pihole'
       - './etc-dnsmasq.d:/etc/dnsmasq.d'
@@ -43,17 +40,6 @@ services:
       - SYS_TIME
       - SYS_NICE
     restart: unless-stopped
-
-{% if pihole.unbound.enabled | default(true) %}
-  unbound:
-    container_name: unbound
-    image: ghcr.io/klutchell/unbound:latest
-    network_mode: host
-    volumes:
-      - './unbound:/etc/unbound'
-    restart: unless-stopped
-    userns_mode: keep-id
-{% endif %}
 
 {% if pihole.nebula_sync is defined %}
   nebula-sync:

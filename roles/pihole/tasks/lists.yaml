@@ -1,9 +1,35 @@
 ---
-- name: Wait for Pi-hole web API
-  wait_for:
-    host: 127.0.0.1
-    port: 80
-    timeout: 120
+- name: Wait for the Pi-hole lists API
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/podman
+      - exec
+      - "{{ pihole_container_name }}"
+      - /usr/bin/timeout
+      - "{{ pihole_api_timeout }}"
+      - pihole
+      - api
+      - "lists?type=block"
+  register: pihole_lists_probe
+  changed_when: false
+  retries: "{{ pihole_api_retries }}"
+  delay: "{{ pihole_api_delay }}"
+  until:
+    - pihole_lists_probe.rc == 0
+    - not pihole_lists_probe.stdout.startswith('Status:')
+
+- name: Compute Pi-hole blocklists to add
+  ansible.builtin.set_fact:
+    pihole_lists_to_add: >-
+      {{ pihole.lists
+         | map('trim')
+         | reject('equalto', '')
+         | difference((pihole_lists_probe.stdout | from_json).lists
+                      | map(attribute='address') | list)
+         | list }}
 
 - name: Authenticate with Pi-hole API
   uri:
@@ -13,25 +39,16 @@
     body:
       password: "{{ pihole.webpassword }}"
     status_code: [200, 201]
+    timeout: "{{ pihole_api_timeout }}"
   register: pihole_auth
   changed_when: false
+  when: pihole_lists_to_add | length > 0
 
 - name: Set Pi-hole API session id
   set_fact:
     pihole_api_sid: "{{ pihole_auth.json.session.sid }}"
   failed_when: pihole_api_sid | length == 0
-
-- name: Get current Pi-hole blocklists
-  ansible.builtin.uri:
-    url: "http://127.0.0.1/api/lists?type=block"
-    headers:
-      X-FTL-SID: "{{ pihole_api_sid }}"
-    status_code: [200]
-  register: pihole_current_lists
-  changed_when: false
-  retries: 10
-  delay: 6
-  until: pihole_current_lists.status == 200
+  when: pihole_lists_to_add | length > 0
 
 - name: POST blocklist URLs to Pi-hole API
   ansible.builtin.uri:
@@ -46,12 +63,8 @@
       enabled: true
       address: "{{ item }}"
     status_code: [200, 201, 400]
-  loop: >-
-    {{ pihole.lists
-       | map('trim')
-       | reject('equalto', '')
-       | difference(pihole_current_lists.json.lists | map(attribute='address') | list)
-       | list }}
+    timeout: "{{ pihole_api_timeout }}"
+  loop: "{{ pihole_lists_to_add }}"
   loop_control:
     label: "{{ item }}"
   register: pihole_list_results
@@ -63,7 +76,7 @@
     msg: >-
       Failed to add {{ item.item }}:
       {{ item.json.error.message | default(item.json | to_json) }}
-      ({{ item.json.error.hint | default('no hint') }}) — ignored
+      ({{ item.json.error.hint | default('no hint') }}) - ignored
   loop: "{{ pihole_list_results.results | default([]) }}"
   loop_control:
     label: "{{ item.item }}"
@@ -92,4 +105,6 @@
     headers:
       X-FTL-SID: "{{ pihole_api_sid }}"
     status_code: [204]
+    timeout: "{{ pihole_api_timeout }}"
   changed_when: false
+  when: pihole_lists_to_add | length > 0
