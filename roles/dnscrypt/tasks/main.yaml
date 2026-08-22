@@ -1,0 +1,28 @@
+---
+- name: Ensure dnscrypt project directory exists
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  loop:
+    - "{{ dnscrypt_container_dir }}"
+    - "{{ dnscrypt_container_dir }}/config"
+
+- name: Render dnscrypt-proxy config
+  ansible.builtin.template:
+    src: dnscrypt-proxy.toml.j2
+    dest: "{{ dnscrypt_container_dir }}/config/dnscrypt-proxy.toml"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  register: dnscrypt_config
+
+- name: Run container
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ dnscrypt_container_name }}"
+    podman_recreate: "{{ dnscrypt_config is changed }}"

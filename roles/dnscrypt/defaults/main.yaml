@@ -1,0 +1,25 @@
+---
+dnscrypt_container_name: dnscrypt-proxy
+dnscrypt_container_dir: "/home/{{ admin_user }}/containers/{{ dnscrypt_container_name }}"
+dnscrypt_image: "ghcr.io/klutchell/dnscrypt-proxy:latest"
+
+dnscrypt:
+  listen_address: 127.0.0.1
+  port: 5354
+  server_names:
+    - cloudflare
+    - quad9-dnscrypt-ip4-nofilter-ecs-pri
+    - google
+    - quad9-dnscrypt-ip4-nofilter-pri
+  dnscrypt_servers: true
+  doh_servers: true
+  require_dnssec: true
+  require_nolog: true
+  require_nofilter: true
+  bootstrap_resolvers:
+    - "127.0.0.1:5353"
+    - "1.1.1.1:53"
+    - "9.9.9.9:53"
+  netprobe_address: "1.1.1.1:53"
+  cache: true
+  log_level: 2

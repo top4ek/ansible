@@ -1,0 +1,67 @@
+---
+unbound_container_name: unbound
+unbound_container_dir: "/home/{{ admin_user }}/containers/{{ unbound_container_name }}"
+unbound_image: "ghcr.io/klutchell/unbound:latest"
+
+unbound:
+  server:
+    interface: 127.0.0.1
+    port: 5353
+    verbosity: 0
+    access-control:
+      - "10.0.0.0/8 allow"
+      - "127.0.0.0/8 allow"
+      - "172.16.0.0/12 allow"
+      - "192.168.0.0/16 allow"
+    do-ip4: "yes"
+    do-ip6: "no"
+    do-tcp: "yes"
+    do-udp: "yes"
+    aggressive-nsec: "yes"
+    auto-trust-anchor-file: '"/etc/unbound/root.key"'
+    chroot: '""'
+    directory: '"/etc/unbound"'
+    do-daemonize: "no"
+    edns-buffer-size: 1232
+    harden-algo-downgrade: "no"
+    harden-dnssec-stripped: "yes"
+    harden-glue: "yes"
+    harden-referral-path: "no"
+    hide-identity: "yes"
+    hide-version: "yes"
+    infra-cache-numhosts: 10000
+    infra-cache-slabs: 2
+    key-cache-slabs: 2
+    msg-cache-size: 150m
+    msg-cache-slabs: 2
+    num-queries-per-thread: 4096
+    num-threads: 1
+    outgoing-range: 1024
+    pidfile: '""'
+    prefer-ip6: "no"
+    prefetch-key: "yes"
+    prefetch: "yes"
+    qname-minimisation-strict: "no"
+    qname-minimisation: "no"
+    root-hints: '"/etc/unbound/root.hints"'
+    rrset-cache-size: 100m
+    rrset-cache-slabs: 2
+    rrset-roundrobin: "yes"
+    so-rcvbuf: 1m
+    use-caps-for-id: "no"
+    use-syslog: "no"
+    username: '""'
+    private-address:
+      - 192.168.0.0/16
+      - 169.254.0.0/16
+      - 172.16.0.0/12
+      - 10.0.0.0/8
+      - fd00::/8
+      - fe80::/10
+      - 192.0.2.0/24
+      - 198.51.100.0/24
+      - 203.0.113.0/24
+      - 255.255.255.255/32
+      - 2001:db8::/32
+  remote-control:
+    control-enable: "no"

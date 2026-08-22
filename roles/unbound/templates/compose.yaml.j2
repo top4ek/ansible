@@ -1,0 +1,9 @@
+services:
+  {{ unbound_container_name }}:
+    container_name: {{ unbound_container_name }}
+    image: "{{ unbound_image }}"
+    restart: unless-stopped
+    network_mode: host
+    userns_mode: keep-id
+    volumes:
+      - "{{ compose_project_dir }}/etc-unbound:/etc/unbound:rw,z"
