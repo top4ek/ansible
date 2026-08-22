@@ -7,8 +7,9 @@ dnscrypt:
   listen_address: 127.0.0.1
   port: 5354
   server_names:
-    - cloudflare
     - quad9-dnscrypt-ip4-nofilter-ecs-pri
+    - odoh-cloudflare
+    - cloudflare
     - google
     - quad9-dnscrypt-ip4-nofilter-pri
   dnscrypt_servers: true
