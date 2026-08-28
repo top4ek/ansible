@@ -17,8 +17,9 @@
     validate: "nft --check --file %s"
   notify: "Restarting firewall rules"
 
-- name: Enable nftables service
+- name: Enable and start nftables service
   become: true
   service:
     name: nftables
     enabled: true
+    state: started
