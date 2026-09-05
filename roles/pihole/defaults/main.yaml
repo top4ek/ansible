@@ -4,6 +4,11 @@ pihole_container_dir: "/home/{{ admin_user }}/containers/{{ pihole_container_nam
 pihole_api_timeout: 30
 pihole_api_retries: 20
 pihole_api_delay: 15
+pihole_api_write_timeout: 300 # add/delete list calls - FTL rewrites gravity rows synchronously
+pihole_gravity_retries: 3
+pihole_gravity_delay: 30
+pihole_data_uid: "1000"
+pihole_data_gid: "1000"
 
 pihole:
   timezone: Europe/Moscow

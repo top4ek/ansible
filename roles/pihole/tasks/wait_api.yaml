@@ -1,0 +1,22 @@
+---
+- name: Wait for the Pi-hole lists API
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/podman
+      - exec
+      - "{{ pihole_container_name }}"
+      - /usr/bin/timeout
+      - "{{ pihole_api_timeout }}"
+      - pihole
+      - api
+      - "lists?type=block"
+  register: pihole_lists_probe
+  changed_when: false
+  retries: "{{ pihole_api_retries }}"
+  delay: "{{ pihole_api_delay }}"
+  until:
+    - pihole_lists_probe.rc == 0
+    - not pihole_lists_probe.stdout.startswith('Status:')

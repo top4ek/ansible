@@ -1,5 +1,5 @@
 ---
-- name: Ensure pihole project directory exists
+- name: Ensure pihole project directories exist
   file:
     path: "{{ item }}"
     state: directory
@@ -8,8 +8,49 @@
     mode: "0755"
   loop:
     - "{{ pihole_container_dir }}"
-    - "{{ pihole_container_dir }}/etc-pihole"
     - "{{ pihole_container_dir }}/etc-dnsmasq.d"
+
+- name: Stat pihole data directory
+  ansible.builtin.stat:
+    path: "{{ pihole_container_dir }}/etc-pihole"
+  register: pihole_data_dir
+
+- name: Create pihole data directory
+  file:
+    path: "{{ pihole_container_dir }}/etc-pihole"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  when: not pihole_data_dir.stat.exists
+
+- name: Ensure the container pihole user owns its data directory
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  block:
+    - name: Read pihole data directory ownership inside the user namespace
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/podman
+          - unshare
+          - stat
+          - -c
+          - "%u:%g"
+          - "{{ pihole_container_dir }}/etc-pihole"
+      register: pihole_data_owner
+      changed_when: false
+
+    - name: Give the container pihole user ownership of its data directory
+      ansible.builtin.command:
+        argv:
+          - /usr/bin/podman
+          - unshare
+          - chown
+          - "{{ pihole_data_uid }}:{{ pihole_data_gid }}"
+          - "{{ pihole_container_dir }}/etc-pihole"
+      when: pihole_data_owner.stdout | trim != pihole_data_uid ~ ':' ~ pihole_data_gid
+      changed_when: true
 
 - name: Run container
   include_role:

@@ -1,38 +1,19 @@
 ---
 - name: Wait for the Pi-hole lists API
-  become: true
-  become_user: "{{ admin_user }}"
-  environment: "{{ podman_rootless_environment }}"
-  ansible.builtin.command:
-    argv:
-      - /usr/bin/podman
-      - exec
-      - "{{ pihole_container_name }}"
-      - /usr/bin/timeout
-      - "{{ pihole_api_timeout }}"
-      - pihole
-      - api
-      - "lists?type=block"
-  register: pihole_lists_probe
-  changed_when: false
-  retries: "{{ pihole_api_retries }}"
-  delay: "{{ pihole_api_delay }}"
-  until:
-    - pihole_lists_probe.rc == 0
-    - not pihole_lists_probe.stdout.startswith('Status:')
+  ansible.builtin.include_tasks: wait_api.yaml
 
-- name: Compute Pi-hole blocklists to add
+- name: Compute Pi-hole blocklist changes
   ansible.builtin.set_fact:
-    pihole_lists_to_add: >-
-      {{ pihole.lists
-         | map('trim')
-         | reject('equalto', '')
-         | difference((pihole_lists_probe.stdout | from_json).lists
-                      | map(attribute='address') | list)
-         | list }}
+    pihole_lists_to_add: "{{ desired | difference(current) }}"
+    pihole_lists_to_delete: "{{ current | difference(desired) }}"
+    pihole_lists_changed: "{{ desired | symmetric_difference(current) | length > 0 }}"
+  vars:
+    desired: "{{ pihole.lists | map('trim') | reject('equalto', '') | list }}"
+    current: >-
+      {{ (pihole_lists_probe.stdout | from_json).lists | map(attribute='address') | list }}
 
 - name: Authenticate with Pi-hole API
-  uri:
+  ansible.builtin.uri:
     method: POST
     url: "http://127.0.0.1/api/auth"
     body_format: json
@@ -42,13 +23,13 @@
     timeout: "{{ pihole_api_timeout }}"
   register: pihole_auth
   changed_when: false
-  when: pihole_lists_to_add | length > 0
+  when: pihole_lists_changed
 
 - name: Set Pi-hole API session id
-  set_fact:
+  ansible.builtin.set_fact:
     pihole_api_sid: "{{ pihole_auth.json.session.sid }}"
   failed_when: pihole_api_sid | length == 0
-  when: pihole_lists_to_add | length > 0
+  when: pihole_lists_changed
 
 - name: POST blocklist URLs to Pi-hole API
   ansible.builtin.uri:
@@ -63,13 +44,12 @@
       enabled: true
       address: "{{ item }}"
     status_code: [200, 201, 400]
-    timeout: "{{ pihole_api_timeout }}"
+    timeout: "{{ pihole_api_write_timeout }}"
   loop: "{{ pihole_lists_to_add }}"
   loop_control:
     label: "{{ item }}"
   register: pihole_list_results
-  failed_when: false
-  changed_when: status is defined and status in [200, 201]
+  changed_when: pihole_list_results.status | default(0) in [200, 201]
 
 - name: Log ignored blocklist API errors
   ansible.builtin.debug:
@@ -80,23 +60,48 @@
   loop: "{{ pihole_list_results.results | default([]) }}"
   loop_control:
     label: "{{ item.item }}"
-  when:
-    - item.status == 400
-    - item.json.error.hint | default('') is not match('UNIQUE constraint failed.*')
+  when: item.status == 400
   changed_when: false
+
+- name: DELETE stale blocklists from the Pi-hole API
+  ansible.builtin.uri:
+    method: POST
+    url: "http://127.0.0.1/api/lists:batchDelete"
+    headers:
+      X-FTL-SID: "{{ pihole_api_sid }}"
+    body_format: json
+    body:
+      - item: "{{ item }}"
+        type: block
+    status_code: [204, 404]
+    timeout: "{{ pihole_api_write_timeout }}"
+  loop: "{{ pihole_lists_to_delete }}"
+  loop_control:
+    label: "{{ item }}"
+  register: pihole_delete_result
+  changed_when: pihole_delete_result.status | default(0) == 204
+
+- name: Wait for the Pi-hole lists API to settle after list changes
+  ansible.builtin.include_tasks: wait_api.yaml
+  when: pihole_lists_changed
 
 - name: Update Pi-hole gravity
   become: true
   become_user: "{{ admin_user }}"
-  command:
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command:
     argv:
-      - podman
+      - /usr/bin/podman
       - exec
       - "{{ pihole_container_name }}"
       - pihole
       - updateGravity
-  when: pihole_list_results.results | default([]) | selectattr('status', 'in', [200, 201]) | list | length > 0
-  changed_when: true
+  register: pihole_gravity
+  retries: "{{ pihole_gravity_retries }}"
+  delay: "{{ pihole_gravity_delay }}"
+  until: pihole_gravity.rc == 0
+  when: pihole_lists_changed
+  changed_when: pihole_gravity.rc == 0
 
 - name: Delete Pi-hole API session
   ansible.builtin.uri:
@@ -107,4 +112,4 @@
     status_code: [204]
     timeout: "{{ pihole_api_timeout }}"
   changed_when: false
-  when: pihole_lists_to_add | length > 0
+  when: pihole_lists_changed
