@@ -1,0 +1,9 @@
+{# Managed by Ansible - roles/forgejo_runner. Монтируется в job-контейнеры
+   (container.options), см. roles/base/templates/apk-repositories.j2 для
+   аналога на самом хосте. #}
+{% for repo in ['main', 'community'] %}
+{{ apt_cacher_endpoint }}/alpine/{{ forgejo_runner.alpine_branch }}/{{ repo }}
+{% endfor %}
+{% for repo in ['main', 'community'] %}
+https://mirror.yandex.ru/mirrors/alpine/{{ forgejo_runner.alpine_branch }}/{{ repo }}
+{% endfor %}

@@ -1,32 +1,29 @@
-- name: Set IPv4 forwarding flag
+- name: Remove superseded sysctl drop-ins
   become: true
-  sysctl:
-    name: net.ipv4.ip_forward
-    sysctl_file: /etc/sysctl.d/ipv4.conf
-    value: "1"
-    state: present
-
-- name: Set IPv6 forwarding flag
-  become: true
-  ignore_errors: true
-  sysctl:
-    name: net.ipv6.conf.all.forwarding
-    sysctl_file: /etc/sysctl.d/ipv6.conf
-    value: "0"
-    state: present
-
-- name: Set IPv6 stack enable/disable flags
-  become: true
-  ignore_errors: true
-  sysctl:
-    name: "net.ipv6.conf.{{ item }}.disable_ipv6"
-    sysctl_file: /etc/sysctl.d/99-ipv6.conf
-    value: "{{ '0' if network_ipv6_enabled else '1' }}"
-    state: present
+  file:
+    path: "/etc/sysctl.d/{{ item }}"
+    state: absent
   loop:
-    - all
-    - default
-    - lo
+    - ipv4.conf
+    - ipv6.conf
+    - 99-ipv6.conf
+
+- name: Set network sysctl flags
+  become: true
+  template:
+    src: sysctl-network.conf.j2
+    dest: /etc/sysctl.d/10-network.conf
+    owner: root
+    group: root
+    mode: "0644"
+  register: network_sysctl
+
+- name: Apply network sysctl flags
+  become: true
+  ansible.builtin.command: sysctl --system
+  changed_when: true
+  failed_when: false
+  when: network_sysctl is changed
 
 - name: Deleting old firewall daemons
   become: true

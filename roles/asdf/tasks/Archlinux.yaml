@@ -1,6 +1,0 @@
-- name: Check yay installed
-  include_role:
-    name: yay
-  vars:
-    packages:
-      - asdf-vm

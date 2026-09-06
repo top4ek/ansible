@@ -1,0 +1,92 @@
+---
+# ON_ERROR_STOP=1 обязателен: без него psql возвращает 0, даже если половина
+# дампа не применилась, и апгрейд отчитается успехом на полупустом кластере.
+- name: Restore cluster dump
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment | combine({'PGPASSWORD': postgresql_password}) }}"
+  ansible.builtin.shell:
+    cmd: >-
+      /usr/bin/podman run --rm -i --network host --env PGPASSWORD
+      {{ postgresql_image }}
+      psql -v ON_ERROR_STOP=1
+      -h 127.0.0.1 -p {{ postgresql_conf.port | default(5432) }}
+      -U {{ postgresql_user }} -d postgres
+      < {{ postgresql_upgrade_dump }}
+  changed_when: true
+
+- name: List databases in the new cluster
+  community.postgresql.postgresql_query:
+    login_db: postgres
+    query: SELECT datname FROM pg_database WHERE datistemplate = false
+    login_host: localhost
+    login_port: "{{ postgresql_conf.port | default(5432) }}"
+    login_user: "{{ postgresql_user }}"
+    login_password: "{{ postgresql_password }}"
+  register: postgresql_restored_databases
+  changed_when: false
+
+- name: Verify every declared database was recreated
+  ansible.builtin.assert:
+    that:
+      - postgresql_databases | map(attribute='database') | difference(postgresql_restored_databases.query_result | map(attribute='datname') | list) | length == 0
+    fail_msg: >-
+      Missing after restore:
+      {{ postgresql_databases | map(attribute='database') | difference(postgresql_restored_databases.query_result | map(attribute='datname') | list) | join(', ') }}.
+      The old cluster is still on disk at {{ postgresql_old_data_dir }},
+      dump at {{ postgresql_upgrade_dump }}.
+
+- name: Count restored user tables per database
+  community.postgresql.postgresql_query:
+    login_db: "{{ item.database }}"
+    query: >-
+      SELECT count(*) AS tables FROM information_schema.tables
+      WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+    login_host: localhost
+    login_port: "{{ postgresql_conf.port | default(5432) }}"
+    login_user: "{{ postgresql_user }}"
+    login_password: "{{ postgresql_password }}"
+  register: postgresql_restore_check
+  changed_when: false
+  loop: "{{ postgresql_databases }}"
+  loop_control:
+    label: "{{ item.database }}"
+
+- name: Verify restored databases are not empty
+  ansible.builtin.assert:
+    that:
+      - item.query_result[0].tables | int > 0
+    fail_msg: >-
+      Database {{ item.item.database }} has no user tables after restore.
+      The old cluster is still on disk at {{ postgresql_old_data_dir }},
+      dump at {{ postgresql_upgrade_dump }}.
+  loop: "{{ postgresql_restore_check.results }}"
+  loop_control:
+    label: "{{ item.item.database }}"
+
+# После restore статистика пуста, планировщик до первого autovacuum строит плохие планы.
+- name: Analyze restored databases
+  community.postgresql.postgresql_query:
+    login_db: "{{ item.database }}"
+    query: ANALYZE
+    autocommit: true
+    login_host: localhost
+    login_port: "{{ postgresql_conf.port | default(5432) }}"
+    login_user: "{{ postgresql_user }}"
+    login_password: "{{ postgresql_password }}"
+  loop: "{{ postgresql_databases }}"
+  loop_control:
+    label: "{{ item.database }}"
+
+- name: Report upgrade result
+  ansible.builtin.debug:
+    msg:
+      - "PostgreSQL upgraded {{ postgresql_installed_version }} -> {{ postgresql_version }}."
+      - "Old cluster kept at {{ postgresql_old_data_dir }}, delete manually once satisfied."
+      - "Dump kept at {{ postgresql_upgrade_dump }}."
+      - >-
+        Rollback: service {{ postgresql_container_name }} stop;
+        mv {{ postgresql_data_dir }} {{ postgresql_data_dir }}-{{ postgresql_version }}-failed;
+        mv {{ postgresql_old_data_dir }} {{ postgresql_data_dir }};
+        set postgresql_version back to {{ postgresql_installed_version }};
+        rerun the playbook.

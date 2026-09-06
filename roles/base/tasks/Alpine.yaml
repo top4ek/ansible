@@ -1,16 +1,4 @@
 ---
-- name: Set repositories
-  become: true
-  copy:
-    dest: /etc/apk/repositories
-    content: |-
-      https://dl-cdn.alpinelinux.org/alpine/v3.24/main
-      https://dl-cdn.alpinelinux.org/alpine/v3.24/community
-    owner: root
-    group: root
-    mode: 644
-  register: alpine_repositories
-
 - name: Update apk index
   become: true
   package:
@@ -18,16 +6,19 @@
 
 - name: Upgrade apk-tools after repository change
   become: true
-  apk:
+  package:
     name: apk-tools
     state: latest
   when: alpine_repositories.changed
 
 - name: Upgrade the system
   become: true
-  apk:
-    upgrade: yes
-    available: "{{ alpine_repositories.changed | bool }}"
+  environment:
+    LC_ALL: C
+  ansible.builtin.command: >-
+    apk upgrade {{ '--available' if alpine_repositories.changed else '' }}
+  register: apk_upgrade
+  changed_when: "'Upgrading' in apk_upgrade.stdout or 'Installing' in apk_upgrade.stdout"
 
 - name: Reset connection after system upgrade
   meta: reset_connection

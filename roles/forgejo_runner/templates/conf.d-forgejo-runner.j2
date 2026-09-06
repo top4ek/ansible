@@ -1,0 +1,9 @@
+# Managed by Ansible.
+supervisor="supervise-daemon"
+respawn_delay=10
+respawn_max=0
+command_user="{{ admin_user }}"
+export DOCKER_HOST="{{ forgejo_runner.docker_host }}"
+output_log="/var/log/forgejo-runner.log"
+error_log="/var/log/forgejo-runner.log"
+rc_after="podman-api"

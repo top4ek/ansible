@@ -1,0 +1,53 @@
+---
+- name: Validate apt-cacher configuration
+  ansible.builtin.assert:
+    that:
+      - (apt_cacher_repos | default({})) | length > 0
+      - (apt_cacher_port | int) >= 1024
+      - apt_cacher_repos.values() | map(attribute='prefix') | select('match', '^/') | list | length == apt_cacher_repos | length
+    fail_msg: >-
+      apt_cacher_repos must be a non-empty mapping where every entry has a
+      prefix starting with "/", and apt_cacher_port must be unprivileged
+      (rootless podman publishes it without podman_unprivileged_port_start)
+
+- name: Ensure apt-cacher container project directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  loop:
+    - "{{ apt_cacher_container_dir }}/cache"
+    - "{{ apt_cacher_container_dir }}/log"
+    - "{{ apt_cacher_container_dir }}/backends"
+
+- name: Render apt-cacher-ng configuration
+  ansible.builtin.template:
+    src: acng.conf.j2
+    dest: "{{ apt_cacher_container_dir }}/zzz-local.conf"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0640"
+  register: apt_cacher_config
+
+- name: Render apt-cacher-ng upstream backend lists
+  ansible.builtin.copy:
+    content: |
+      {{ item.value | join('\n') }}
+    dest: "{{ apt_cacher_container_dir }}/backends/{{ item.key }}"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  loop: "{{ (apt_cacher_backends | default({})) | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  register: apt_cacher_backend_files
+
+- name: Run container
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ apt_cacher_container_name }}"
+    podman_recreate: "{{ (apt_cacher_config is changed) or (apt_cacher_backend_files is changed) }}"

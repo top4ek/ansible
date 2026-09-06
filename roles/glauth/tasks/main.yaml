@@ -14,7 +14,6 @@
     group: "{{ admin_user }}"
     mode: "0755"
   loop:
-    - "{{ glauth_container_dir }}"
     - "{{ glauth_container_dir }}/data"
 
 - name: Render config.cfg
@@ -32,6 +31,4 @@
     tasks_from: container.yaml
   vars:
     container_name: "{{ glauth_container_name }}"
-    podman_compose_dest: "{{ glauth_container_dir }}/compose.yaml"
-    compose_project_dir: "{{ glauth_container_dir }}"
     podman_recreate: "{{ glauth_config is changed }}"

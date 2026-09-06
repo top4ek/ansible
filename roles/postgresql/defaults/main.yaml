@@ -2,7 +2,15 @@
 postgresql_container_name: "postgresql"
 postgresql_container_dir: "/home/{{ admin_user }}/containers/{{ postgresql_container_name }}"
 
+postgresql_version: 18
+postgresql_image: "mirror.gcr.io/library/postgres:{{ postgresql_version }}-alpine"
+
+postgresql_compose_file: "{{ postgresql_container_dir }}/compose.yaml"
+postgresql_upgrade_dir: "{{ postgresql_container_dir }}/upgrade"
+
 postgresql_shm_size: "1g"
+
+postgresql_bind_address: "127.0.0.1"
 
 postgresql_conf:
   listen_addresses: "'*'"

@@ -1,0 +1,68 @@
+---
+# apt-cacher-ng: кэш пакетов для Debian/Proxmox, Arch и Alpine.
+#
+# Подключение клиентов: package_cache: true в host_vars/group_vars,
+# см. roles/base/tasks/package_cache.yaml. Что именно настраивается
+# (порт по умолчанию 3142):
+#   Debian/Proxmox  /etc/apt/apt.conf.d/01proxy:
+#                     Acquire::http::Proxy "http://<host>:3142";
+#                   sources.list не меняется; https-репы уйдут через CONNECT
+#                   мимо кэша, их URI надо перевести на http://.
+#   Arch            /etc/pacman.d/mirrorlist, первой строкой:
+#                     Server = http://<host>:3142/arch/$repo/os/$arch
+#   Alpine          /etc/apk/repositories:
+#                     http://<host>:3142/alpine/v3.24/main
+#                     http://<host>:3142/alpine/v3.24/community
+#   Статистика      http://<host>:3142/acng-report.html
+apt_cacher_container_name: "apt-cacher"
+apt_cacher_container_dir: "/home/{{ admin_user }}/containers/{{ apt_cacher_container_name }}"
+apt_cacher_image: "docker.io/mbentley/apt-cacher-ng:latest"
+apt_cacher_port: 3142
+apt_cacher_expire_days: 5
+apt_cacher_vfile_use_range_ops: 0
+apt_cacher_fresh_index_max_age: 300
+
+apt_cacher_repos:
+  arch:
+    prefix: /arch
+    backends:
+      - "http://mirror.yandex.ru/archlinux/"
+      - "http://geo.mirror.pkgbuild.com/"
+  alpine:
+    prefix: /alpine
+    backends:
+      - "http://dl-cdn.alpinelinux.org/alpine/"
+      - "http://mirror.yandex.ru/mirrors/alpine/"
+  pve:
+    prefix: /pve
+    backends:
+      - "http://download.proxmox.com/debian/"
+      - "http://download.cdn.proxmox.com/debian/"
+  raspbian:
+    prefix: /raspbian
+    urls:
+      - "http://raspbian.raspberrypi.com/raspbian"
+    # Сам raspbian.raspberrypi.com в backends не годится: это MirrorBrain,
+    # он отдаёт pool/ 302-редиректом на гео-зеркало, и если то мертво -
+    # acng отдаёт 503 и на следующий backend не переключается.
+    backends:
+      - "http://mirror.yandex.ru/mirrors/raspbian/"
+      - "http://mirror.datacenter.by/pub/mirrors/archive.raspbian.org/raspbian/"
+  rpi:
+    prefix: /rpi
+    urls:
+      - "http://archive.raspberrypi.com/debian"
+    backends:
+      - "http://archive.raspberrypi.com/debian/"
+      - "http://archive.raspberrypi.org/debian/"
+
+apt_cacher_backends:
+  backends_debian:
+    - "http://deb.debian.org/debian/"
+
+apt_cacher_extra_conf: []
+
+# apt_cacher:
+#   admin: # защита страницы обслуживания /acng-report.html
+#     username: suser
+#     password: "big_secret"

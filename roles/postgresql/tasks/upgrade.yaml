@@ -1,0 +1,160 @@
+---
+- name: Refuse to downgrade the cluster
+  ansible.builtin.assert:
+    that:
+      - postgresql_installed_version | int < postgresql_version | int
+    fail_msg: >-
+      Cluster on disk is PostgreSQL {{ postgresql_installed_version }},
+      requested postgresql_version is {{ postgresql_version }}.
+      pg_dumpall cannot restore into an older major version.
+      Restore from a backup instead.
+
+# Не ansible_date_time: при fact_caching он приходит из кеша и два прогона
+# подряд получили бы одинаковые имена каталогов.
+- name: Read a fresh upgrade timestamp
+  ansible.builtin.command: date -u +%Y%m%d%H%M%S
+  register: postgresql_upgrade_now
+  changed_when: false
+
+- name: Set upgrade paths
+  ansible.builtin.set_fact:
+    postgresql_old_data_dir: "{{ postgresql_data_dir }}-{{ postgresql_installed_version }}-{{ postgresql_upgrade_now.stdout }}"
+    postgresql_upgrade_dump: "{{ postgresql_upgrade_dir }}/dumpall-{{ postgresql_installed_version }}-to-{{ postgresql_version }}-{{ postgresql_upgrade_now.stdout }}.sql"
+
+# du -sk и df -Pk есть и в busybox, и в coreutils, обе величины в килобайтах.
+- name: Measure current data directory size
+  become: true
+  ansible.builtin.command: "du -sk {{ postgresql_data_dir }}"
+  register: postgresql_data_size
+  changed_when: false
+
+- name: Measure free space on the container filesystem
+  become: true
+  ansible.builtin.command: "df -Pk {{ postgresql_container_dir }}"
+  register: postgresql_free_space
+  changed_when: false
+
+# 3x, а не 1.5x: по ходу процедуры на диске одновременно оказываются старый
+# кластер, полный plain-text pg_dumpall (регулярно больше самого кластера) и
+# заново залитый новый кластер. ENOSPC во время restore наступает уже после
+# переименования data, то есть там, где откат ручной.
+- name: Ensure there is room for the old cluster, the new cluster and the dump
+  ansible.builtin.assert:
+    that:
+      - (postgresql_free_space.stdout_lines[-1].split()[3] | int) > (postgresql_data_size.stdout.split() | first | int * 3)
+    fail_msg: >-
+      Not enough free space for a dump/restore upgrade.
+      Data directory is {{ (postgresql_data_size.stdout.split() | first | int / 1024) | round | int }} MiB,
+      free is {{ (postgresql_free_space.stdout_lines[-1].split()[3] | int / 1024) | round | int }} MiB,
+      at least 3x the data directory must be free.
+
+# Старый кластер поднимается на своём собственном образе независимо от того,
+# что сейчас лежит в compose.yaml (например, после прерванного прогона).
+- name: Start old cluster on its original image
+  include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ postgresql_container_name }}"
+    postgresql_version: "{{ postgresql_installed_version }}"
+    podman_recreate: true
+    podman_skip_pull: true
+
+- name: Wait for the old cluster to accept TCP connections
+  wait_for:
+    host: 127.0.0.1
+    port: "{{ postgresql_conf.port | default(5432) }}"
+    timeout: 120
+
+- name: Pull the target PostgreSQL image
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command: "/usr/bin/podman pull {{ postgresql_image }}"
+  changed_when: false
+
+- name: Ensure upgrade directory exists
+  become: true
+  file:
+    path: "{{ postgresql_upgrade_dir }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0700"
+
+# Клиент новее сервера - рекомендованное направление по документации PostgreSQL.
+# --env PGPASSWORD без значения наследует переменную из окружения, поэтому
+# пароль не попадает в argv и не виден в ps на хосте.
+#
+# Пишем в .partial и переименовываем только после нулевого кода возврата:
+# редирект создаёт файл до первого байта, поэтому оборванный дамп иначе
+# остался бы под финальным именем и выглядел бы готовым.
+- name: Dump old cluster
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment | combine({'PGPASSWORD': postgresql_password}) }}"
+  ansible.builtin.shell:
+    cmd: >-
+      /usr/bin/podman run --rm --network host --env PGPASSWORD
+      {{ postgresql_image }}
+      pg_dumpall -h 127.0.0.1 -p {{ postgresql_conf.port | default(5432) }}
+      -U {{ postgresql_user }}
+      > {{ postgresql_upgrade_dump }}.partial
+      && mv {{ postgresql_upgrade_dump }}.partial {{ postgresql_upgrade_dump }}
+  changed_when: true
+
+- name: Stat the dump
+  become: true
+  ansible.builtin.stat:
+    path: "{{ postgresql_upgrade_dump }}"
+  register: postgresql_dump_stat
+
+- name: Read the dump trailer
+  become: true
+  ansible.builtin.command: "tail -n 5 {{ postgresql_upgrade_dump }}"
+  register: postgresql_dump_trailer
+  changed_when: false
+
+- name: Verify the dump is complete before touching the data directory
+  ansible.builtin.assert:
+    that:
+      - postgresql_dump_stat.stat.exists
+      - postgresql_dump_stat.stat.size > 1000
+      - "'PostgreSQL database cluster dump complete' in postgresql_dump_trailer.stdout"
+    fail_msg: >-
+      Dump {{ postgresql_upgrade_dump }} looks truncated.
+      The old data directory has not been touched, fix the dump and rerun.
+
+- name: Stop old cluster
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/podman-compose
+      - --in-pod=false
+      - -f
+      - "{{ postgresql_compose_file }}"
+      - down
+
+- name: Move the old data directory aside
+  become: true
+  ansible.builtin.command: "mv {{ postgresql_data_dir }} {{ postgresql_old_data_dir }}"
+  args:
+    creates: "{{ postgresql_old_data_dir }}"
+    removes: "{{ postgresql_data_dir }}"
+
+# podman отказывается стартовать, если каталог-источник bind-mount отсутствует
+# (в отличие от docker). Создаём пустой каталог, initdb сам выставит на нём 0700.
+- name: Create empty data directory for the new cluster
+  become: true
+  file:
+    path: "{{ postgresql_data_dir }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+
+- name: Mark upgrade as pending restore
+  ansible.builtin.set_fact:
+    postgresql_upgrade_pending: true

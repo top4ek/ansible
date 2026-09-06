@@ -1,0 +1,99 @@
+---
+forgejo_container_name: "forgejo"
+forgejo_container_dir: "/home/{{ admin_user }}/containers/{{ forgejo_container_name }}"
+forgejo_image: "codeberg.org/forgejo/forgejo"
+
+forgejo_admin_cmd:
+  - /usr/bin/podman
+  - exec
+  - "{{ forgejo_container_name }}"
+  - forgejo
+  - admin
+
+forgejo_config_defaults:
+  DEFAULT:
+    APP_NAME: "Forgejo"
+    RUN_MODE: prod
+  server:
+    PROTOCOL: http
+    HTTP_PORT: 3000
+    DOMAIN: "{{ forgejo.host }}"
+    ROOT_URL: "https://{{ forgejo.host }}/"
+    SSH_DOMAIN: "{{ forgejo.host }}"
+    SSH_PORT: "{{ forgejo.ssh_port | default(22) }}"
+    SSH_LISTEN_PORT: 2222
+    START_SSH_SERVER: true
+    LFS_START_SERVER: true
+    OFFLINE_MODE: true
+  database:
+    DB_TYPE: postgres
+    HOST: "{{ forgejo.database.host }}:{{ forgejo.database.port | default(5432) }}"
+    NAME: "{{ forgejo.database.name | default('forgejo') }}"
+    USER: "{{ forgejo.database.user | default('forgejo') }}"
+    PASSWD: "{{ forgejo.database.password }}"
+    SSL_MODE: "{{ forgejo.database.ssl_mode | default('disable') }}"
+  security:
+    INSTALL_LOCK: true
+    REVERSE_PROXY_LIMIT: 1
+    REVERSE_PROXY_TRUSTED_PROXIES: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+  service:
+    DISABLE_REGISTRATION: true
+    REQUIRE_SIGNIN_VIEW: false
+  repository:
+    DEFAULT_BRANCH: main
+  actions:
+    ENABLED: true
+  session:
+    COOKIE_SECURE: true
+  log:
+    MODE: console
+    LEVEL: warning
+  cron.update_checker:
+    ENABLED: false
+
+forgejo_ldap_defaults:
+  name: ldap
+  port: 636
+  security_protocol: ldaps
+  skip_tls_verify: false
+  attributes_in_bind: true
+  synchronize_users: true
+  username_attribute: uid
+  firstname_attribute: givenName
+  surname_attribute: sn
+  email_attribute: mail
+  public_ssh_key_attribute: sshPublicKey
+
+# forgejo:
+#   version: "16"
+#   host: forgejo.example.com
+#   ssh_port: 22
+#   database:
+#     host: 192.168.123.123
+#     port: 5432
+#     name: forgejo
+#     user: forgejo
+#     password: "secret"
+#   admin:
+#     username: suser
+#     email: suser@example.com
+#     password: "big_secret"
+#   config: # накладывается на forgejo_config_defaults
+#     mailer:
+#       ENABLED: true
+#   ldap: # накладывается на forgejo_ldap_defaults; блок необязателен
+#     # Имя источника, по нему он ищется в `forgejo admin auth list`.
+#     # Менять имя у существующего источника нельзя: роль заведёт второй.
+#     name: auth.example.com
+#     host: auth.example.com
+#     bind_dn: "cn=svc_binder,dc=example,dc=com"
+#     # Пароль bind-юзера необязателен: у существующего источника роль
+#     # сохраняет тот, что уже лежит зашифрованным в БД. Задавать его нужно
+#     # только чтобы инстанс поднимался с нуля без ручных шагов.
+#     bind_password: "secret"
+#     user_search_base: "ou=users,dc=example,dc=com"
+#     # %s подставляется ТОЛЬКО в user_filter.
+#     user_filter: "(&(objectClass=posixAccount)(uid=%s)(memberOf=ou=forgejo_user,ou=groups,dc=example,dc=com))"
+#     # admin_filter уходит в LDAP как есть, с базой = DN найденного юзера,
+#     # поэтому %s в нём ломает проверку админских прав.
+#     admin_filter: "(&(objectClass=posixAccount)(memberOf=ou=forgejo_admin,ou=groups,dc=example,dc=com))"

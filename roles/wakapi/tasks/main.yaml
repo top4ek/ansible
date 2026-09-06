@@ -1,12 +1,4 @@
 ---
-- name: Ensure container project directory exists
-  file:
-    path: "{{ wakapi_container_dir }}"
-    state: directory
-    owner: "{{ admin_user }}"
-    group: "{{ admin_user }}"
-    mode: "0755"
-
 - name: Run container
   include_role:
     name: podman

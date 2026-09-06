@@ -15,9 +15,7 @@
     mode: "0755"
   loop:
     - "{{ luanti_map_container_dir }}"
-    - "{{ luanti_container_dir }}"
     - "{{ luanti_container_dir }}/conf"
-    - "{{ luanti_container_dir }}/data"
     - "{{ luanti_container_dir }}/data/mods"
     - "{{ luanti_container_dir }}/data/games"
     - "{{ luanti_container_dir }}/data/worlds/world"

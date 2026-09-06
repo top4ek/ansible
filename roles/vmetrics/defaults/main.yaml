@@ -1,0 +1,13 @@
+---
+vmetrics_container_name: "vmetrics"
+vmetrics_container_dir: "/home/{{ admin_user }}/containers/{{ vmetrics_container_name }}"
+vmetrics_image: "docker.io/victoriametrics/victoria-metrics"
+
+vmetrics_bind_address: "127.0.0.1"
+
+# vmetrics:
+#   version: latest       # тег docker.io/victoriametrics/victoria-metrics
+#   port: 8428            # порт на vmetrics_bind_address
+#   retention: 12m        # -retentionPeriod
+#   host: vmetrics.home.aleschenko.ru  # traefik-роут для vmui; необязателен
+#   extra_args: []        # дополнительные флаги victoria-metrics

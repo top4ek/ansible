@@ -1,0 +1,28 @@
+[[servers]]
+host = "{{ grafana_ldap.host }}"
+port = {{ grafana_ldap.port }}
+use_ssl = {{ grafana_ldap.use_ssl | lower }}
+start_tls = {{ grafana_ldap.start_tls | lower }}
+ssl_skip_verify = {{ grafana_ldap.ssl_skip_verify | lower }}
+timeout = {{ grafana_ldap.timeout }}
+bind_dn = "{{ grafana_ldap.bind_dn }}"
+bind_password = "{{ grafana_ldap.bind_password }}"
+search_filter = "{{ grafana_ldap.search_filter }}"
+search_base_dns = {{ grafana_ldap.search_base_dns | to_json }}
+
+[servers.attributes]
+{% for key, value in grafana_ldap.attributes.items() %}
+  {{ key }} = "{{ value }}"
+{% endfor %}
+{% for m in grafana_ldap.group_mappings %}
+
+[[servers.group_mappings]]
+  group_dn = "{{ m.group_dn }}"
+  org_role = "{{ m.org_role }}"
+{% if m.grafana_admin is defined %}
+  grafana_admin = {{ m.grafana_admin | lower }}
+{% endif %}
+{% if m.org_id is defined %}
+  org_id = {{ m.org_id }}
+{% endif %}
+{% endfor %}

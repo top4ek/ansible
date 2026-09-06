@@ -1,0 +1,43 @@
+---
+- name: Set Alpine repositories
+  become: true
+  template:
+    src: apk-repositories.j2
+    dest: /etc/apk/repositories
+    owner: root
+    group: root
+    mode: "0644"
+  register: alpine_repositories
+  when: ansible_facts['os_family'] == 'Alpine'
+
+- name: Point apt at the package cache
+  become: true
+  copy:
+    dest: /etc/apt/apt.conf.d/01proxy
+    content: |-
+      Acquire::http::Proxy "{{ apt_cacher_endpoint }}";
+    owner: root
+    group: root
+    mode: "0644"
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - package_cache | bool
+
+- name: Remove apt package cache proxy
+  become: true
+  file:
+    path: /etc/apt/apt.conf.d/01proxy
+    state: absent
+  when:
+    - ansible_facts['os_family'] == 'Debian'
+    - not (package_cache | bool)
+
+- name: Point pacman at the package cache
+  become: true
+  lineinfile:
+    path: /etc/pacman.d/mirrorlist
+    line: "Server = {{ apt_cacher_endpoint }}/arch/$repo/os/$arch"
+    insertbefore: BOF
+    firstmatch: true
+    state: "{{ 'present' if package_cache | bool else 'absent' }}"
+  when: ansible_facts['os_family'] == 'Archlinux'

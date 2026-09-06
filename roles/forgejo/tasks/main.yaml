@@ -1,0 +1,138 @@
+---
+- name: Validate forgejo configuration
+  ansible.builtin.assert:
+    that:
+      - forgejo.host | default('') | length > 0
+      - forgejo.database.host | default('') | length > 0
+      - forgejo.database.password | default('') | length > 0
+      - "'traefik' in (host_roles | default([]))"
+      - (forgejo.ssh_port | default(22) | int) >= (podman_unprivileged_port_start | default(1024) | int)
+    fail_msg: >-
+      forgejo.host, forgejo.database.host and forgejo.database.password must be set
+      in host_vars, the traefik role must be enabled on this host, and
+      podman_unprivileged_port_start must be low enough for rootless podman to
+      publish forgejo.ssh_port
+
+- name: Merge forgejo app.ini configuration
+  ansible.builtin.set_fact:
+    forgejo_config: "{{ forgejo_config_defaults | combine(forgejo.config | default({}), recursive=True) }}"
+
+- name: Ensure forgejo container project directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  loop:
+    - "{{ forgejo_container_dir }}/data"
+
+- name: Run container
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ forgejo_container_name }}"
+
+- name: Configure forgejo LDAP authentication source
+  when: forgejo.ldap is defined
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  block:
+    - name: Merge forgejo LDAP configuration
+      ansible.builtin.set_fact:
+        forgejo_ldap: "{{ forgejo_ldap_defaults | combine(forgejo.ldap) }}"
+
+    - name: Validate forgejo LDAP configuration
+      ansible.builtin.assert:
+        that:
+          - forgejo_ldap.host | default('') | length > 0
+          - forgejo_ldap.bind_dn | default('') | length > 0
+          - forgejo_ldap.user_search_base | default('') | length > 0
+          - "'%s' in forgejo_ldap.user_filter | default('')"
+          - "'%s' not in forgejo_ldap.admin_filter | default('')"
+        fail_msg: >-
+          forgejo.ldap needs host, bind_dn, user_search_base and a user_filter
+          containing the %s login placeholder. admin_filter must not contain %s:
+          forgejo passes it to LDAP verbatim, with the resolved user DN as the
+          search base.
+
+    - name: List forgejo authentication sources
+      ansible.builtin.command:
+        argv: "{{ forgejo_admin_cmd + ['auth', 'list'] }}"
+      register: forgejo_auth_list
+      changed_when: false
+      retries: 12
+      delay: 5
+      until: forgejo_auth_list.rc == 0
+
+    - name: Find existing forgejo LDAP authentication source
+      ansible.builtin.set_fact:
+        forgejo_ldap_source_id: >-
+          {{ forgejo_auth_list.stdout_lines
+             | map('regex_search', '^(\d+)\s+' ~ (forgejo_ldap.name | regex_escape) ~ '\s', '\1')
+             | select() | flatten | first | default('') }}
+
+    - name: Build forgejo LDAP authentication source arguments
+      ansible.builtin.set_fact:
+        forgejo_ldap_args: >-
+          {{ ['--name', forgejo_ldap.name,
+              '--host', forgejo_ldap.host,
+              '--port', forgejo_ldap.port | string,
+              '--security-protocol', forgejo_ldap.security_protocol,
+              '--bind-dn', forgejo_ldap.bind_dn,
+              '--user-search-base', forgejo_ldap.user_search_base,
+              '--user-filter', forgejo_ldap.user_filter,
+              '--username-attribute', forgejo_ldap.username_attribute,
+              '--firstname-attribute', forgejo_ldap.firstname_attribute,
+              '--surname-attribute', forgejo_ldap.surname_attribute,
+              '--email-attribute', forgejo_ldap.email_attribute,
+              '--public-ssh-key-attribute', forgejo_ldap.public_ssh_key_attribute,
+              '--active']
+             + (['--bind-password', forgejo_ldap.bind_password] if forgejo_ldap.bind_password is defined else [])
+             + (['--admin-filter', forgejo_ldap.admin_filter] if forgejo_ldap.admin_filter is defined else [])
+             + (['--attributes-in-bind'] if forgejo_ldap.attributes_in_bind else [])
+             + (['--skip-tls-verify'] if forgejo_ldap.skip_tls_verify else [])
+             + (['--synchronize-users'] if forgejo_ldap.synchronize_users else ['--disable-synchronize-users']) }}
+
+    - name: Create forgejo LDAP authentication source
+      ansible.builtin.command:
+        argv: "{{ forgejo_admin_cmd + ['auth', 'add-ldap'] + forgejo_ldap_args }}"
+      when: forgejo_ldap_source_id | length == 0
+      no_log: true
+
+    - name: Update forgejo LDAP authentication source
+      ansible.builtin.command:
+        argv: >-
+          {{ forgejo_admin_cmd + ['auth', 'update-ldap',
+              '--id', forgejo_ldap_source_id] + forgejo_ldap_args }}
+      when: forgejo_ldap_source_id | length > 0
+      changed_when: true
+      no_log: true
+
+- name: Configure the forgejo administrator
+  when: forgejo.admin is defined
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  block:
+    - name: List forgejo administrators
+      ansible.builtin.command:
+        argv: "{{ forgejo_admin_cmd + ['user', 'list', '--admin'] }}"
+      register: forgejo_admin_list
+      changed_when: false
+      retries: 12
+      delay: 5
+      until: forgejo_admin_list.rc == 0
+
+    - name: Create forgejo administrator
+      ansible.builtin.command:
+        argv: >-
+          {{ forgejo_admin_cmd + ['user', 'create', '--admin',
+              '--username', forgejo.admin.username,
+              '--email', forgejo.admin.email,
+              '--password', forgejo.admin.password,
+              '--must-change-password=false'] }}
+      when: forgejo.admin.username not in (forgejo_admin_list.stdout | default(''))
+      no_log: true

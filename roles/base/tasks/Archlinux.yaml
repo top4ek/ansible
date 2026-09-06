@@ -1,52 +1,44 @@
-- name: Fancy Pacman
+- name: Configure pacman options
   become: true
-  ini_file:
+  blockinfile:
     path: /etc/pacman.conf
-    section: options
-    option: ILoveCandy
-    allow_no_value: true
+    marker: "# {mark} ANSIBLE MANAGED OPTIONS"
+    insertafter: '^\[options\]'
+    block: |
+      ILoveCandy
+      Color
+      ParallelDownloads = 5
+      CleanMethod = KeepInstalled
 
-- name: Colored output
+- name: Check whether multilib is already enabled
   become: true
-  ini_file:
-    path: /etc/pacman.conf
-    section: options
-    option: Color
-    allow_no_value: true
-
-- name: Enable parallel downloads
-  become: true
-  ini_file:
-    path: /etc/pacman.conf
-    section: options
-    option: ParallelDownloads
-    value: "5"
+  ansible.builtin.command: grep -c '^\[multilib\]' /etc/pacman.conf
+  register: pacman_multilib
+  changed_when: false
+  failed_when: false
 
 - name: Enable multilib
   become: true
-  ini_file:
+  blockinfile:
     path: /etc/pacman.conf
-    section: multilib
-    option: Include
-    value: "/etc/pacman.d/mirrorlist"
-
-- name: Set clean method
-  become: true
-  ini_file:
-    path: /etc/pacman.conf
-    section: options
-    option: CleanMethod
-    value: KeepInstalled
+    marker: "# {mark} ANSIBLE MANAGED MULTILIB"
+    block: |
+      [multilib]
+      Include = /etc/pacman.d/mirrorlist
+  when: pacman_multilib.stdout | int == 0
 
 - name: Upgrade system
   become: true
-  pacman:
-    update_cache: yes
-    upgrade: yes
+  environment:
+    LC_ALL: C
+  ansible.builtin.command: pacman -Syu --noconfirm
+  register: pacman_upgrade
+  changed_when: "'there is nothing to do' not in pacman_upgrade.stdout"
 
 - name: Install packages
   become: true
-  pacman:
+  package:
+    state: present
     name:
       - base-devel
       - cdrtools

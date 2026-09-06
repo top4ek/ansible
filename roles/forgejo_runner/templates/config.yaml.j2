@@ -1,0 +1,46 @@
+log:
+  level: info
+  job_level: info
+
+runner:
+  capacity: {{ forgejo_runner.capacity }}
+  timeout: 3h
+  labels:
+{% for label in forgejo_runner.labels %}
+    - "{{ label }}"
+{% endfor %}
+
+cache:
+  enabled: {{ forgejo_runner.cache.enabled | lower }}
+  proxy_port: {{ forgejo_runner.cache.proxy_port }}
+
+container:
+  # Пусто = podman создаёт отдельную сеть под каждую джобу.
+  network: ""
+  privileged: false
+{% set all_valid_volumes = ([forgejo_runner_job_cache_dir ~ '/*'] if forgejo_runner.package_cache else []) + forgejo_runner.valid_volumes %}
+  valid_volumes: {{ all_valid_volumes | to_json }}
+{% if forgejo_runner.docker_in_jobs %}
+  # Сокет монтируется в job-контейнер как /var/run/docker.sock.
+  docker_host: "{{ forgejo_runner.docker_host }}"
+{% else %}
+  # "-" = раннер берёт сокет из DOCKER_HOST, но внутрь джоб его не пробрасывает.
+  docker_host: "-"
+{% endif %}
+  force_pull: false
+  # Пакетный кэш монтируется read-only в каждый job-контейнер: лишний файл
+  # для чужого дистрибутива безвреден, apt/apk/pacman его просто не читают.
+  options: >-
+{% if forgejo_runner.package_cache %}
+{% for f in forgejo_runner_job_cache_files %}
+    --volume {{ forgejo_runner_job_cache_dir }}/{{ f.name }}:{{ f.dest }}:ro
+{% endfor %}
+{% endif %}
+    {{ forgejo_runner.container_options }}
+
+server:
+  connections:
+    default:
+      url: "{{ forgejo_runner.url }}"
+      uuid: "{{ forgejo_runner.uuid }}"
+      token: "{{ forgejo_runner.secret }}"

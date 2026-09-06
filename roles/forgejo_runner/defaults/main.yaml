@@ -1,0 +1,51 @@
+---
+forgejo_runner_packages:
+  - forgejo-runner
+  - "forgejo-runner-{{ 'openrc' if ansible_facts['service_mgr'] in ['openrc', 'rc']
+    else 'systemd' }}"
+
+forgejo_runner_job_cache_dir: /etc/forgejo-runner/job-cache
+
+forgejo_runner_job_cache_files:
+  - name: apt-proxy.conf
+    template: job-apt-proxy.conf.j2
+    dest: /etc/apt/apt.conf.d/01proxy
+  - name: apk-repositories
+    template: job-apk-repositories.j2
+    dest: /etc/apk/repositories
+  - name: pacman-mirrorlist
+    template: job-pacman-mirrorlist.j2
+    dest: /etc/pacman.d/mirrorlist
+
+forgejo_runner_defaults:
+  name: "{{ inventory_hostname }}"
+  scope: ""
+  capacity: 2
+  docker_in_jobs: true
+  docker_host: "unix://{{ podman_rootless_environment.XDG_RUNTIME_DIR }}/podman/podman.sock"
+  cache:
+    enabled: true
+    proxy_port: 40080
+  package_cache: "{{ package_cache | default(false) }}"
+  alpine_branch: "v{{ ansible_facts['distribution_version'].split('.')[:2] | join('.') }}"
+  container_options: ""
+  valid_volumes: []
+  labels:
+    - "docker:docker://code.forgejo.org/oci/node:22-bookworm"
+    - "ubuntu-latest:docker://code.forgejo.org/oci/node:22-bookworm"
+    - "ubuntu-22.04:docker://code.forgejo.org/oci/node:20-bookworm"
+    - "docker-cli:docker://code.forgejo.org/oci/docker:cli"
+
+# forgejo_runner: # накладывается на forgejo_runner_defaults
+#   # uuid и secret выдаёт сам Forgejo при создании раннера: копируются как
+#   # есть. Роль их не выводит и не регистрирует - раннер должен уже
+#   # существовать в инстансе, иначе он не подключится.
+#   uuid: "3f1c9a02-7b4e-4d61-8a55-2c9e6f0d1b73"
+#   secret: "cde61e803b50fa6b92cd68918939c946d2343c4c"
+#   name: builder
+#   capacity: 4
+#   # Адрес инстанса, с которым раннер устанавливает соединение.
+#   url: "https://forgejo.example.com/"
+#   docker_in_jobs: true
+#   labels:
+#     - "docker:docker://code.forgejo.org/oci/node:22-bookworm"

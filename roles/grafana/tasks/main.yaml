@@ -1,0 +1,78 @@
+---
+- name: Validate grafana configuration
+  ansible.builtin.assert:
+    that:
+      - grafana.admin.password | default('') | length > 0
+      - (grafana.host | default('') | length > 0) or ('traefik' not in (host_roles | default([])))
+      - >-
+        (grafana.database.type | default('sqlite3')) == 'sqlite3'
+        or (
+          grafana.database.host | default('') | length > 0
+          and grafana.database.name | default('') | length > 0
+          and grafana.database.user | default('') | length > 0
+          and grafana.database.password | default('') | length > 0
+        )
+    fail_msg: >-
+      grafana.admin.password must be set, grafana.host is required when
+      traefik is enabled on this host, and a non-sqlite3 grafana.database
+      needs host, name, user and password
+
+- name: Ensure grafana container project directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  loop:
+    - "{{ grafana_container_dir }}/data"
+    - "{{ grafana_container_dir }}/provisioning/datasources"
+
+- name: Render grafana datasource provisioning
+  ansible.builtin.copy:
+    content: "{{ {'apiVersion': 1, 'datasources': grafana.datasources} | to_nice_yaml }}"
+    dest: "{{ grafana_container_dir }}/provisioning/datasources/ansible.yaml"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  when: grafana.datasources is defined
+  register: grafana_datasources
+
+- name: Configure grafana LDAP authentication
+  when: grafana.ldap is defined
+  block:
+    - name: Merge grafana LDAP configuration
+      ansible.builtin.set_fact:
+        grafana_ldap: "{{ grafana_ldap_defaults | combine(grafana.ldap, recursive=True) }}"
+
+    - name: Validate grafana LDAP configuration
+      ansible.builtin.assert:
+        that:
+          - grafana_ldap.host | default('') | length > 0
+          - grafana_ldap.base_dn | default('') | length > 0
+          - grafana_ldap.bind_dn | default('') | length > 0
+          - grafana_ldap.bind_password | default('') | length > 0
+          - "'%s' in grafana_ldap.search_filter | default('')"
+          - grafana_ldap.group_mappings | default([]) | length > 0
+        fail_msg: >-
+          grafana.ldap needs host, base_dn, bind_dn and bind_password, a
+          search_filter containing the %s login placeholder, and at least
+          one group_mapping.
+
+    - name: Render grafana ldap.toml
+      ansible.builtin.template:
+        src: ldap.toml.j2
+        dest: "{{ grafana_container_dir }}/ldap.toml"
+        owner: "{{ admin_user }}"
+        group: "{{ admin_user }}"
+        mode: "0600"
+      register: grafana_ldap_config
+      no_log: true
+
+- name: Run container
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ grafana_container_name }}"
+    podman_recreate: "{{ (grafana_datasources is changed) or (grafana_ldap_config.changed | default(false)) }}"

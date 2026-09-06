@@ -16,5 +16,3 @@
     tasks_from: container.yaml
   vars:
     container_name: "{{ rustdesk_container_name }}"
-    podman_compose_dest: "{{ rustdesk_container_dir }}/compose.yaml"
-    compose_project_dir: "{{ rustdesk_container_dir }}"

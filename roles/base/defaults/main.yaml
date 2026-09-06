@@ -22,3 +22,10 @@ LC_TELEPHONE: en_US.UTF-8
 LC_TIME: en_US.UTF-8
 
 TIMEZONE: Europe/Moscow
+
+package_cache: false
+alpine_mirror: "https://mirror.yandex.ru/mirrors/alpine"
+alpine_repos:
+  - main
+  - community
+alpine_repo_branch: "v{{ ansible_facts['distribution_version'].split('.')[:2] | join('.') }}"

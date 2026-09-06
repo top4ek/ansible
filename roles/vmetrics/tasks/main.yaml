@@ -1,0 +1,26 @@
+---
+- name: Validate vmetrics configuration
+  ansible.builtin.assert:
+    that:
+      - vmetrics_bind_address | default('') | length > 0
+      - (vmetrics.host | default('') | length > 0) or ('traefik' not in (host_roles | default([])))
+    fail_msg: >-
+      vmetrics_bind_address must be set, and vmetrics.host is required when
+      traefik is enabled on this host
+
+- name: Ensure vmetrics container project directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  loop:
+    - "{{ vmetrics_container_dir }}/data"
+
+- name: Run container
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ vmetrics_container_name }}"

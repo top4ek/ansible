@@ -1,6 +1,7 @@
 - name: Install packages
   become: true
-  pacman:
+  package:
+    state: present
     name:
       - tmux
 

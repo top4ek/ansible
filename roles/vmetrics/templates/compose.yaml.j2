@@ -1,0 +1,33 @@
+services:
+  {{ vmetrics_container_name }}:
+    container_name: {{ vmetrics_container_name }}
+    image: "{{ vmetrics_image }}:{{ vmetrics.version | default('latest') }}"
+    restart: unless-stopped
+    userns_mode: keep-id
+    user: "{{ admin_uid }}:{{ admin_gid }}"
+    command:
+      - "-storageDataPath=/victoria-metrics-data"
+      - "-httpListenAddr=:8428"
+      - "-retentionPeriod={{ vmetrics.retention | default('12m') }}"
+{% for arg in vmetrics.extra_args | default([]) %}
+      - "{{ arg }}"
+{% endfor %}
+    ports:
+      - "{{ vmetrics_bind_address }}:{{ vmetrics.port | default(8428) }}:8428"
+    volumes:
+      - "{{ compose_project_dir }}/data:/victoria-metrics-data"
+{% if vmetrics.host is defined %}
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vmetrics.rule=Host(`{{ vmetrics.host }}`)"
+      - "traefik.http.routers.vmetrics.entrypoints=websecure"
+      - "traefik.http.routers.vmetrics.tls=true"
+      - "traefik.http.routers.vmetrics.tls.certresolver=letsencrypt"
+      - "traefik.http.services.vmetrics.loadbalancer.server.port=8428"
+
+networks:
+  proxy:
+    external: true
+{% endif %}

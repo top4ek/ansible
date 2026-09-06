@@ -1,0 +1,6 @@
+---
+- name: Restart forgejo runner
+  become: true
+  ansible.builtin.service:
+    name: forgejo-runner
+    state: restarted

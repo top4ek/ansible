@@ -1,0 +1,55 @@
+---
+grafana_container_name: "grafana"
+grafana_container_dir: "/home/{{ admin_user }}/containers/{{ grafana_container_name }}"
+grafana_image: "docker.io/grafana/grafana-oss"
+
+# grafana:
+#   version: latest
+#   host: grafana.home.aleschenko.ru   # traefik-роут; обязателен при traefik
+#   port: 3000                         # публикуется, только если traefik нет
+#   admin:
+#     user: admin
+#     password: "..."
+#   database:                          # блок необязателен -> sqlite3
+#     type: postgres
+#     host: 192.168.151.128
+#     port: 5432
+#     name: grafana
+#     user: grafana
+#     password: "..."
+#     ssl_mode: disable
+#   datasources: []                    # provisioning, формат Grafana v1
+#   ldap: # накладывается на grafana_ldap_defaults; блок необязателен
+#     host: auth.example.com
+#     base_dn: "dc=example,dc=com"
+#     bind_dn: "cn=svc_binder,dc=example,dc=com"
+#     bind_password: "secret"
+#     # group_mappings/search_filter переопределяются целиком, если нужно
+
+# Значения по умолчанию для grafana.ldap. Подобраны под glauth (роль glauth):
+# memberOf приходит как ou=<group>,ou=groups,<base_dn>, поиск возможен только
+# из-под bind-пользователя, поэтому группы читаем атрибутом, а не поиском.
+grafana_ldap_defaults:
+  port: 636
+  use_ssl: true
+  start_tls: false
+  ssl_skip_verify: false
+  timeout: 10
+  allow_sign_up: true
+  search_filter: "(&(objectClass=posixAccount)(uid=%s))"
+  search_base_dns:
+    - "ou=users,{{ grafana.ldap.base_dn }}"
+  attributes:
+    username: uid
+    name: givenName
+    surname: sn
+    email: mail
+    member_of: memberOf
+  # Пользователь, не попавший ни в один маппинг, войти не сможет:
+  # маппинга group_dn = "*" намеренно нет.
+  group_mappings:
+    - group_dn: "ou=grafana_admin,ou=groups,{{ grafana.ldap.base_dn }}"
+      org_role: Admin
+      grafana_admin: true
+    - group_dn: "ou=grafana,ou=groups,{{ grafana.ldap.base_dn }}"
+      org_role: Viewer

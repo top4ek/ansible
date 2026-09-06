@@ -7,7 +7,6 @@
     group: "{{ admin_user }}"
     mode: "0755"
   loop:
-    - "{{ llamacpp_container_dir }}"
     - "{{ llamacpp_container_dir }}/models"
 
 - name: Set model filename
@@ -20,5 +19,3 @@
     tasks_from: container.yaml
   vars:
     container_name: "{{ llamacpp_container_name }}"
-    podman_compose_dest: "{{ llamacpp_container_dir }}/compose.yaml"
-    compose_project_dir: "{{ llamacpp_container_dir }}"

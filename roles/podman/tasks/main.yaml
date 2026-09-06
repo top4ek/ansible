@@ -13,20 +13,27 @@
 
 - name: Allow rootless bind to privileged ports
   become: true
-  ansible.builtin.sysctl:
-    name: net.ipv4.ip_unprivileged_port_start
-    sysctl_file: /etc/sysctl.d/rootless-ports.conf
-    value: "{{ podman_unprivileged_port_start }}"
-    state: present
+  ansible.builtin.copy:
+    content: "net.ipv4.ip_unprivileged_port_start = {{ podman_unprivileged_port_start }}\n"
+    dest: /etc/sysctl.d/rootless-ports.conf
+    owner: root
+    group: root
+    mode: "0644"
+  register: podman_ports_sysctl
   when: podman_unprivileged_port_start is defined
 
 - name: Remove rootless privileged ports config
   become: true
-  ansible.builtin.sysctl:
-    name: net.ipv4.ip_unprivileged_port_start
-    sysctl_file: /etc/sysctl.d/rootless-ports.conf
+  ansible.builtin.file:
+    path: /etc/sysctl.d/rootless-ports.conf
     state: absent
   when: podman_unprivileged_port_start is not defined
+
+- name: Apply rootless privileged ports config
+  become: true
+  ansible.builtin.command: sysctl --system
+  changed_when: true
+  when: podman_ports_sysctl is changed
 
 - name: Run distribution specific tasks
   include_tasks: "{{ ansible_os_family }}.yaml"
@@ -66,6 +73,9 @@
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "0644"
+
+- name: Configure local registry mirrors
+  include_tasks: registries.yaml
 
 - name: Ensure subuid mapping for admin_user
   become: true

@@ -1,0 +1,13 @@
+# Managed by Ansible (roles/podman/tasks/registries.yaml).
+# Локальные pull-through зеркала (роль registry_cache на хосте aptcache).
+# Если зеркало недоступно или не отдало образ, podman идёт в upstream сам.
+{% for name, upstream in registry_cache_upstreams.items() %}
+
+[[registry]]
+prefix = "{{ upstream.registry }}"
+location = "{{ upstream.registry }}"
+
+[[registry.mirror]]
+location = "{{ registry_cache_host }}:{{ upstream.port }}"
+insecure = true
+{% endfor %}

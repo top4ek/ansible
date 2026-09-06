@@ -1,0 +1,4 @@
+# Managed by Ansible - roles/forgejo_runner. Монтируется в job-контейнеры
+# (container.options). $repo и $arch - переменные pacman, не Jinja.
+Server = {{ apt_cacher_endpoint }}/arch/$repo/os/$arch
+Server = http://mirror.yandex.ru/archlinux/$repo/os/$arch

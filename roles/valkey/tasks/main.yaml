@@ -7,7 +7,6 @@
     group: "{{ admin_user }}"
     mode: "0755"
   loop:
-    - "{{ valkey_container_dir }}"
     - "{{ valkey_container_dir }}/conf"
 
 - name: Deploy Valkey config
@@ -25,6 +24,4 @@
     tasks_from: container.yaml
   vars:
     container_name: "{{ valkey_container_name }}"
-    podman_compose_dest: "{{ valkey_container_dir }}/compose.yaml"
-    compose_project_dir: "{{ valkey_container_dir }}"
     podman_recreate: "{{ valkey_config is changed }}"

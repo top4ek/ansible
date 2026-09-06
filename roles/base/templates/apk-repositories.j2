@@ -1,0 +1,8 @@
+{% if package_cache | bool %}
+{% for repo in alpine_repos %}
+{{ apt_cacher_endpoint }}/alpine/{{ alpine_repo_branch }}/{{ repo }}
+{% endfor %}
+{% endif %}
+{% for repo in alpine_repos %}
+{{ alpine_mirror }}/{{ alpine_repo_branch }}/{{ repo }}
+{% endfor %}

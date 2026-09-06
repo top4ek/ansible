@@ -5,3 +5,5 @@ podman_recreate: false
 podman_rootless_environment:
   HOME: "/home/{{ admin_user }}"
   XDG_RUNTIME_DIR: "/run/user/{{ admin_uid }}"
+
+registry_cache_client: false

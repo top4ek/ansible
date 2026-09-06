@@ -1,0 +1,38 @@
+{% macro ini_env(name) %}{{ name | replace('.', '_0X2E_') | replace('-', '_0X2D_') }}{% endmacro %}
+services:
+  {{ forgejo_container_name }}:
+    container_name: {{ forgejo_container_name }}
+    image: "{{ forgejo_image }}:{{ forgejo.version | default('16') }}-rootless"
+    restart: unless-stopped
+    userns_mode: keep-id
+    user: "{{ admin_uid }}:{{ admin_gid }}"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - NET_RAW
+    environment:
+      TZ: "{{ TIMEZONE }}"
+{% for section, options in forgejo_config.items() %}
+{% for key, value in options.items() %}
+      FORGEJO__{{ ini_env('' if section == 'DEFAULT' else section) }}__{{ ini_env(key) }}: "{{ (value | lower) if (value is boolean) else value }}"
+{% endfor %}
+{% endfor %}
+    volumes:
+      - "{{ compose_project_dir }}/data:/var/lib/gitea:rw,z"
+      - "/etc/localtime:/etc/localtime:ro"
+    ports:
+      - "{{ forgejo.ssh_port | default(22) }}:2222"
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.forgejo.rule=Host(`{{ forgejo.host }}`)"
+      - "traefik.http.routers.forgejo.entrypoints=websecure"
+      - "traefik.http.routers.forgejo.tls=true"
+      - "traefik.http.routers.forgejo.tls.certresolver=letsencrypt"
+      - "traefik.http.services.forgejo.loadbalancer.server.port=3000"
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,53 @@
+services:
+  {{ grafana_container_name }}:
+    container_name: {{ grafana_container_name }}
+    image: "{{ grafana_image }}:{{ grafana.version | default('latest') }}"
+    restart: unless-stopped
+    userns_mode: keep-id
+    user: "{{ admin_uid }}:{{ admin_gid }}"
+    environment:
+      TZ: "{{ TIMEZONE }}"
+{% if grafana.host is defined %}
+      GF_SERVER_ROOT_URL: "https://{{ grafana.host }}/"
+{% endif %}
+      GF_SECURITY_ADMIN_USER: "{{ grafana.admin.user | default('admin') }}"
+      GF_SECURITY_ADMIN_PASSWORD: "{{ grafana.admin.password }}"
+      GF_DATABASE_TYPE: "{{ grafana.database.type | default('sqlite3') }}"
+{% if (grafana.database.type | default('sqlite3')) != 'sqlite3' %}
+      GF_DATABASE_HOST: "{{ grafana.database.host }}:{{ grafana.database.port | default(5432) }}"
+      GF_DATABASE_NAME: "{{ grafana.database.name }}"
+      GF_DATABASE_USER: "{{ grafana.database.user }}"
+      GF_DATABASE_PASSWORD: "{{ grafana.database.password }}"
+      GF_DATABASE_SSL_MODE: "{{ grafana.database.ssl_mode | default('disable') }}"
+{% endif %}
+{% if grafana.ldap is defined %}
+      GF_AUTH_LDAP_ENABLED: "true"
+      GF_AUTH_LDAP_CONFIG_FILE: "/etc/grafana/ldap.toml"
+      GF_AUTH_LDAP_ALLOW_SIGN_UP: "{{ grafana_ldap.allow_sign_up | lower }}"
+{% endif %}
+    volumes:
+      - "{{ compose_project_dir }}/data:/var/lib/grafana"
+      - "{{ compose_project_dir }}/provisioning:/etc/grafana/provisioning:ro"
+{% if grafana.ldap is defined %}
+      - "{{ compose_project_dir }}/ldap.toml:/etc/grafana/ldap.toml:ro"
+{% endif %}
+{% if grafana.host is defined %}
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`{{ grafana.host }}`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls=true"
+      - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+{% else %}
+    ports:
+      - "{{ grafana.port | default(3000) }}:3000"
+{% endif %}
+
+{% if grafana.host is defined %}
+networks:
+  proxy:
+    external: true
+{% endif %}

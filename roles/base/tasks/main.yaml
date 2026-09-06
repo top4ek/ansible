@@ -1,3 +1,6 @@
+- name: Configure package sources
+  include_tasks: package_cache.yaml
+
 - name: Install common packages and update databases
   become: true
   package:
@@ -96,24 +99,41 @@
 
 - name: Ensure the locales exists
   become: true
-  locale_gen:
-    name:
-      - en_US.UTF-8
-      - ru_RU.UTF-8
+  lineinfile:
+    path: /etc/locale.gen
+    regexp: "^#?\\s*{{ item | regex_escape }} "
+    line: "{{ item }} {{ item.split('.')[1] | default('UTF-8') }}"
     state: present
+  loop: "{{ (['en_US.UTF-8', 'ru_RU.UTF-8', LC_ALL]) | unique }}"
+  register: base_locales
   when: ansible_facts['os_family'] != 'Alpine'
 
-- name: Set timezone
+- name: Generate locales
   become: true
-  timezone:
-    name: "{{ TIMEZONE }}"
-    hwclock: UTC
+  ansible.builtin.command: locale-gen
+  changed_when: true
+  when:
+    - ansible_facts['os_family'] != 'Alpine'
+    - base_locales is changed
 
-- name: Generate locale
+- name: Set hardware clock to UTC
   become: true
-  locale_gen:
-    name: "{{ LC_ALL }}"
-  when: ansible_facts['os_family'] != 'Alpine'
+  copy:
+    content: "0.0 0 0.0\n0\nUTC\n"
+    dest: /etc/adjtime
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Write /etc/timezone
+  become: true
+  copy:
+    content: "{{ TIMEZONE }}\n"
+    dest: /etc/timezone
+    owner: root
+    group: root
+    mode: "0644"
+  when: ansible_facts['os_family'] == 'Debian'
 
 - name: Ensure .profile exists
   copy:

@@ -1,0 +1,4 @@
+# Managed by Ansible - roles/forgejo_runner. Монтируется в job-контейнеры
+# (container.options), см. roles/base/tasks/package_cache.yaml для аналога
+# на самом хосте.
+Acquire::http::Proxy "{{ apt_cacher_endpoint }}";

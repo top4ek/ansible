@@ -1,0 +1,6 @@
+{{ ansible_managed | comment }}
+net.ipv4.ip_forward = 1
+net.ipv6.conf.all.forwarding = 0
+{% for iface in ['all', 'default', 'lo'] %}
+net.ipv6.conf.{{ iface }}.disable_ipv6 = {{ '0' if network_ipv6_enabled else '1' }}
+{% endfor %}

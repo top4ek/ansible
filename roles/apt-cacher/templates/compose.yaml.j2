@@ -1,0 +1,21 @@
+services:
+  {{ apt_cacher_container_name }}:
+    container_name: {{ apt_cacher_container_name }}
+    image: "{{ apt_cacher_image }}"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - NET_RAW
+    environment:
+      TZ: "{{ TIMEZONE }}"
+    volumes:
+      - "{{ compose_project_dir }}/cache:/var/cache/apt-cacher-ng:rw,z"
+      - "{{ compose_project_dir }}/log:/var/log/apt-cacher-ng:rw,z"
+      - "{{ compose_project_dir }}/zzz-local.conf:/etc/apt-cacher-ng/zzz-local.conf:ro,z"
+{% for name in apt_cacher_backends %}
+      - "{{ compose_project_dir }}/backends/{{ name }}:/etc/apt-cacher-ng/{{ name }}:ro,z"
+{% endfor %}
+      - "/etc/localtime:/etc/localtime:ro"
+    ports:
+      - "{{ apt_cacher_port }}:3142"

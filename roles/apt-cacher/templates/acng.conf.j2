@@ -1,0 +1,38 @@
+# Managed by Ansible - roles/apt-cacher
+# Читается последним: apt-cacher-ng сливает все *.conf каталога в алфавитном
+# порядке, поздние файлы переопределяют ранние.
+Port: {{ apt_cacher_port }}
+CacheDir: /var/cache/apt-cacher-ng
+LogDir: /var/log/apt-cacher-ng
+ReportPage: acng-report.html
+ExThreshold: {{ apt_cacher_expire_days }}
+
+{% for name, repo in apt_cacher_repos.items() %}
+Remap-{{ name }}: {{ ([repo.prefix] + (repo.urls | default([]))) | join(' ') }} ; {{ repo.backends | join(' ') }}
+{% endfor %}
+
+# У aptcache нет глобального IPv6-адреса и маршрута: попытки коннекта по AAAA
+# только тратят время.
+ConnectProto: v4
+# Короткий DNS-кэш, чтобы разовый сбой резолва не залипал в процессе надолго.
+DnsCacheSeconds: 300
+
+# Освежать индексы обычным условным GET, без Range: параллельные клиенты
+# подписываются на один элемент кэша вместо своей полной перекачки каждый.
+VfileUseRangeOps: {{ apt_cacher_vfile_use_range_ops }}
+# Окно заморозки состояния индексов - на время прогона playbook.
+FreshIndexMaxAge: {{ apt_cacher_fresh_index_max_age }}
+
+# Индексы - волатильные (перепроверяются), пакеты - неизменяемые (из кэша).
+VfilePatternEx: (.*/APKINDEX\.tar\.gz|.*/[^/]*\.db(\.tar\.(gz|xz|zst))?(\.sig)?|.*/[^/]*\.files(\.tar\.(gz|xz|zst))?)$
+PfilePatternEx: (.*\.pkg\.tar\.(gz|xz|zst)(\.sig)?|.*\.apk)$
+{% if (apt_cacher | default({})).admin is defined %}
+
+AdminAuth: {{ apt_cacher.admin.username }}:{{ apt_cacher.admin.password }}
+{% endif %}
+{% if apt_cacher_extra_conf | length > 0 %}
+
+{% for line in apt_cacher_extra_conf %}
+{{ line }}
+{% endfor %}
+{% endif %}

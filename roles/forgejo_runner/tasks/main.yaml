@@ -1,0 +1,122 @@
+---
+- name: Merge forgejo runner configuration
+  ansible.builtin.set_fact:
+    forgejo_runner: "{{ forgejo_runner_defaults | combine(forgejo_runner | default({}), recursive=True) }}"
+
+- name: Validate forgejo runner configuration
+  ansible.builtin.assert:
+    that:
+      - forgejo_runner.uuid | default('') | length > 0
+      - forgejo_runner.secret | default('') | length > 0
+      - forgejo_runner.url | default('') | length > 0
+      - forgejo_runner.docker_host | default('') | length > 0
+      - forgejo_runner.labels | default([]) | length > 0
+      - "'podman' in (host_roles | default([]))"
+      - not (forgejo_runner.package_cache | bool) or (apt_cacher_endpoint | default('') | length > 0)
+    fail_msg: >-
+      forgejo_runner.uuid and forgejo_runner.secret must be copied from the
+      runner Forgejo issued, forgejo_runner.url must point at the Forgejo
+      instance, forgejo_runner.docker_host must point at the container socket
+      that runs the jobs, forgejo_runner.labels must not be empty, the podman
+      role must be enabled on this host (the runner needs its rootless socket)
+      and forgejo_runner.package_cache requires apt_cacher_endpoint to be set.
+
+- name: Install forgejo runner packages
+  become: true
+  ansible.builtin.package:
+    name: "{{ forgejo_runner_packages }}"
+    state: present
+    update_cache: true
+
+- name: Configure the forgejo runner service (OpenRC)
+  when: ansible_facts['service_mgr'] in ['openrc', 'rc']
+  become: true
+  block:
+    - name: Render the forgejo runner conf.d
+      ansible.builtin.template:
+        src: conf.d-forgejo-runner.j2
+        dest: "/etc/conf.d/forgejo-runner"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart forgejo runner
+
+    - name: Ensure the forgejo runner log file exists
+      ansible.builtin.file:
+        path: /var/log/forgejo-runner.log
+        state: touch
+        owner: "{{ admin_user }}"
+        group: "{{ admin_user }}"
+        mode: "0640"
+        access_time: preserve
+        modification_time: preserve
+
+- name: Configure the forgejo runner service (systemd)
+  when: ansible_facts['service_mgr'] == 'systemd'
+  become: true
+  block:
+    - name: Ensure the forgejo runner systemd drop-in directory exists
+      ansible.builtin.file:
+        path: "/etc/systemd/system/forgejo-runner.service.d"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Render the forgejo runner systemd drop-in
+      ansible.builtin.template:
+        src: systemd-override.conf.j2
+        dest: "/etc/systemd/system/forgejo-runner.service.d/override.conf"
+        owner: root
+        group: root
+        mode: "0644"
+      notify: Restart forgejo runner
+
+- name: Configure the job package cache
+  when: forgejo_runner.package_cache | bool
+  become: true
+  block:
+    - name: Ensure job package cache directory exists
+      ansible.builtin.file:
+        path: "{{ forgejo_runner_job_cache_dir }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Render job package cache configuration
+      ansible.builtin.template:
+        src: "{{ item.template }}"
+        dest: "{{ forgejo_runner_job_cache_dir }}/{{ item.name }}"
+        owner: root
+        group: root
+        mode: "0644"
+      loop: "{{ forgejo_runner_job_cache_files }}"
+      loop_control:
+        label: "{{ item.name }}"
+      notify: Restart forgejo runner
+
+- name: Remove job package cache directory
+  become: true
+  ansible.builtin.file:
+    path: "{{ forgejo_runner_job_cache_dir }}"
+    state: absent
+  when: not (forgejo_runner.package_cache | bool)
+  notify: Restart forgejo runner
+
+- name: Render forgejo runner configuration
+  become: true
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: /etc/forgejo-runner/config.yaml
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0600"
+  notify: Restart forgejo runner
+
+- name: Enable and start forgejo runner
+  become: true
+  ansible.builtin.service:
+    name: "forgejo-runner"
+    enabled: true
+    state: started

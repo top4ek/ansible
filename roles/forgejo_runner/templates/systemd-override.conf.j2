@@ -1,0 +1,8 @@
+# Managed by Ansible.
+# Штатный unit из forgejo-runner-systemd хардкодит User=forgejo-runner, а раннеру
+# нужен rootless podman-сокет admin_user.
+
+[Service]
+User={{ admin_user }}
+Group={{ admin_user }}
+Environment=DOCKER_HOST={{ forgejo_runner.docker_host }}
