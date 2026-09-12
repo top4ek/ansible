@@ -1,0 +1,23 @@
+---
+- name: Install Ruby build dependencies and extrepo
+  become: true
+  ansible.builtin.apt:
+    state: present
+    update_cache: true
+    name:
+      - build-essential
+      - libssl-dev
+      - zlib1g-dev
+      - extrepo
+
+- name: Enable mise apt repository
+  become: true
+  ansible.builtin.command: extrepo enable mise
+  changed_when: false
+
+- name: Install mise
+  become: true
+  ansible.builtin.apt:
+    state: present
+    update_cache: true
+    name: mise

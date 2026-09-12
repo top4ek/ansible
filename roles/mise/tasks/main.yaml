@@ -1,0 +1,33 @@
+---
+- name: Run distribution specific tasks
+  ansible.builtin.include_tasks: "{{ ansible_os_family }}.yaml"
+
+- name: Ensure mise config directory exists
+  ansible.builtin.file:
+    path: "/home/{{ admin_user }}/.config/mise"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+
+- name: Render mise config
+  ansible.builtin.template:
+    src: config.toml.j2
+    dest: "/home/{{ admin_user }}/.config/mise/config.toml"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+
+- name: Install mise tools
+  become: true
+  become_user: "{{ admin_user }}"
+  environment:
+    HOME: "/home/{{ admin_user }}"
+  ansible.builtin.command: "mise install --yes"
+
+- name: Add mise shims to PATH
+  ansible.builtin.lineinfile:
+    state: present
+    path: "/home/{{ admin_user }}/.profile"
+    regexp: '^export PATH="\$HOME/\.local/share/mise/shims'
+    line: 'export PATH="$HOME/.local/share/mise/shims:$PATH"'

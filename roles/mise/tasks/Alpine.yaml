@@ -1,0 +1,15 @@
+---
+- name: Install Ruby build dependencies
+  become: true
+  ansible.builtin.package:
+    state: present
+    name:
+      - build-base
+      - openssl-dev
+      - zlib-dev
+
+- name: Install mise
+  become: true
+  ansible.builtin.package:
+    name: mise
+    state: present

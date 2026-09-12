@@ -1,0 +1,6 @@
+---
+- name: Install mise
+  become: true
+  ansible.builtin.package:
+    name: mise
+    state: present
