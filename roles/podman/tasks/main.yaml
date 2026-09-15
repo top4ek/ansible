@@ -14,7 +14,7 @@
 - name: Allow rootless bind to privileged ports
   become: true
   ansible.builtin.copy:
-    content: "net.ipv4.ip_unprivileged_port_start = {{ podman_unprivileged_port_start }}\n"
+    content: "net.ipv4.ip_unprivileged_port_start={{ podman_unprivileged_port_start }}\n"
     dest: /etc/sysctl.d/rootless-ports.conf
     owner: root
     group: root
@@ -31,7 +31,7 @@
 
 - name: Apply rootless privileged ports config
   become: true
-  ansible.builtin.command: sysctl --system
+  ansible.builtin.command: sysctl -e -p /etc/sysctl.d/rootless-ports.conf
   changed_when: true
   when: podman_ports_sysctl is changed
 
