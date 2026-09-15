@@ -1,3 +1,7 @@
+ [settings]
+ disable_hints = ["auto_update"]
+ disable_update_warning = true
+
 [tools]
 {% for tool, version in mise.tools.items() %}
 {{ tool }} = "{{ version }}"
