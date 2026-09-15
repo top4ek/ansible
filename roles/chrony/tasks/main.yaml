@@ -1,22 +1,22 @@
+---
 - name: Install Chrony
   become: true
-  package:
-    state: latest
+  ansible.builtin.package:
     name: chrony
-    update_cache: yes
+    update_cache: true
 
 - name: Configure Chrony
   become: true
-  copy:
+  ansible.builtin.template:
     src: chrony.conf
     dest: /etc/chrony/chrony.conf
     owner: root
     group: root
-    mode: 644
+    mode: "644"
   notify: Restart Chrony
 
 - name: Enable chronyd
   become: true
-  service:
+  ansible.builtin.service:
     name: chronyd
     enabled: true
