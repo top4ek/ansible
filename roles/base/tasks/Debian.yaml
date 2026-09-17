@@ -1,7 +1,7 @@
 ---
 - name: Disable all apt recommendations and suggestions
   become: true
-  copy:
+  ansible.builtin.copy:
     dest: /etc/apt/apt.conf.d/99local
     content: |-
       APT::Install-Recommends "0";
@@ -12,7 +12,7 @@
 
 - name: Upgrade system
   become: true
-  apt:
+  ansible.builtin.apt:
     update_cache: yes
     upgrade: full
     autoremove: yes
@@ -20,7 +20,7 @@
 
 - name: Install packages
   become: true
-  apt:
+  ansible.builtin.apt:
     state: latest
     name:
       - apt-transport-https
@@ -31,7 +31,7 @@
 - name: Update user
   become: true
   ignore_errors: true
-  user:
+  ansible.builtin.user:
     name: "{{ admin_user }}"
     shell: "/bin/zsh"
     system: yes
@@ -46,7 +46,7 @@
 
 - name: Enable passwordless sudo
   become: true
-  lineinfile:
+  ansible.builtin.lineinfile:
     regexp: "^%sudo"
     line: "%sudo ALL=(ALL) NOPASSWD: ALL"
     state: present

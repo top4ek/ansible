@@ -7,7 +7,7 @@
     fail_msg: "glauth.base_dn and glauth.users must be set in host_vars"
 
 - name: Ensure container project directories exist
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ admin_user }}"
@@ -17,7 +17,7 @@
     - "{{ glauth_container_dir }}/data"
 
 - name: Render config.cfg
-  template:
+  ansible.builtin.template:
     src: glauth.cfg.j2
     dest: "{{ glauth_container_dir }}/data/config.cfg"
     owner: "{{ admin_user }}"
@@ -26,7 +26,7 @@
   register: glauth_config
 
 - name: Run container
-  include_role:
+  ansible.builtin.include_role:
     name: podman
     tasks_from: container.yaml
   vars:

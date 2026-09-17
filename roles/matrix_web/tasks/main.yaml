@@ -1,6 +1,6 @@
 ---
 - name: Ensure matrix_web project directory exists
-  file:
+  ansible.builtin.file:
     path: "{{ matrix_web_container_dir }}"
     state: directory
     owner: "{{ admin_user }}"
@@ -8,7 +8,7 @@
     mode: "0755"
 
 - name: Render element-config.json
-  template:
+  ansible.builtin.template:
     src: element-config.json.j2
     dest: "{{ matrix_web_container_dir }}/element-config.json"
     owner: "{{ admin_user }}"
@@ -17,7 +17,7 @@
   register: matrix_web_config
 
 - name: Run container
-  include_role:
+  ansible.builtin.include_role:
     name: podman
     tasks_from: container.yaml
   vars:

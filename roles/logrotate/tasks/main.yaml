@@ -1,11 +1,11 @@
 ---
 - name: Install logrotate
-  package:
+  ansible.builtin.package:
     name: logrotate
     state: present
 
 - name: Render config
-  template:
+  ansible.builtin.template:
     src: logrotate.j2
     dest: "/etc/logrotate.d/{{ item.name }}"
     mode: "0644"

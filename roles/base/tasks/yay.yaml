@@ -1,33 +1,33 @@
 - name: Check if yay available
-  command: yay --version
+  ansible.builtin.command: yay --version
   ignore_errors: true
   register: yayresult
 
 - name: Install build dependencies
   become: true
-  package:
+  ansible.builtin.package:
     name:
       - fakeroot
       - git
       - base-devel
     state: present
-    update_cache: yes
+    update_cache: true
   when: "yayresult.rc != 0"
 
 - name: Checkout sources
-  git:
+  ansible.builtin.git:
     repo: "https://aur.archlinux.org/yay.git"
     dest: "/home/{{ admin_user }}/yay"
   when: "yayresult.rc != 0"
 
 - name: Build and install yay
-  shell:
+  ansible.builtin.shell:
     cmd: makepkg -si --noconfirm
     chdir: "/home/{{ admin_user }}/yay"
   when: "yayresult.rc != 0"
 
 - name: Remove sources
-  file:
+  ansible.builtin.file:
     state: absent
     path: "/home/{{ admin_user }}/yay"
   when: "yayresult.rc != 0"
@@ -38,7 +38,7 @@
   when: "packages is defined"
 
 - name: Install batch of packages
-  command: >
+  ansible.builtin.command: >
     yay -S
       --answerclean none --answeredit none --answerupgrade none --answerdiff none
       --removemake --noconfirm --combinedupgrade --needed

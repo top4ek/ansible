@@ -1,6 +1,6 @@
 - name: Configure pacman options
   become: true
-  blockinfile:
+  ansible.builtin.blockinfile:
     path: /etc/pacman.conf
     marker: "# {mark} ANSIBLE MANAGED OPTIONS"
     insertafter: '^\[options\]'
@@ -19,7 +19,7 @@
 
 - name: Enable multilib
   become: true
-  blockinfile:
+  ansible.builtin.blockinfile:
     path: /etc/pacman.conf
     marker: "# {mark} ANSIBLE MANAGED MULTILIB"
     block: |
@@ -37,7 +37,7 @@
 
 - name: Install packages
   become: true
-  package:
+  ansible.builtin.package:
     state: present
     name:
       - base-devel
@@ -64,20 +64,20 @@
 
 - name: Enable NetworkManager service
   become: true
-  service:
+  ansible.builtin.service:
     name: NetworkManager
     enabled: true
     state: started
 
 - name: Update user
   become: true
-  user:
+  ansible.builtin.user:
     name: "{{ admin_user }}"
     shell: "/bin/zsh"
-    system: yes
-    create_home: yes
+    system: true
+    create_home: true
     expires: -1
-    append: yes
+    append: true
     groups:
       - adm
       - audio
@@ -105,7 +105,7 @@
 
 - name: Enable passwordless sudo
   become: true
-  lineinfile:
+  ansible.builtin.lineinfile:
     regexp: "^%wheel"
     line: "%wheel ALL=(ALL) NOPASSWD: ALL"
     state: present
@@ -113,4 +113,4 @@
     validate: "/usr/sbin/visudo -cf %s"
 
 - name: Run distribution specific tasks
-  include_tasks: "yay.yaml"
+  ansible.builtin.include_tasks: "yay.yaml"

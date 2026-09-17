@@ -1,7 +1,7 @@
 ---
 - name: Set Alpine repositories
   become: true
-  template:
+  ansible.builtin.template:
     src: apk-repositories.j2
     dest: /etc/apk/repositories
     owner: root
@@ -12,7 +12,7 @@
 
 - name: Point apt at the package cache
   become: true
-  copy:
+  ansible.builtin.copy:
     dest: /etc/apt/apt.conf.d/01proxy
     content: |-
       Acquire::http::Proxy "{{ apt_cacher_endpoint }}";
@@ -25,7 +25,7 @@
 
 - name: Remove apt package cache proxy
   become: true
-  file:
+  ansible.builtin.file:
     path: /etc/apt/apt.conf.d/01proxy
     state: absent
   when:
@@ -34,7 +34,7 @@
 
 - name: Point pacman at the package cache
   become: true
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/pacman.d/mirrorlist
     line: "Server = {{ apt_cacher_endpoint }}/arch/$repo/os/$arch"
     insertbefore: BOF

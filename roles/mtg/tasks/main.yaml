@@ -1,7 +1,7 @@
 ---
 - name: Ensure container project directory exists
   become: true
-  file:
+  ansible.builtin.file:
     path: "{{ mtg_container_dir }}"
     state: directory
     owner: "{{ admin_user }}"
@@ -9,7 +9,7 @@
     mode: "0755"
 
 - name: Derive mtg_sni from mtg.secret
-  command: "python3 {{ role_path }}/files/hex_sni.py {{ mtg.secret }}"
+  ansible.builtin.command: "python3 {{ role_path }}/files/hex_sni.py {{ mtg.secret }}"
   delegate_to: localhost
   become: false
   changed_when: false
@@ -28,13 +28,13 @@
     quiet: true
 
 - name: Generate mtg config
-  template:
+  ansible.builtin.template:
     src: "config.toml.j2"
     dest: "{{ mtg_container_dir }}/config.toml"
   register: mtg_config
 
 - name: Run container
-  include_role:
+  ansible.builtin.include_role:
     name: podman
     tasks_from: container.yaml
   vars:

@@ -1,7 +1,7 @@
 ---
 - name: Install git
   become: true
-  package:
+  ansible.builtin.package:
     state: present
     name:
       - git
@@ -30,7 +30,7 @@
   register: luanti_minetest_conf
 
 - name: Render Luanti world.mt
-  template:
+  ansible.builtin.template:
     src: "world.mt.j2"
     dest: "{{ luanti_container_dir }}/data/worlds/world/world.mt"
     owner: "{{ admin_user }}"
@@ -68,7 +68,7 @@
   register: luanti_mods
 
 - name: Logrotate logs
-  include_role:
+  ansible.builtin.include_role:
     name: logrotate
   vars:
     entries:

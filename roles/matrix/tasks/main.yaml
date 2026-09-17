@@ -1,6 +1,6 @@
 ---
 - name: Ensure matrix project directory exists
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ admin_user }}"
@@ -14,7 +14,7 @@
     - "{{ matrix_container_dir }}/modules"
 
 - name: Render homeserver.yaml
-  template:
+  ansible.builtin.template:
     src: homeserver.yaml.j2
     dest: "{{ matrix_container_dir }}/data/homeserver.yaml"
     owner: "{{ admin_user }}"
@@ -23,7 +23,7 @@
   register: matrix_homeserver
 
 - name: Copy room_restriction.py
-  copy:
+  ansible.builtin.copy:
     src: room_restriction.py
     dest: "{{ matrix_container_dir }}/modules/room_restriction.py"
     owner: "{{ admin_user }}"
@@ -32,7 +32,7 @@
   register: matrix_module
 
 - name: Render livekit.yaml
-  template:
+  ansible.builtin.template:
     src: livekit.yaml.j2
     dest: "{{ matrix_container_dir }}/livekit.yaml"
     owner: "{{ admin_user }}"
@@ -41,7 +41,7 @@
   register: matrix_livekit
 
 - name: Run container
-  include_role:
+  ansible.builtin.include_role:
     name: podman
     tasks_from: container.yaml
   vars:

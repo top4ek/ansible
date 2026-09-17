@@ -1,6 +1,6 @@
 ---
 - name: Ensure esphome project directory exists
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ admin_user }}"
@@ -11,7 +11,7 @@
     - "{{ esphome_container_dir }}/config"
 
 - name: Run container
-  include_role:
+  ansible.builtin.include_role:
     name: podman
     tasks_from: container.yaml
   vars:

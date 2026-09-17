@@ -1,12 +1,12 @@
 ---
 - name: Update apk index
   become: true
-  package:
+  ansible.builtin.package:
     update_cache: yes
 
 - name: Upgrade apk-tools after repository change
   become: true
-  package:
+  ansible.builtin.package:
     name: apk-tools
     state: latest
   when: alpine_repositories.changed
@@ -21,27 +21,27 @@
   changed_when: "'Upgrading' in apk_upgrade.stdout or 'Installing' in apk_upgrade.stdout"
 
 - name: Reset connection after system upgrade
-  meta: reset_connection
+  ansible.builtin.meta: reset_connection
 
 - name: Rediscover Python interpreter
-  setup:
+  ansible.builtin.setup:
     gather_subset: "!all,min"
   vars:
     ansible_python_interpreter: /usr/bin/python3
 
 - name: Update Python interpreter fact
-  set_fact:
+  ansible.builtin.set_fact:
     ansible_python_interpreter: "{{ ansible_facts.discovered_interpreter_python }}"
 
 - name: Remove motd
   become: true
-  file:
+  ansible.builtin.file:
     path: "/etc/motd"
     state: absent
 
 - name: Install packages
   become: true
-  package:
+  ansible.builtin.package:
     state: present
     name:
       - ca-certificates
@@ -53,7 +53,7 @@
 - name: Update user
   become: true
   ignore_errors: true
-  user:
+  ansible.builtin.user:
     name: "{{ admin_user }}"
     shell: "/bin/zsh"
     system: yes
@@ -70,7 +70,7 @@
 - name: Enable passwordless sudo
   become: true
   ignore_errors: true
-  lineinfile:
+  ansible.builtin.lineinfile:
     regexp: "^%wheel"
     line: "%wheel ALL=(ALL) NOPASSWD: ALL"
     state: present

@@ -1,7 +1,7 @@
 ---
 - name: Install Kitty
   become: true
-  package:
+  ansible.builtin.package:
     state: latest
     name:
       - kitty
@@ -21,6 +21,6 @@
       - ttf-ubuntu-font-family
 
 - name: Copy config file
-  template:
+  ansible.builtin.template:
     src: kitty.conf.j2
     dest: /home/{{ admin_user }}/.config/kitty/kitty.conf

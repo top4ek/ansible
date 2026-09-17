@@ -1,6 +1,6 @@
 ---
 - name: Ensure pihole project directories exist
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ admin_user }}"
@@ -16,7 +16,7 @@
   register: pihole_data_dir
 
 - name: Create pihole data directory
-  file:
+  ansible.builtin.file:
     path: "{{ pihole_container_dir }}/etc-pihole"
     state: directory
     owner: "{{ admin_user }}"
@@ -53,7 +53,7 @@
       changed_when: true
 
 - name: Run container
-  include_role:
+  ansible.builtin.include_role:
     name: podman
     tasks_from: container.yaml
   vars:

@@ -1,9 +1,9 @@
 - name: Configure package sources
-  include_tasks: package_cache.yaml
+  ansible.builtin.include_tasks: package_cache.yaml
 
 - name: Install common packages and update databases
   become: true
-  package:
+  ansible.builtin.package:
     state: latest
     update_cache: yes
     name:
@@ -20,11 +20,11 @@
       - zsh-syntax-highlighting
 
 - name: Run distribution specific tasks
-  include_tasks: "{{ ansible_os_family }}.yaml"
+  ansible.builtin.include_tasks: "{{ ansible_os_family }}.yaml"
 
 - name: Disable SSH password authentication
   become: true
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
     regex: '^(\#|\s)*PasswordAuthentication\s*(yes|no)$'
     line: "PasswordAuthentication no"
@@ -33,7 +33,7 @@
 
 - name: Set SSH port
   become: true
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: "/etc/ssh/sshd_config"
     regex: '^(\#|\s)*Port\s*\d+$'
     line: "Port {{ ansible_port }}"
@@ -42,13 +42,13 @@
 
 - name: Set hostname in /etc/hostname
   become: true
-  copy:
+  ansible.builtin.copy:
     content: "{{ hostname|default(inventory_hostname) }}\n"
     dest: "/etc/hostname"
 
 - name: Set hostname in /etc/hosts
   become: true
-  lineinfile:
+  ansible.builtin.lineinfile:
     regexp: "^127.0.1.1"
     line: "127.0.1.1 {{ hostname|default(inventory_hostname) }}.localdomain {{
       hostname|default(inventory_hostname) }}"
@@ -57,13 +57,13 @@
 
 - name: Minimize swappines
   become: true
-  copy:
+  ansible.builtin.copy:
     content: "vm.swappiness = 1\n"
     dest: "/etc/sysctl.d/swappiness.conf"
 
 - name: Disable PC speaker
   become: true
-  copy:
+  ansible.builtin.copy:
     content: "blacklist pcspkr
 
       blacklist snd_pcsp\n"
@@ -71,14 +71,14 @@
 
 - name: Create timezone symbolic link
   become: true
-  file:
+  ansible.builtin.file:
     src: "/usr/share/zoneinfo/{{ TIMEZONE }}"
     dest: "/etc/localtime"
     state: link
 
 - name: Create udev directory
   become: true
-  file:
+  ansible.builtin.file:
     path: "/etc/udev/rules.d"
     state: directory
     mode: "0755"
@@ -86,20 +86,20 @@
 
 - name: Set keymap via udev
   become: true
-  template:
+  ansible.builtin.template:
     src: "templates/75-x11-input.rules.j2"
     dest: "/etc/udev/rules.d/75-x11-input.rules"
   when: ansible_facts['os_family'] != 'Alpine'
 
 - name: Copy locale.conf
   become: true
-  template:
+  ansible.builtin.template:
     src: "templates/locale.conf.j2"
     dest: "/etc/locale.conf"
 
 - name: Ensure the locales exists
   become: true
-  lineinfile:
+  ansible.builtin.lineinfile:
     path: /etc/locale.gen
     regexp: "^#?\\s*{{ item | regex_escape }} "
     line: "{{ item }} {{ item.split('.')[1] | default('UTF-8') }}"
@@ -118,7 +118,7 @@
 
 - name: Set hardware clock to UTC
   become: true
-  copy:
+  ansible.builtin.copy:
     content: "0.0 0 0.0\n0\nUTC\n"
     dest: /etc/adjtime
     owner: root
@@ -127,7 +127,7 @@
 
 - name: Write /etc/timezone
   become: true
-  copy:
+  ansible.builtin.copy:
     content: "{{ TIMEZONE }}\n"
     dest: /etc/timezone
     owner: root
@@ -136,32 +136,32 @@
   when: ansible_facts['os_family'] == 'Debian'
 
 - name: Ensure .profile exists
-  copy:
+  ansible.builtin.copy:
     content: ""
     dest: /home/{{ admin_user }}/.profile
     force: false
 
 - name: Define export EDITOR
-  lineinfile:
+  ansible.builtin.lineinfile:
     state: present
     path: /home/{{ admin_user }}/.profile
     regexp: "^export EDITOR="
     line: "export EDITOR=nvim"
 
 - name: Create directory
-  file:
+  ansible.builtin.file:
     path: "/home/{{ admin_user }}/.ssh"
     state: directory
     mode: "0700"
 
 - name: Add public key
-  lineinfile:
+  ansible.builtin.lineinfile:
     state: present
     path: /home/{{ admin_user }}/.ssh/authorized_keys
     line: "{{ admin_public_key }}"
 
 - name: Define key bindings
-  lineinfile:
+  ansible.builtin.lineinfile:
     state: present
     path: /home/{{ admin_user }}/.profile
     line: "bindkey '{{ item.key }}' {{ item.command }}"
@@ -185,14 +185,14 @@
     - { key: "^[[1;5D", command: "backward-word" }
 
 - name: Set home permissions
-  file:
+  ansible.builtin.file:
     path: "/home/{{ admin_user }}"
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     mode: "700"
 
 - name: Create wakatime config
-  template:
+  ansible.builtin.template:
     dest: "/home/{{ admin_user }}/.wakatime.cfg"
     src: ".wakatime.cfg.j2"
   when:
@@ -200,32 +200,32 @@
     - wakatime.key is defined
 
 - name: Clone oh my zsh sources
-  git:
+  ansible.builtin.git:
     repo: "https://github.com/robbyrussell/oh-my-zsh.git"
     dest: "/home/{{ admin_user }}/.oh-my-zsh"
-    single_branch: yes
+    single_branch: true
     depth: 1
-    update: yes
+    update: true
 
 - name: Set permissions of oh-my-zsh
   become: true
-  file:
+  ansible.builtin.file:
     path: "/home/{{ admin_user }}/.oh-my-zsh"
     mode: "go-w"
 
 - name: Creating .zshrc
-  template:
+  ansible.builtin.template:
     src: templates/.zshrc.j2
     dest: /home/{{ admin_user }}/.zshrc
 
 - name: Create config directory
-  file:
+  ansible.builtin.file:
     path: "/home/{{ admin_user }}/.config"
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
     state: directory
 
 - name: Copy starship config
-  template:
+  ansible.builtin.template:
     src: starship.toml.j2
     dest: /home/{{ admin_user }}/.config/starship.toml
