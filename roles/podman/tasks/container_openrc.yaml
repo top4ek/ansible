@@ -1,7 +1,7 @@
 ---
 - name: Ensure OpenRC service script is installed
   become: true
-  template:
+  ansible.builtin.template:
     src: "templates/openrc-podman-compose.initd.j2"
     dest: "/etc/init.d/{{ container_name }}"
     owner: root

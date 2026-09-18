@@ -2,7 +2,7 @@
 - name: Ensure systemd user unit directory exists
   become: true
   become_user: "{{ admin_user }}"
-  file:
+  ansible.builtin.file:
     path: "/home/{{ admin_user }}/.config/systemd/user"
     state: directory
     mode: "0755"
@@ -10,7 +10,7 @@
 - name: Install systemd user unit for compose project
   become: true
   become_user: "{{ admin_user }}"
-  template:
+  ansible.builtin.template:
     src: "templates/podman-compose-user.service.j2"
     dest: "/home/{{ admin_user }}/.config/systemd/user/{{ container_name }}.service"
     mode: "0644"

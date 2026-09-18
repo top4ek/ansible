@@ -1,7 +1,7 @@
 ---
 - name: Install Archlinux-specific packages for rootless podman
   become: true
-  package:
+  ansible.builtin.package:
     state: present
     update_cache: yes
     name:

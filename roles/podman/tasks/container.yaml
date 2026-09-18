@@ -1,7 +1,7 @@
 ---
 - name: Ensure container project directory exists
   become: true
-  file:
+  ansible.builtin.file:
     path: "{{ compose_project_dir }}"
     state: directory
     owner: "{{ admin_user }}"
@@ -10,7 +10,7 @@
 
 - name: Render compose.yaml
   become: true
-  template:
+  ansible.builtin.template:
     src: compose.yaml.j2
     dest: "{{ podman_compose_dest }}"
     owner: "{{ admin_user }}"
@@ -53,9 +53,9 @@
     podman_apply: "{{ (compose_render is changed) or (podman_images_before.stdout != podman_images_after.stdout) or (podman_recreate | default(false) | bool) }}"
 
 - name: Run systemd-user unit setup
-  include_tasks: container_systemd_user_unit.yaml
+  ansible.builtin.include_tasks: container_systemd_user_unit.yaml
   when: ansible_facts['service_mgr'] == 'systemd'
 
 - name: Run OpenRC setup
-  include_tasks: container_openrc.yaml
+  ansible.builtin.include_tasks: container_openrc.yaml
   when: ansible_facts['service_mgr'] in ['openrc', 'rc']

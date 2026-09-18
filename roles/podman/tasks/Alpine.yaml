@@ -1,7 +1,7 @@
 ---
 - name: Install Alpine-specific packages for rootless podman
   become: true
-  package:
+  ansible.builtin.package:
     state: present
     update_cache: yes
     name:
@@ -9,14 +9,14 @@
 
 - name: Enable cgroups v2
   become: true
-  copy:
+  ansible.builtin.copy:
     dest: /etc/conf.d/cgroups
     content: rc_cgroup_mode="unified"
     mode: "0644"
 
 - name: Enable and start cgroups service
   become: true
-  service:
+  ansible.builtin.service:
     name: cgroups
     state: started
     enabled: yes

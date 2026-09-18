@@ -1,7 +1,7 @@
 ---
 - name: "Restarting firewall rules (Systemd)"
   become: true
-  systemd:
+  ansible.builtin.systemd:
     daemon_reload: yes
     name: nftables
     enabled: yes
@@ -12,7 +12,7 @@
 
 - name: "Restarting firewall rules (OpenRC)"
   become: true
-  service:
+  ansible.builtin.service:
     name: nftables
     state: restarted
   when: ansible_facts['service_mgr'] in ['openrc', 'rc']

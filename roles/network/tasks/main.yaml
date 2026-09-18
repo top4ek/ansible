@@ -1,6 +1,6 @@
 - name: Remove superseded sysctl drop-ins
   become: true
-  file:
+  ansible.builtin.file:
     path: "/etc/sysctl.d/{{ item }}"
     state: absent
   loop:
@@ -10,7 +10,7 @@
 
 - name: Set network sysctl flags
   become: true
-  template:
+  ansible.builtin.template:
     src: sysctl-network.conf.j2
     dest: /etc/sysctl.d/10-network.conf
     owner: root
@@ -20,25 +20,24 @@
 
 - name: Apply network sysctl flags
   become: true
-  ansible.builtin.command: sysctl --system
+  ansible.builtin.command: sysctl -e -p /etc/sysctl.d/10-network.conf
   changed_when: true
-  failed_when: false
   when: network_sysctl is changed
 
 - name: Deleting old firewall daemons
   become: true
-  package:
+  ansible.builtin.package:
     state: absent
     name:
       - firewalld
     update_cache: yes
 
 - name: Gather service facts for NetworkManager detection
-  service_facts:
+  ansible.builtin.service_facts:
   when: network_backend == 'auto'
 
 - name: Detect NetworkManager backend
-  set_fact:
+  ansible.builtin.set_fact:
     network_use_networkmanager: >-
       {{
         network_backend == 'networkmanager'
@@ -53,7 +52,7 @@
 
 - name: Rename legacy /etc/network/interfaces when using NetworkManager
   become: true
-  command:
+  ansible.builtin.command:
     cmd: mv /etc/network/interfaces /etc/network/interfaces-old
   args:
     removes: /etc/network/interfaces
@@ -62,13 +61,13 @@
   changed_when: true
 
 - name: Configure network interfaces
-  include_tasks: networking.yaml
+  ansible.builtin.include_tasks: networking.yaml
   when: interfaces is defined
 
 - name: Configure WireGuard
-  include_tasks: wireguard.yaml
+  ansible.builtin.include_tasks: wireguard.yaml
   when: wireguard is defined and wireguard.interfaces is defined
 
 - name: Configure nftables
-  include_tasks: nftables.yaml
+  ansible.builtin.include_tasks: nftables.yaml
   when: interfaces is defined

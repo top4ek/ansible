@@ -1,13 +1,13 @@
 - name: Installing required packages
   become: true
-  package:
+  ansible.builtin.package:
     name: nftables
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: "Generating nftables rules"
   become: true
-  template:
+  ansible.builtin.template:
     src: "nftables.conf.j2"
     dest: "{{ '/etc/nftables.nft' if ansible_facts['os_family'] == 'Alpine' else
       '/etc/nftables.conf' }}"
@@ -19,7 +19,7 @@
 
 - name: Enable and start nftables service
   become: true
-  service:
+  ansible.builtin.service:
     name: nftables
     enabled: true
     state: started

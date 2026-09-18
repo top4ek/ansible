@@ -2,7 +2,7 @@
 - name: Configure interfaces via interfaces
   when: not network_use_networkmanager
   become: true
-  template:
+  ansible.builtin.template:
     src: interfaces.j2
     dest: /etc/network/interfaces
     mode: "0644"
@@ -13,7 +13,7 @@
     - not network_use_networkmanager
     - interfaces | selectattr('nameservers', 'defined') | list | length > 0
   become: true
-  template:
+  ansible.builtin.template:
     src: resolv.conf.j2
     dest: /etc/resolv.conf
     mode: "0644"
@@ -23,14 +23,14 @@
   block:
     - name: Ensure NetworkManager is enabled and running
       become: true
-      service:
+      ansible.builtin.service:
         name: NetworkManager
         enabled: true
         state: started
 
     - name: Disable legacy networking services on Debian
       become: true
-      service:
+      ansible.builtin.service:
         name: "{{ item }}"
         enabled: false
         state: stopped
@@ -42,7 +42,7 @@
 
     - name: Deploy NetworkManager connection profiles
       become: true
-      template:
+      ansible.builtin.template:
         src: nmconnection.j2
         dest: "/etc/NetworkManager/system-connections/{{ item.iface }}.nmconnection"
         owner: root

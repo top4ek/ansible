@@ -1,6 +1,6 @@
 ---
 - name: Ensure container project directory exists
-  file:
+  ansible.builtin.file:
     path: "{{ shizoidgo_container_dir }}"
     state: directory
     owner: "{{ admin_user }}"
@@ -8,7 +8,7 @@
     mode: "0755"
 
 - name: Generate config.yaml
-  copy:
+  ansible.builtin.copy:
     content: "{{ shizoidgo | to_nice_yaml }}"
     dest: "{{ shizoidgo_container_dir }}/config.yaml"
     owner: "{{ admin_user }}"
@@ -17,7 +17,7 @@
   register: shizoidgo_config
 
 - name: Run container
-  include_role:
+  ansible.builtin.include_role:
     name: podman
     tasks_from: container.yaml
   vars:

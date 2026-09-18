@@ -1,7 +1,7 @@
 ---
 - name: Install PostgreSQL client
   become: true
-  package:
+  ansible.builtin.package:
     name: python-psycopg2
     state: present
     update_cache: yes

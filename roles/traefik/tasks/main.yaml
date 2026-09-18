@@ -1,6 +1,6 @@
 ---
 - name: Ensure traefik project directory exists
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ admin_user }}"
@@ -12,7 +12,7 @@
     - "{{ traefik_container_dir }}/log"
 
 - name: Render traefik dynamic configurations
-  copy:
+  ansible.builtin.copy:
     content: "{{ item.value | to_nice_yaml }}"
     dest: "{{ traefik_container_dir }}/dynamic/{{ item.key }}.yaml"
     owner: "{{ admin_user }}"
@@ -21,7 +21,7 @@
   loop: "{{ (traefik_dynamic | default({})) | dict2items }}"
 
 - name: Ensure acme.json exists with correct permissions
-  copy:
+  ansible.builtin.copy:
     dest: "{{ traefik_container_dir }}/acme.json"
     content: "{}"
     force: false
@@ -45,14 +45,14 @@
   changed_when: traefik_log_migrated.rc == 0
 
 - name: Ensure traefik.log exists (file target for filePath)
-  copy:
+  ansible.builtin.copy:
     dest: "{{ traefik_container_dir }}/log/traefik.log"
     content: ""
     force: false
     mode: "0644"
 
 - name: Render traefik static configuration
-  template:
+  ansible.builtin.template:
     src: traefik.yaml.j2
     dest: "{{ traefik_container_dir }}/traefik.yaml"
     owner: "{{ admin_user }}"
@@ -61,7 +61,7 @@
   register: traefik_static_config
 
 - name: Run traefik container
-  include_role:
+  ansible.builtin.include_role:
     name: podman
     tasks_from: container.yaml
   vars:

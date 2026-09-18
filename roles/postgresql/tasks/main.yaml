@@ -1,6 +1,6 @@
 ---
 - name: Set PostgreSQL paths
-  set_fact:
+  ansible.builtin.set_fact:
     postgresql_data_dir: "{{ postgresql_container_dir }}/data"
     # postgresql_backup_dir: "{{ postgresql_compose_dir }}/backups"
 
@@ -22,11 +22,11 @@
     postgresql_installed_version: "{{ (postgresql_pgversion_raw.content | b64decode | trim) if postgresql_pgversion_file.stat.exists else (postgresql_version | string) }}"
 
 - name: Run major version upgrade
-  include_tasks: upgrade.yaml
+  ansible.builtin.include_tasks: upgrade.yaml
   when: postgresql_installed_version != (postgresql_version | string)
 
 - name: Run container
-  include_role:
+  ansible.builtin.include_role:
     name: podman
     tasks_from: container.yaml
   vars:
@@ -34,19 +34,19 @@
     podman_recreate: "{{ postgresql_upgrade_pending | default(false) }}"
 
 - name: Wait for postgresql.conf to be created
-  wait_for:
+  ansible.builtin.wait_for:
     path: "{{ postgresql_data_dir }}/postgresql.conf"
     timeout: 120
 
 - name: Deploy pg_hba.conf
-  template:
+  ansible.builtin.template:
     src: pg_hba.conf.j2
     dest: "{{ postgresql_data_dir }}/pg_hba.conf"
     mode: "0644"
   notify: Reload PostgreSQL
 
 - name: Ensure conf directory exists
-  file:
+  ansible.builtin.file:
     path: "{{ postgresql_data_dir }}/conf.d"
     state: directory
     owner: "{{ admin_user }}"
@@ -54,14 +54,14 @@
     mode: "0755"
 
 - name: Deploy custom PostgreSQL config
-  template:
+  ansible.builtin.template:
     src: custom.conf.j2
     dest: "{{ postgresql_data_dir }}/conf.d/custom.conf"
     mode: "0644"
   notify: Reload PostgreSQL
 
 - name: Include custom configs
-  lineinfile:
+  ansible.builtin.lineinfile:
     regexp: "^#include_dir = "
     line: "include_dir = 'conf.d'"
     state: present
@@ -72,16 +72,16 @@
   ansible.builtin.meta: flush_handlers
 
 - name: Install distribution-specific packages
-  include_tasks: "{{ ansible_facts['os_family'] }}.yaml"
+  ansible.builtin.include_tasks: "{{ ansible_facts['os_family'] }}.yaml"
 
 - name: Wait for PostgreSQL to accept TCP connections on localhost
-  wait_for:
+  ansible.builtin.wait_for:
     host: 127.0.0.1
     port: "{{ postgresql_conf.port | default(5432) }}"
     timeout: 120
 
 - name: Restore cluster dump after major upgrade
-  include_tasks: upgrade_restore.yaml
+  ansible.builtin.include_tasks: upgrade_restore.yaml
   when: postgresql_upgrade_pending | default(false) | bool
 
 - name: Set superuser password

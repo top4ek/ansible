@@ -1,6 +1,6 @@
 ---
 - name: Ensure container project directories exist
-  file:
+  ansible.builtin.file:
     path: "{{ item }}"
     state: directory
     owner: "{{ admin_user }}"
@@ -10,7 +10,7 @@
     - "{{ valkey_container_dir }}/conf"
 
 - name: Deploy Valkey config
-  template:
+  ansible.builtin.template:
     src: valkey.conf.j2
     dest: "{{ valkey_container_dir }}/conf/valkey.conf"
     owner: "{{ admin_user }}"
@@ -19,7 +19,7 @@
   register: valkey_config
 
 - name: Run container
-  include_role:
+  ansible.builtin.include_role:
     name: podman
     tasks_from: container.yaml
   vars:

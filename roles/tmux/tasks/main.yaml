@@ -1,12 +1,12 @@
 - name: Install packages
   become: true
-  package:
+  ansible.builtin.package:
     state: present
     name:
       - tmux
 
 - name: Create plugins directories
-  file:
+  ansible.builtin.file:
     path: "/home/{{ admin_user }}/.config/tmux/plugins/{{ item }}"
     state: directory
     mode: "0755"
@@ -14,27 +14,27 @@
     - catppuccin
 
 - name: Install catppuccin theme
-  git:
+  ansible.builtin.git:
     repo: "https://github.com/catppuccin/tmux.git"
     dest: "/home/{{ admin_user }}/.config/tmux/plugins/catppuccin/tmux"
-    single_branch: yes
-    update: yes
+    single_branch: true
+    update: true
     version: "v2.3"
 
 - name: Copy unit file
   become: true
-  copy:
+  ansible.builtin.copy:
     src: tmux.service
     dest: /etc/systemd/system/tmux@.service
 
 - name: Copy config file
-  template:
+  ansible.builtin.template:
     src: .tmux.conf
     dest: ~/.tmux.conf
 
 - name: Enable and start service
   become: true
-  systemd:
+  ansible.builtin.systemd:
     name: "tmux@{{ admin_user }}"
     enabled: true
     # state: started

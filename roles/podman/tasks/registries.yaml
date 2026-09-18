@@ -1,7 +1,7 @@
 ---
 - name: Ensure registries.conf.d exists
   become: true
-  file:
+  ansible.builtin.file:
     path: /etc/containers/registries.conf.d
     state: directory
     owner: root
@@ -10,7 +10,7 @@
 
 - name: Point podman at the local registry mirrors
   become: true
-  template:
+  ansible.builtin.template:
     src: registries-mirror.conf.j2
     dest: /etc/containers/registries.conf.d/10-local-mirror.conf
     owner: root
@@ -22,7 +22,7 @@
 
 - name: Remove local registry mirrors
   become: true
-  file:
+  ansible.builtin.file:
     path: /etc/containers/registries.conf.d/10-local-mirror.conf
     state: absent
   when: not (registry_cache_client | bool) or (registry_cache_upstreams | default({}) | length == 0)
