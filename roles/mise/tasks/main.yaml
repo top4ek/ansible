@@ -1,7 +1,4 @@
 ---
-- name: Run distribution specific tasks
-  ansible.builtin.include_tasks: "{{ ansible_os_family }}.yaml"
-
 - name: Ensure mise config directory exists
   ansible.builtin.file:
     path: "/home/{{ admin_user }}/.config/mise"
@@ -18,12 +15,9 @@
     group: "{{ admin_user }}"
     mode: "0644"
 
-- name: Install mise tools
-  become: true
-  become_user: "{{ admin_user }}"
-  environment:
-    HOME: "/home/{{ admin_user }}"
-  ansible.builtin.command: "mise install --yes"
+- name: Run distribution specific tasks
+  ansible.builtin.include_tasks: "{{ ansible_os_family }}.yaml"
+
 
 - name: Add mise shims to PATH
   ansible.builtin.lineinfile:
@@ -31,3 +25,9 @@
     path: "/home/{{ admin_user }}/.profile"
     regexp: '^export PATH="\$HOME/\.local/share/mise/shims'
     line: 'export PATH="$HOME/.local/share/mise/shims:$PATH"'
+
+- name: Activate mise in zsh sessions
+  ansible.builtin.lineinfile:
+    state: present
+    path: "/home/{{ admin_user }}/.zshrc"
+    line: 'eval "$(mise activate zsh)"'
