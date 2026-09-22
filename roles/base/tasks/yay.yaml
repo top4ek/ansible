@@ -1,7 +1,7 @@
 - name: Check if yay available
-  ansible.builtin.command: yay --version
-  ignore_errors: true
-  register: yayresult
+  ansible.builtin.stat:
+    path: /usr/bin/yay
+  register: yay_binary
 
 - name: Install build dependencies
   become: true
@@ -12,35 +12,45 @@
       - base-devel
     state: present
     update_cache: true
-  when: "yayresult.rc != 0"
+  when: not yay_binary.stat.exists
 
 - name: Checkout sources
+  become: true
+  become_user: "{{ admin_user }}"
   ansible.builtin.git:
     repo: "https://aur.archlinux.org/yay.git"
     dest: "/home/{{ admin_user }}/yay"
-  when: "yayresult.rc != 0"
+  when: not yay_binary.stat.exists
 
 - name: Build and install yay
-  ansible.builtin.shell:
+  become: true
+  become_user: "{{ admin_user }}"
+  ansible.builtin.command:
     cmd: makepkg -si --noconfirm
     chdir: "/home/{{ admin_user }}/yay"
-  when: "yayresult.rc != 0"
+  when: not yay_binary.stat.exists
 
 - name: Remove sources
   ansible.builtin.file:
     state: absent
     path: "/home/{{ admin_user }}/yay"
-  when: "yayresult.rc != 0"
+  when: not yay_binary.stat.exists
 
 - name: Show packages
   ansible.builtin.debug:
     msg: "{{ packages }}"
-  when: "packages is defined"
+  when: packages is defined
 
 - name: Install batch of packages
-  ansible.builtin.command: >
+  become: true
+  become_user: "{{ admin_user }}"
+  ansible.builtin.command: >-
     yay -S
       --answerclean none --answeredit none --answerupgrade none --answerdiff none
       --removemake --noconfirm --combinedupgrade --needed
-      {% for pkg in packages %} {{ pkg | quote }} {% endfor %}
-  when: "packages is defined"
+      {{ packages | map('quote') | join(' ') }}
+  environment:
+    LC_ALL: C
+  register: yay_install
+  changed_when: "'there is nothing to do' not in yay_install.stdout"
+  when: packages is defined

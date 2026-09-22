@@ -56,10 +56,10 @@
   ansible.builtin.user:
     name: "{{ admin_user }}"
     shell: "/bin/zsh"
-    system: yes
-    create_home: yes
+    system: true
+    create_home: true
     expires: -1
-    append: yes
+    append: true
     groups:
       - audio
       - input
@@ -69,9 +69,9 @@
 
 - name: Enable passwordless sudo
   become: true
-  ignore_errors: true
   ansible.builtin.lineinfile:
     regexp: "^%wheel"
     line: "%wheel ALL=(ALL) NOPASSWD: ALL"
     state: present
     path: "/etc/sudoers"
+    validate: "/usr/sbin/visudo -cf %s"

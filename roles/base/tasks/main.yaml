@@ -139,6 +139,8 @@
   ansible.builtin.copy:
     content: ""
     dest: /home/{{ admin_user }}/.profile
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
     force: false
 
 - name: Define export EDITOR
@@ -152,13 +154,19 @@
   ansible.builtin.file:
     path: "/home/{{ admin_user }}/.ssh"
     state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
     mode: "0700"
 
 - name: Add public key
   ansible.builtin.lineinfile:
     state: present
+    create: true
     path: /home/{{ admin_user }}/.ssh/authorized_keys
     line: "{{ admin_public_key }}"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0600"
 
 - name: Define key bindings
   ansible.builtin.lineinfile:
