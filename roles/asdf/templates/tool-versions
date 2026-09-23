@@ -1,0 +1,3 @@
+{% for tool in dev_tools %}
+{{ tool }} system
+{% endfor %}

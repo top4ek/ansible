@@ -1,0 +1,43 @@
+---
+- name: Resolve latest asdf release
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/asdf-vm/asdf/releases/latest
+    return_content: true
+  register: asdf_latest_release
+  changed_when: false
+
+- name: Map host architecture to asdf release architecture
+  ansible.builtin.set_fact:
+    asdf_arch:
+      x86_64: amd64
+      aarch64: arm64
+
+- name: Select asdf release asset
+  ansible.builtin.set_fact:
+    asdf_asset: >-
+      {{ asdf_latest_release.json.assets
+         | selectattr('name', 'equalto', 'asdf-' ~ asdf_latest_release.json.tag_name
+           ~ '-linux-' ~ asdf_arch[ansible_facts['architecture']] ~ '.tar.gz')
+         | list | first | default(none) }}
+
+- name: Validate asdf release asset
+  ansible.builtin.assert:
+    that:
+      - asdf_asset is not none
+    fail_msg: >-
+      No asdf asset found for {{ asdf_latest_release.json.tag_name }} and
+      {{ ansible_facts['architecture'] }}.
+
+- name: Check installed asdf version
+  ansible.builtin.command: /usr/local/bin/asdf version
+  register: asdf_installed
+  changed_when: false
+  failed_when: false
+
+- name: Install asdf binary
+  become: true
+  ansible.builtin.unarchive:
+    src: "{{ asdf_asset.browser_download_url }}"
+    dest: /usr/local/bin
+    remote_src: true
+  when: asdf_latest_release.json.tag_name not in asdf_installed.stdout

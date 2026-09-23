@@ -1,0 +1,17 @@
+---
+- name: Install asdf dependencies
+  become: true
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - ca-certificates
+      - curl
+      - git
+      - libssl-dev
+      - zlib1g-dev
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install asdf binary
+  ansible.builtin.include_tasks: install_binary.yaml

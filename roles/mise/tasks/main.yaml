@@ -1,4 +1,26 @@
 ---
+- name: Validate that the asdf role is not assigned
+  ansible.builtin.assert:
+    that:
+      - "'asdf' not in host_roles"
+    fail_msg: >-
+      roles/mise conflicts with roles/asdf on {{ inventory_hostname }}: both
+      manage ~/.tool-versions and shims. Remove one of them from host_roles/group_roles.
+  any_errors_fatal: true
+
+- name: Validate that the legacy tool list is not used
+  ansible.builtin.assert:
+    that:
+      - mise.tools is not defined
+    fail_msg: >-
+      {{ inventory_hostname }}: mise.tools заменён общим ключом
+      dev_tools: {<tool>: {version: ...}}. Обновите host_vars.
+
+- name: Roll back a previous asdf installation
+  ansible.builtin.include_role:
+    name: asdf
+    tasks_from: uninstall.yaml
+
 - name: Ensure mise config directory exists
   ansible.builtin.file:
     path: "/home/{{ admin_user }}/.config/mise"
@@ -16,8 +38,24 @@
     mode: "0644"
 
 - name: Run distribution specific tasks
-  ansible.builtin.include_tasks: "{{ ansible_os_family }}.yaml"
+  ansible.builtin.include_tasks: "{{ ansible_facts['os_family'] }}.yaml"
 
+- name: Install mise tools
+  become: true
+  become_user: "{{ admin_user }}"
+  ansible.builtin.command:
+    argv: [mise, install, "{{ item.key }}@{{ item.value.version }}"]
+    creates: "/home/{{ admin_user }}/.local/share/mise/installs/{{ item.key }}/{{ item.value.version }}"
+  loop: "{{ dev_tools | dict2items | rejectattr('value.version', 'equalto', 'system') | list }}"
+  loop_control:
+    label: "{{ item.key }} {{ item.value.version }}"
+
+- name: Rebuild mise shims
+  become: true
+  become_user: "{{ admin_user }}"
+  ansible.builtin.command:
+    argv: [mise, reshim]
+  changed_when: false
 
 - name: Add mise shims to PATH
   ansible.builtin.lineinfile:
@@ -25,9 +63,3 @@
     path: "/home/{{ admin_user }}/.profile"
     regexp: '^export PATH="\$HOME/\.local/share/mise/shims'
     line: 'export PATH="$HOME/.local/share/mise/shims:$PATH"'
-
-- name: Activate mise in zsh sessions
-  ansible.builtin.lineinfile:
-    state: present
-    path: "/home/{{ admin_user }}/.zshrc"
-    line: 'eval "$(mise activate zsh)"'

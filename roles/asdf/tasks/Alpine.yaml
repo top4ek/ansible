@@ -1,0 +1,16 @@
+---
+- name: Install asdf dependencies
+  become: true
+  ansible.builtin.package:
+    state: present
+    name:
+      - bash
+      - git
+      - ca-certificates
+      - tar
+      - build-base
+      - openssl-dev
+      - zlib-dev
+
+- name: Install asdf binary
+  ansible.builtin.include_tasks: install_binary.yaml

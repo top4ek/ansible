@@ -1,0 +1,84 @@
+- name: Validate that the mise role is not assigned
+  ansible.builtin.assert:
+    that:
+      - "'mise' not in host_roles"
+    fail_msg: >-
+      roles/asdf conflicts with roles/mise on {{ inventory_hostname }}: both
+      manage ~/.tool-versions and shims. Remove one of them from host_roles/group_roles.
+  any_errors_fatal: true
+
+- name: Validate dev_tools entries define a version
+  ansible.builtin.assert:
+    that:
+      - item.value.version is defined
+    fail_msg: >-
+      {{ inventory_hostname }}: dev_tools.{{ item.key }} не задаёт version; форма -
+      {<plugin>: {version: ..., src: ...}}.
+    quiet: true
+  loop: "{{ dev_tools | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Roll back a previous mise installation
+  ansible.builtin.include_role:
+    name: mise
+    tasks_from: uninstall.yaml
+
+- name: Install asdf
+  ansible.builtin.include_tasks: "{{ ansible_facts['os_family'] }}.yaml"
+
+- name: Enable legacy version file
+  ansible.builtin.ini_file:
+    path: "/home/{{ admin_user }}/.asdfrc"
+    create: true
+    section:
+    option: legacy_version_file
+    value: "{{ 'yes' if dev_tools_idiomatic | length > 0 else 'no' }}"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+
+- name: Render tool versions
+  ansible.builtin.template:
+    src: tool-versions
+    dest: "/home/{{ admin_user }}/.tool-versions"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  when: dev_tools | length > 0
+
+- name: Add asdf shims to PATH
+  ansible.builtin.lineinfile:
+    create: true
+    state: present
+    path: "/home/{{ admin_user }}/.profile"
+    regexp: '^export PATH="\$\{ASDF_DATA_DIR'
+    line: 'export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"'
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+
+- name: Add plugins
+  become: true
+  become_user: "{{ admin_user }}"
+  ansible.builtin.command:
+    argv: "{{ ['asdf', 'plugin', 'add', item.key] + ([item.value.src] if item.value.src is defined else []) }}"
+    creates: "{{ asdf_data_dir }}/plugins/{{ item.key }}"
+  environment:
+    ASDF_DATA_DIR: "{{ asdf_data_dir }}"
+  loop: "{{ dev_tools | default({}) | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Install plugin versions
+  become: true
+  become_user: "{{ admin_user }}"
+  ansible.builtin.command:
+    argv: ['asdf', 'install', "{{ item.key }}", "{{ item.value.version }}"]
+    creates: "{{ asdf_data_dir }}/installs/{{ item.key }}/{{ item.value.version }}"
+  environment:
+    ASDF_DATA_DIR: "{{ asdf_data_dir }}"
+  loop: "{{ dev_tools | default({}) | dict2items }}"
+  loop_control:
+    label: "{{ item.key }} {{ item.value.version }}"
+  when: item.value.version != 'system'

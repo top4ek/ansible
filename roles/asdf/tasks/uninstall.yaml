@@ -1,0 +1,59 @@
+---
+- name: Look for asdf leftovers
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: asdf_leftovers
+  loop:
+    - /usr/local/bin/asdf
+    - /opt/asdf-vm
+    - "/home/{{ admin_user }}/.asdfrc"
+    - "{{ asdf_data_dir }}"
+
+- name: Roll back asdf installation
+  when: asdf_leftovers.results | selectattr('stat.exists') | list | length > 0
+  block:
+    - name: Report found asdf leftovers
+      ansible.builtin.debug:
+        msg: "asdf leftovers on {{ inventory_hostname }}, rolling back: {{ asdf_leftovers.results | selectattr('stat.exists') | map(attribute='item') | list }}"
+
+    - name: Remove asdf shims from PATH
+      ansible.builtin.lineinfile:
+        state: absent
+        path: "/home/{{ admin_user }}/.profile"
+        regexp: '^export PATH="\$\{ASDF_DATA_DIR'
+
+    - name: Remove legacy asdf.sh sourcing
+      ansible.builtin.lineinfile:
+        state: absent
+        path: "/home/{{ admin_user }}/.profile"
+        line: ". /opt/asdf-vm/asdf.sh"
+
+    - name: Remove asdf config files and binary
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "/home/{{ admin_user }}/.asdfrc"
+        - "/home/{{ admin_user }}/.tool-versions"
+        - /usr/local/bin/asdf
+
+    - name: Remove asdf-vm package
+      ansible.builtin.package:
+        name: asdf-vm
+        state: absent
+      when: ansible_facts['os_family'] == 'Archlinux'
+
+    - name: Remove dangling asdf shims
+      ansible.builtin.file:
+        path: "{{ asdf_data_dir }}/shims"
+        state: absent
+
+    - name: Warn about remaining asdf data directory
+      ansible.builtin.debug:
+        msg: >-
+          {{ asdf_data_dir }} is left in place on {{ inventory_hostname }}; remove it
+          manually if the installed tools are no longer needed: rm -rf {{ asdf_data_dir }}
+      when: asdf_leftovers.results | selectattr('item', 'equalto', asdf_data_dir) | selectattr('stat.exists') | list | length > 0
+
+- name: Reset connection after mise removal
+  ansible.builtin.meta: reset_connection

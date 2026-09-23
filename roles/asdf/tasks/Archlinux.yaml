@@ -1,0 +1,7 @@
+- name: Install asdf-vm from AUR
+  ansible.builtin.include_role:
+    name: base
+    tasks_from: yay.yaml
+  vars:
+    packages:
+      - asdf-vm

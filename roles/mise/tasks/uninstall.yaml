@@ -1,0 +1,63 @@
+---
+- name: Look for mise leftovers
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  register: mise_leftovers
+  loop:
+    - /usr/bin/mise
+    - "/home/{{ admin_user }}/.config/mise/config.toml"
+    - "/home/{{ admin_user }}/.local/share/mise"
+
+- name: Check for extrepo
+  ansible.builtin.stat:
+    path: /usr/bin/extrepo
+  register: mise_extrepo
+
+- name: Roll back mise installation
+  when: mise_leftovers.results | selectattr('stat.exists') | list | length > 0
+  block:
+    - name: Report found mise leftovers
+      ansible.builtin.debug:
+        msg: "mise leftovers on {{ inventory_hostname }}, rolling back: {{ mise_leftovers.results | selectattr('stat.exists') | map(attribute='item') | list }}"
+
+    - name: Remove mise shims from PATH
+      ansible.builtin.lineinfile:
+        state: absent
+        path: "/home/{{ admin_user }}/.profile"
+        regexp: '^export PATH="\$HOME/\.local/share/mise/shims'
+
+    - name: Remove mise activation from zsh
+      ansible.builtin.lineinfile:
+        state: absent
+        path: "/home/{{ admin_user }}/.zshrc"
+        regexp: '^\s*eval "\$\(mise activate'
+
+    - name: Remove mise config
+      ansible.builtin.file:
+        path: "/home/{{ admin_user }}/.config/mise/config.toml"
+        state: absent
+
+    - name: Remove mise package
+      ansible.builtin.package:
+        name: mise
+        state: absent
+
+    - name: Remove dangling mise shims
+      ansible.builtin.file:
+        path: "/home/{{ admin_user }}/.local/share/mise/shims"
+        state: absent
+
+    - name: Disable mise apt repository
+      ansible.builtin.command: extrepo disable mise
+      changed_when: false
+      when:
+        - ansible_facts['os_family'] == 'Debian'
+        - mise_extrepo.stat.exists
+
+    - name: Warn about remaining mise data directory
+      ansible.builtin.debug:
+        msg: >-
+          /home/{{ admin_user }}/.local/share/mise is left in place on {{ inventory_hostname }};
+          remove it manually if the installed tools are no longer needed:
+          rm -rf /home/{{ admin_user }}/.local/share/mise
+      when: mise_leftovers.results | selectattr('item', 'equalto', '/home/' ~ admin_user ~ '/.local/share/mise') | selectattr('stat.exists') | list | length > 0

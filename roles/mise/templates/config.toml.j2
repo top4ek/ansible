@@ -1,10 +1,11 @@
-{% if mise is defined %}
-{% if mise.tools is defined %}
-{% if mise.tools.items is defined %}
-[tools]
-{% for tool, version in mise.tools.items() %}
-{{ tool }} = "{{ version }}"
-{% endfor %}
-{% endif %}
-{% endif %}
-{% endif %}
+[settings]
+auto_install = false
+not_found_auto_install = false
+not_found_system_fallback = true
+idiomatic_version_file_enable_tools = {{ dev_tools_idiomatic | to_json }}
+disable_hints = ["*"]
+
+[settings.status]
+missing_tools = "never"
+show_tools = false
+show_env = false
