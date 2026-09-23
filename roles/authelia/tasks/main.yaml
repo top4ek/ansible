@@ -15,7 +15,7 @@
     state: directory
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
-    mode: 0755
+    mode: "0755"
 
 - name: Render authelia configuration
   ansible.builtin.template:
@@ -23,12 +23,8 @@
     dest: "{{ authelia_container_dir }}/config/configuration.yml"
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
-    mode: 0644
+    mode: "0644"
   register: authelia_config
-
-- name: Set podman_recreate flag if config changed
-  ansible.builtin.set_fact:
-    podman_recreate: "{{ authelia_config.changed }}"
 
 - name: Deploy authelia container
   ansible.builtin.include_role:
@@ -36,3 +32,4 @@
     tasks_from: container.yaml
   vars:
     container_name: "{{ authelia_container_name }}"
+    podman_recreate: "{{ authelia_config is changed }}"
