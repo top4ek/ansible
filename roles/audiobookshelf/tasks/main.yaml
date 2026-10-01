@@ -1,0 +1,48 @@
+---
+- name: Merge Audiobookshelf configuration
+  ansible.builtin.set_fact:
+    audiobookshelf_config: "{{ audiobookshelf_defaults | combine(audiobookshelf | default({}), recursive=True) }}"
+
+- name: Validate Audiobookshelf mount paths
+  ansible.builtin.assert:
+    that:
+      - item is string
+      - item is match('^/')
+      - item != '/'
+      - not item.endswith('/')
+    fail_msg: "audiobookshelf.required_mounts must contain absolute non-root paths without trailing slashes"
+  loop: "{{ audiobookshelf_config.required_mounts }}"
+
+- name: Read active Audiobookshelf mounts
+  ansible.builtin.slurp:
+    src: /proc/mounts
+  register: audiobookshelf_active_mounts
+
+- name: Validate Audiobookshelf mounts are active
+  ansible.builtin.assert:
+    that:
+      - item in audiobookshelf_mount_paths
+    fail_msg: "Required Audiobookshelf mount {{ item }} is not active; refusing to create storage directories"
+  vars:
+    audiobookshelf_mount_paths: >-
+      {{ (audiobookshelf_active_mounts.content | b64decode).splitlines()
+          | reject('equalto', '') | map('split')
+          | map(attribute=1) | map('replace', '\040', ' ') | list }}
+  loop: "{{ audiobookshelf_config.required_mounts }}"
+
+- name: Ensure Audiobookshelf directories exist
+  ansible.builtin.include_tasks: directory.yaml
+  loop: "{{ [audiobookshelf_container_dir, audiobookshelf_config.config_path,
+              audiobookshelf_config.metadata_path, audiobookshelf_config.audiobooks_path,
+              audiobookshelf_config.podcasts_path] | unique }}"
+  loop_control:
+    loop_var: audiobookshelf_directory
+
+- name: Run Audiobookshelf container
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ audiobookshelf_container_name }}" # noqa var-naming[no-role-prefix] -- shared podman role interface
+    compose_project_dir: "{{ audiobookshelf_container_dir }}" # noqa var-naming[no-role-prefix] -- shared podman role interface
+    podman_required_mounts: "{{ audiobookshelf_config.required_mounts }}"

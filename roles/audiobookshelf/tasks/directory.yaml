@@ -1,0 +1,24 @@
+---
+- name: Identify Audiobookshelf storage directory
+  ansible.builtin.set_fact:
+    audiobookshelf_directory_is_shared: >-
+      {{ audiobookshelf_config.required_mounts | length > 0 and
+         audiobookshelf_directory is match('^(' ~
+           (audiobookshelf_config.required_mounts | map('regex_escape') | join('|')) ~ ')(/|$)') }}
+
+- name: Ensure shared Audiobookshelf directory exists
+  become: true
+  become_user: "{{ admin_user }}"
+  ansible.builtin.file:
+    path: "{{ audiobookshelf_directory }}"
+    state: directory
+  when: audiobookshelf_directory_is_shared | bool
+
+- name: Ensure local Audiobookshelf directory exists
+  ansible.builtin.file:
+    path: "{{ audiobookshelf_directory }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+  when: not (audiobookshelf_directory_is_shared | bool)

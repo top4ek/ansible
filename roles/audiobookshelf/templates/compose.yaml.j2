@@ -1,0 +1,37 @@
+services:
+  {{ audiobookshelf_container_name }}:
+    container_name: {{ audiobookshelf_container_name }}
+    image: "{{ audiobookshelf_image }}:{{ audiobookshelf_config.version }}"
+    restart: unless-stopped
+    userns_mode: keep-id
+    user: "{{ admin_uid }}:{{ admin_gid }}"
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      PORT: "13378"
+      TZ: "{{ TIMEZONE }}"
+    volumes:
+      - "{{ audiobookshelf_config.config_path }}:/config:rw"
+      - "{{ audiobookshelf_config.metadata_path }}:/metadata:rw"
+      - "{{ audiobookshelf_config.audiobooks_path }}:/audiobooks:rw"
+      - "{{ audiobookshelf_config.podcasts_path }}:/podcasts:rw"
+    ports:
+      - "{{ audiobookshelf_config.bind_address }}:{{ audiobookshelf_config.port }}:13378"
+{% if audiobookshelf_config.host %}
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.{{ audiobookshelf_container_name }}.rule=Host(`{{ audiobookshelf_config.host }}`)"
+      - "traefik.http.routers.{{ audiobookshelf_container_name }}.entrypoints=websecure"
+      - "traefik.http.routers.{{ audiobookshelf_container_name }}.tls=true"
+      - "traefik.http.routers.{{ audiobookshelf_container_name }}.tls.certresolver=letsencrypt"
+      - "traefik.http.services.{{ audiobookshelf_container_name }}.loadbalancer.server.port=13378"
+
+networks:
+  proxy:
+    external: true
+{% endif %}

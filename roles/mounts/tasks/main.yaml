@@ -1,0 +1,26 @@
+---
+- name: Install OS-specific mount dependencies
+  ansible.builtin.include_tasks: "{{ ansible_facts['os_family'] }}.yaml"
+  when: mounts | length > 0
+
+- name: Ensure mountpoint directories exist
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ mounts }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Manage fstab entries
+  ansible.builtin.blockinfile:
+    path: /etc/fstab
+    marker: "# {mark} ANSIBLE MANAGED BLOCK mounts"
+    block: |-
+      {% for item in mounts %}
+      {{ item.src | replace(' ', '\\040') | replace('\t', '\\011') }}\t{{ item.path | replace(' ', '\\040') | replace('\t', '\\011') }}\t{{ item.fstype }}\t{{ item.opts }}\t{{ item.dump | default(0) }}\t{{ item.passno | default(0) }}
+      {% endfor %}
+    state: "{{ 'present' if mounts | length > 0 else 'absent' }}"
+    create: true
+    backup: true
+    mode: "0644"

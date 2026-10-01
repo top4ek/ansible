@@ -1,0 +1,6 @@
+---
+- name: Install NFS client packages
+  become: true
+  ansible.builtin.package:
+    name: nfs-common
+    state: present

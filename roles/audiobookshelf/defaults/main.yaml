@@ -1,0 +1,24 @@
+---
+audiobookshelf_container_name: audiobookshelf
+audiobookshelf_container_dir: "/home/{{ admin_user }}/containers/{{ audiobookshelf_container_name }}"
+audiobookshelf_image: ghcr.io/advplyr/audiobookshelf
+
+# Direct access requires opening the selected TCP port in interfaces[].open_ports.
+# host_vars only needs overrides; omitted settings retain these defaults:
+# audiobookshelf:
+#   host: books.example.invalid
+#   audiobooks_path: /mnt/audiobooks
+audiobookshelf_defaults:
+  version: latest
+  host: "" # Set a hostname to enable TLS through the Traefik proxy network.
+  port: 13378 # Host port; the container always listens on 13378.
+  bind_address: "{{ '127.0.0.1' if (audiobookshelf | default({})).get('host', '') else '0.0.0.0' }}"
+  # SQLite must stay on local storage, never on NFS/SMB.
+  config_path: "{{ audiobookshelf_container_dir }}/config"
+  metadata_path: "{{ audiobookshelf_container_dir }}/metadata"
+  # Media paths may point to existing storage writable by admin_user.
+  # Mount directories must be separate, not nested inside each other.
+  audiobooks_path: "{{ audiobookshelf_container_dir }}/audiobooks"
+  podcasts_path: "{{ audiobookshelf_container_dir }}/podcasts"
+  # Must be active before directory creation; paths beneath these mounts retain NAS ownership and permissions.
+  required_mounts: [] # Mount dependencies for the Podman service, e.g. [/mnt].

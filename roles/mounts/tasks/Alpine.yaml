@@ -1,0 +1,12 @@
+---
+- name: Install NFS client packages
+  become: true
+  ansible.builtin.package:
+    name: nfs-utils
+    state: present
+
+- name: Ensure netmount is enabled for network filesystem mounts at boot
+  become: true
+  ansible.builtin.service:
+    name: netmount
+    enabled: true
