@@ -17,6 +17,10 @@ export KUBECONFIG=./kubeconfig # TODO: Rethink it.
 source $ZSH/oh-my-zsh.sh
 source $HOME/.profile
 
+{% if 'mise' in host_roles %}
+eval "$(mise activate zsh)"
+{% endif %}
+
 {% if zsh is defined and zsh.aliases is defined %}
 {% for name, command in zsh.aliases.items() %}
 alias {{ name }}='{{ command }}'

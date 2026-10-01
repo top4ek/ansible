@@ -20,7 +20,7 @@
       - zsh-syntax-highlighting
 
 - name: Run distribution specific tasks
-  ansible.builtin.include_tasks: "{{ ansible_os_family }}.yaml"
+  ansible.builtin.include_tasks: "{{ ansible_facts['os_family'] }}.yaml"
 
 - name: Disable SSH password authentication
   become: true
