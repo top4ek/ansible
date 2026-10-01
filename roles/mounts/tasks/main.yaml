@@ -1,7 +1,42 @@
 ---
+- name: Validate mount definitions
+  ansible.builtin.assert:
+    that:
+      - item.src is defined
+      - item.path is defined
+      - item.path is match('^/')
+      - item.path != '/'
+      - item.fstype is defined
+      - item.opts is defined
+    fail_msg: "Each mounts entry requires src, an absolute non-root path, fstype and opts"
+  loop: "{{ mounts }}"
+  loop_control:
+    label: "{{ item.path | default('undefined') }}"
+
 - name: Install OS-specific mount dependencies
   ansible.builtin.include_tasks: "{{ ansible_facts['os_family'] }}.yaml"
   when: mounts | length > 0
+
+- name: Inspect existing fstab
+  ansible.builtin.stat:
+    path: /etc/fstab
+  register: mounts_fstab_stat
+
+- name: Read existing fstab
+  ansible.builtin.slurp:
+    src: /etc/fstab
+  register: mounts_previous_fstab
+  when: mounts_fstab_stat.stat.exists
+
+- name: Read previously managed mountpoints
+  ansible.builtin.set_fact:
+    mounts_previous_paths: >-
+      {{ (mounts_previous_fstab.content | default('') | b64decode
+          | regex_findall('(?ms)^# BEGIN ANSIBLE MANAGED BLOCK mounts\n(.*?)^# END ANSIBLE MANAGED BLOCK mounts')
+          | join('\n')
+          | regex_findall('(?m)^[^#\s]+[ \t]+(\S+)')
+          | map('replace', '\040', ' ')
+          | map('replace', '\011', '\t') | list) }}
 
 - name: Ensure mountpoint directories exist
   ansible.builtin.file:
@@ -18,9 +53,50 @@
     marker: "# {mark} ANSIBLE MANAGED BLOCK mounts"
     block: |-
       {% for item in mounts %}
-      {{ item.src | replace(' ', '\\040') | replace('\t', '\\011') }}\t{{ item.path | replace(' ', '\\040') | replace('\t', '\\011') }}\t{{ item.fstype }}\t{{ item.opts }}\t{{ item.dump | default(0) }}\t{{ item.passno | default(0) }}
+      {{ item.src | replace(' ', '\040') | replace('\t', '\011') }} {{ item.path | replace(' ', '\040') | replace('\t', '\011') }} {{ item.fstype }} {{ item.opts }} {{ item.dump | default(0) }} {{ item.passno | default(0) }}
       {% endfor %}
     state: "{{ 'present' if mounts | length > 0 else 'absent' }}"
     create: true
     backup: true
     mode: "0644"
+  register: mounts_fstab
+
+- name: Read active mountpoints
+  ansible.builtin.slurp:
+    src: /proc/mounts
+  register: mounts_active
+
+- name: Decode active mountpoints
+  ansible.builtin.set_fact:
+    mounts_active_paths: >-
+      {{ (mounts_active.content | b64decode
+          | regex_findall('(?m)^\S+[ \t]+(\S+)')
+          | map('replace', '\040', ' ')
+          | map('replace', '\011', '\t') | list) }}
+
+- name: Unmount managed filesystems after fstab changes
+  ansible.builtin.command:
+    argv: [umount, "{{ item }}"]
+  loop: "{{ (mounts_previous_paths + (mounts | map(attribute='path') | list)) | unique | sort(reverse=true) }}"
+  when:
+    - mounts_fstab is changed
+    - item in mounts_active_paths
+  changed_when: true
+
+- name: Reload systemd mount units after fstab changes
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  when:
+    - mounts_fstab is changed
+    - ansible_facts['service_mgr'] == 'systemd'
+
+- name: Mount configured filesystems
+  ansible.builtin.command:
+    argv: [mount, "{{ item.path }}"]
+  loop: "{{ mounts | sort(attribute='path') }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when:
+    - "'noauto' not in item.opts.split(',')"
+    - mounts_fstab is changed or item.path not in mounts_active_paths
+  changed_when: true

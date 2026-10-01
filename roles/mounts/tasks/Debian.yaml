@@ -1,6 +1,8 @@
 ---
-- name: Install NFS client packages
+- name: Install NFS client and mount inspection packages
   become: true
   ansible.builtin.package:
-    name: nfs-common
+    name:
+      - nfs-common
+      - util-linux
     state: present
