@@ -41,9 +41,17 @@ table inet filter {
 {% endif %}
 {% endfor %}
 
-    icmp type echo-reply ct state new accept
+{% if network_allow_icmp %}
+    icmp type echo-request ct state new accept
+{% endif %}
     icmp type destination-unreachable ct state new accept
     icmp type time-exceeded ct state new accept
+{% if network_ipv6_enabled %}
+    icmpv6 type { nd-neighbor-solicit, nd-neighbor-advert, nd-router-solicit, nd-router-advert, packet-too-big, destination-unreachable, time-exceeded } accept
+{% if network_allow_icmp %}
+    icmpv6 type echo-request ct state new accept
+{% endif %}
+{% endif %}
   }
 
   chain forward {
