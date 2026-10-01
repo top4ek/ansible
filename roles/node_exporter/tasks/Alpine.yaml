@@ -1,0 +1,22 @@
+---
+- name: Install node exporter packages
+  ansible.builtin.package:
+    name:
+      - prometheus-node-exporter
+      - prometheus-node-exporter-openrc
+    state: present
+
+- name: Render node exporter configuration
+  ansible.builtin.template:
+    src: node-exporter.conf.j2
+    dest: /etc/conf.d/node-exporter
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart node-exporter
+
+- name: Enable and start node-exporter
+  ansible.builtin.service:
+    name: node-exporter
+    enabled: true
+    state: started

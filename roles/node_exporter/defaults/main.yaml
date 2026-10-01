@@ -1,0 +1,9 @@
+---
+node_exporter_port: 9100
+node_exporter_listen_address: "127.0.0.1"
+node_exporter_extra_args: []
+
+node_exporter:
+  port: 9100
+  listen_address: 127.0.0.1
+  extra_args: []

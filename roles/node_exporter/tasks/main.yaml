@@ -1,0 +1,11 @@
+---
+- name: Warn about unsupported platform
+  ansible.builtin.debug:
+    msg: >-
+      node_exporter is implemented for Alpine only; {{ inventory_hostname }} runs
+      {{ ansible_facts['os_family'] }}; skipping the node_exporter role without error.
+  when: ansible_facts['os_family'] != 'Alpine'
+
+- name: Apply the Alpine node exporter tasks
+  ansible.builtin.include_tasks: Alpine.yaml
+  when: ansible_facts['os_family'] == 'Alpine'
