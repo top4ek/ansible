@@ -11,6 +11,9 @@ COMPOSE_CMD="/usr/bin/podman-compose --in-pod=false -f $COMPOSE_FILE"
 
 depend() {
   need net cgroups
+{% if podman_required_mounts | default([]) | length > 0 %}
+  need netmount
+{% endif %}
   use podman-api
   after podman-api
 }
@@ -19,8 +22,16 @@ run_compose() {
   su -l "$ADMIN_USER" -c "XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR $COMPOSE_CMD $*"
 }
 
+check_required_mounts() {
+{% for mount_path in podman_required_mounts | default([]) %}
+  findmnt --mountpoint {{ mount_path | quote }} --types nfs,nfs4 || return 1
+{% endfor %}
+  return 0
+}
+
 start_pre() {
-  checkpath -d {{ compose_project_dir }}
+  checkpath -d {{ compose_project_dir }} || return 1
+  check_required_mounts
 }
 
 start() {
@@ -36,12 +47,14 @@ stop() {
 }
 
 reload() {
+  check_required_mounts || return 1
   ebegin "Reloading {{ container_name }}"
   run_compose pull && run_compose down && run_compose up -d
   eend $?
 }
 
 restart() {
+  check_required_mounts || return 1
   ebegin "Restarting {{ container_name }}"
   run_compose down && run_compose up -d
   eend $?

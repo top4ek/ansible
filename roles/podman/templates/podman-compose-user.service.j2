@@ -7,8 +7,14 @@ After=network.target podman.socket
 Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory={{ compose_project_dir }}
+{% for mount_path in podman_required_mounts | default([]) %}
+ExecStartPre=/usr/bin/findmnt --mountpoint "{{ mount_path }}" --types nfs,nfs4
+{% endfor %}
 ExecStart=/usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} up -d
 ExecStop=/usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} stop
+{% for mount_path in podman_required_mounts | default([]) %}
+ExecReload=/usr/bin/findmnt --mountpoint "{{ mount_path }}" --types nfs,nfs4
+{% endfor %}
 ExecReload=/bin/sh -c '/usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} pull && /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} down && /usr/bin/podman-compose --in-pod=false -f {{ podman_compose_dest }} up -d'
 TimeoutStartSec=1min
 
