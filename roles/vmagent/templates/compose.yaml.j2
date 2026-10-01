@@ -1,0 +1,15 @@
+services:
+  {{ vmagent_container_name }}:
+    container_name: {{ vmagent_container_name }}
+    image: "{{ vmagent_image }}:{{ vmagent.version | default('latest') }}"
+    restart: unless-stopped
+    network_mode: host
+    userns_mode: keep-id
+    user: "{{ admin_uid }}:{{ admin_gid }}"
+    command:
+      - "-promscrape.config=/etc/vmagent/scrape.yaml"
+      - "-remoteWrite.url={{ vmagent.remote_write_url }}"
+      - "-remoteWrite.tmpDataPath=/vmagentdata"
+    volumes:
+      - "{{ compose_project_dir }}/scrape.yaml:/etc/vmagent/scrape.yaml:ro"
+      - "{{ compose_project_dir }}/data:/vmagentdata"

@@ -1,0 +1,10 @@
+---
+vmagent_container_name: "vmagent"
+vmagent_container_dir: "/home/{{ admin_user }}/containers/{{ vmagent_container_name }}"
+vmagent_image: "docker.io/victoriametrics/vmagent"
+
+# vmagent:
+#   version: latest
+#   remote_write_url: http://monitoring.example/api/v1/write
+#   scrape_interval: 15s
+#   local_exporter_endpoint: 127.0.0.1:9100

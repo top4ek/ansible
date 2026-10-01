@@ -1,0 +1,33 @@
+---
+- name: Validate vmagent configuration
+  ansible.builtin.assert:
+    that:
+      - "'podman' in (host_roles | default([]))"
+      - vmagent.remote_write_url | default('') | length > 0
+    fail_msg: >-
+      vmagent requires the podman role and a non-empty vmagent.remote_write_url
+
+- name: Ensure vmagent data directory exists
+  ansible.builtin.file:
+    path: "{{ vmagent_container_dir }}/data"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0755"
+
+- name: Render vmagent scrape configuration
+  ansible.builtin.template:
+    src: scrape.yaml.j2
+    dest: "{{ vmagent_container_dir }}/scrape.yaml"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
+  register: vmagent_scrape_config
+
+- name: Run vmagent container
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: container.yaml
+  vars:
+    container_name: "{{ vmagent_container_name }}"
+    podman_recreate: "{{ vmagent_scrape_config is changed }}"
