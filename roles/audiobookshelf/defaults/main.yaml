@@ -8,6 +8,12 @@ audiobookshelf_image: ghcr.io/advplyr/audiobookshelf
 # audiobookshelf:
 #   host: books.example.invalid
 #   audiobooks_path: /mnt/audiobooks
+#   auth_api_token: ... # Administrator API key for automation; inventory only.
+#   oidc: # Optional; managed through the authenticated local API.
+#     issuer: https://auth.example.invalid
+#     client_id: ...
+#     client_secret: ...
+# Local login stays enabled, auto registration stays disabled, usernames are matched.
 audiobookshelf_defaults:
   version: latest
   host: "" # Set a hostname to enable TLS through the Traefik proxy network.

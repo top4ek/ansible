@@ -46,3 +46,7 @@
     container_name: "{{ audiobookshelf_container_name }}" # noqa var-naming[no-role-prefix] -- shared podman role interface
     compose_project_dir: "{{ audiobookshelf_container_dir }}" # noqa var-naming[no-role-prefix] -- shared podman role interface
     podman_required_mounts: "{{ audiobookshelf_config.required_mounts }}"
+
+- name: Configure Audiobookshelf OpenID Connect
+  ansible.builtin.include_tasks: oidc.yaml
+  when: audiobookshelf_config.oidc is defined

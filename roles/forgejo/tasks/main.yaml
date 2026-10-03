@@ -100,7 +100,6 @@
       ansible.builtin.command:
         argv: "{{ forgejo_admin_cmd + ['auth', 'add-ldap'] + forgejo_ldap_args }}"
       when: forgejo_ldap_source_id | length == 0
-      no_log: true
 
     - name: Update forgejo LDAP authentication source
       ansible.builtin.command:
@@ -109,7 +108,6 @@
               '--id', forgejo_ldap_source_id] + forgejo_ldap_args }}
       when: forgejo_ldap_source_id | length > 0
       changed_when: true
-      no_log: true
 
 - name: Configure the forgejo administrator
   when: forgejo.admin is defined
@@ -135,4 +133,3 @@
               '--password', forgejo.admin.password,
               '--must-change-password=false'] }}
       when: forgejo.admin.username not in (forgejo_admin_list.stdout | default(''))
-      no_log: true

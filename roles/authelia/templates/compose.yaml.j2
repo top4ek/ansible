@@ -15,7 +15,7 @@ services:
       traefik.http.routers.authelia.entrypoints: "websecure"
       traefik.http.routers.authelia.tls.certresolver: "letsencrypt"
       traefik.http.services.authelia.loadbalancer.server.port: "9091"
-      traefik.http.middlewares.authelia.forwardAuth.address: "https://auth.{{ traefik.zone }}/api/verify?rd=https://auth.{{ traefik.zone }}"
+      traefik.http.middlewares.authelia.forwardAuth.address: "http://authelia:9091/api/authz/forward-auth"
       traefik.http.middlewares.authelia.forwardAuth.trustForwardHeader: "true"
       traefik.http.middlewares.authelia.forwardAuth.authResponseHeaders: "Remote-User,Remote-Groups,Remote-Name,Remote-Email"
 

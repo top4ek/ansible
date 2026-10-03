@@ -1,0 +1,65 @@
+---
+- name: Validate Audiobookshelf OIDC settings
+  ansible.builtin.assert:
+    that:
+      - audiobookshelf_config.auth_api_token | default('') | length > 0
+      - audiobookshelf_config.oidc.issuer is match('^https://[^/]+$')
+      - audiobookshelf_config.oidc.client_id | default('') | length > 0
+      - audiobookshelf_config.oidc.client_secret | default('') | length > 0
+    fail_msg: "Audiobookshelf OIDC requires an HTTPS issuer without trailing slash, client_id, client_secret and auth_api_token"
+
+- name: Define Audiobookshelf OIDC settings
+  ansible.builtin.set_fact:
+    audiobookshelf_oidc_settings:
+      authActiveAuthMethods: [local, openid]
+      authOpenIDIssuerURL: "{{ audiobookshelf_config.oidc.issuer }}"
+      authOpenIDAuthorizationURL: "{{ audiobookshelf_config.oidc.issuer }}/api/oidc/authorization"
+      authOpenIDTokenURL: "{{ audiobookshelf_config.oidc.issuer }}/api/oidc/token"
+      authOpenIDUserInfoURL: "{{ audiobookshelf_config.oidc.issuer }}/api/oidc/userinfo"
+      authOpenIDJwksURL: "{{ audiobookshelf_config.oidc.issuer }}/jwks.json"
+      authOpenIDLogoutURL: null
+      authOpenIDClientID: "{{ audiobookshelf_config.oidc.client_id }}"
+      authOpenIDClientSecret: "{{ audiobookshelf_config.oidc.client_secret }}"
+      authOpenIDTokenSigningAlgorithm: RS256
+      authOpenIDButtonText: Login with Authelia
+      authOpenIDAutoLaunch: false
+      authOpenIDAutoRegister: false
+      authOpenIDMatchExistingBy: username
+      authOpenIDMobileRedirectURIs: ["audiobookshelf://oauth"]
+      authOpenIDSubfolderForRedirectURLs: ""
+
+- name: Read Audiobookshelf authentication settings
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ audiobookshelf_config.port }}/api/auth-settings"
+    headers:
+      Authorization: "Bearer {{ audiobookshelf_config.auth_api_token }}"
+    return_content: true
+  register: audiobookshelf_auth_settings
+  until: audiobookshelf_auth_settings.status == 200
+  retries: 10
+  delay: 3
+  when: not ansible_check_mode
+
+- name: Save Audiobookshelf authentication settings before enabling OIDC
+  ansible.builtin.copy:
+    content: "{{ audiobookshelf_auth_settings.json | to_nice_json }}"
+    dest: "{{ audiobookshelf_config.config_path }}/auth-settings.before-sso.json"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0600"
+    force: false
+  when:
+    - not ansible_check_mode
+    - (audiobookshelf_auth_settings.json | combine(audiobookshelf_oidc_settings)) != audiobookshelf_auth_settings.json
+
+- name: Update Audiobookshelf authentication settings
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ audiobookshelf_config.port }}/api/auth-settings"
+    method: PATCH
+    headers:
+      Authorization: "Bearer {{ audiobookshelf_config.auth_api_token }}"
+    body_format: json
+    body: "{{ audiobookshelf_oidc_settings }}"
+  register: audiobookshelf_oidc_update
+  changed_when: audiobookshelf_oidc_update.json.updated | bool
+  when: not ansible_check_mode

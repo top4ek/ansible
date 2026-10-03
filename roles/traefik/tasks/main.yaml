@@ -17,7 +17,7 @@
     dest: "{{ traefik_container_dir }}/dynamic/{{ item.key }}.yaml"
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
-    mode: "0644"
+    mode: "0600"
   loop: "{{ (traefik_dynamic | default({})) | dict2items }}"
 
 - name: Ensure acme.json exists with correct permissions

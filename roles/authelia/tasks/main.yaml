@@ -23,8 +23,37 @@
     dest: "{{ authelia_container_dir }}/config/configuration.yml"
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
-    mode: "0644"
+    mode: "0600"
   register: authelia_config
+
+- name: Validate rendered Authelia configuration
+  become: true
+  become_user: "{{ admin_user }}"
+  environment: "{{ podman_rootless_environment }}"
+  ansible.builtin.command:
+    argv:
+      - /usr/bin/podman
+      - run
+      - --rm
+      - --pull=missing
+      - -v
+      - "{{ authelia_container_dir }}/config:/config:ro"
+      - "{{ authelia_image }}"
+      - authelia
+      - config
+      - validate
+      - --config
+      - /config/configuration.yml
+  register: authelia_validation
+  changed_when: false
+  failed_when: false
+  when: authelia_config is changed and not ansible_check_mode
+
+- name: Assert Authelia configuration is valid
+  ansible.builtin.assert:
+    that: authelia_validation.rc == 0
+    fail_msg: "Authelia rejected its rendered configuration; inspect it on the target before applying"
+  when: authelia_config is changed and not ansible_check_mode
 
 - name: Deploy authelia container
   ansible.builtin.include_role:

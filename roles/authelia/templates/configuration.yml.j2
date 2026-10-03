@@ -1,7 +1,6 @@
 ---
 server:
-  host: 0.0.0.0
-  port: 9091
+  address: tcp://0.0.0.0:9091
 
 theme: auto
 
@@ -26,7 +25,9 @@ authentication_backend:
 
 session:
   secret: "{{ authelia.session_secret }}"
-  domain: "{{ traefik.zone }}"
+  cookies:
+    - domain: "{{ traefik.zone }}"
+      authelia_url: "https://auth.{{ traefik.zone }}"
   expiration: 1h
   inactivity: 5m
 
@@ -44,9 +45,18 @@ access_control:
   rules:
     - domain: "auth.{{ traefik.zone }}"
       policy: bypass
+{% if authelia.access_rules | default([]) %}
+{{ authelia.access_rules | to_nice_yaml(indent=2) | indent(4, true) }}
+{% endif %}
     - domain: "*.{{ traefik.zone }}"
       policy: one_factor
 
 identity_validation:
   reset_password:
     jwt_secret: "{{ authelia.jwt_secret }}"
+{% if authelia.oidc is defined %}
+
+identity_providers:
+  oidc:
+{{ authelia.oidc | to_nice_yaml(indent=2) | indent(4, true) }}
+{% endif %}

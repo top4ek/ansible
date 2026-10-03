@@ -22,7 +22,7 @@
     dest: "{{ glauth_container_dir }}/data/config.cfg"
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
-    mode: "0644"
+    mode: "0600"
   register: glauth_config
 
 - name: Run container

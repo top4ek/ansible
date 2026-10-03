@@ -67,7 +67,6 @@
         group: "{{ admin_user }}"
         mode: "0600"
       register: grafana_ldap_config
-      no_log: true
 
 - name: Run container
   ansible.builtin.include_role:

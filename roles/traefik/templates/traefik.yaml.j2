@@ -1,6 +1,11 @@
 entryPoints:
   web:
     address: ":80"
+{% if traefik_forwarded_headers_trusted_ips | length > 0 %}
+    forwardedHeaders:
+      trustedIPs:
+{{ traefik_forwarded_headers_trusted_ips | to_nice_yaml | indent(6, true) }}
+{% endif %}
     http:
       redirections:
         entryPoint:
@@ -10,6 +15,11 @@ entryPoints:
 
   websecure:
     address: ":443"
+{% if traefik_forwarded_headers_trusted_ips | length > 0 %}
+    forwardedHeaders:
+      trustedIPs:
+{{ traefik_forwarded_headers_trusted_ips | to_nice_yaml | indent(6, true) }}
+{% endif %}
     http3: {}
 
 {% if traefik.ldap | default(false) %}

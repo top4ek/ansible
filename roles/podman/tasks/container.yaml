@@ -15,7 +15,7 @@
     dest: "{{ podman_compose_dest }}"
     owner: "{{ admin_user }}"
     group: "{{ admin_user }}"
-    mode: "0644"
+    mode: "0600"
   register: compose_render
 
 - name: Snapshot local image ids before pull
