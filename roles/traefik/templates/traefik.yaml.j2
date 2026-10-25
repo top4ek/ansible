@@ -22,9 +22,14 @@ entryPoints:
 {% endif %}
     http3: {}
 
-{% if traefik.ldap | default(false) %}
+{% if traefik_ldap_enabled | default(false) %}
   ldap:
     address: ":636"
+
+{% endif %}
+{% if traefik_gopher_enabled | default(false) %}
+  gopher:
+    address: ":70"
 
 {% endif %}
 serversTransport:

@@ -9,8 +9,11 @@ services:
       - "80:80"
       - "443:443"
       - "443:443/udp"
-{% if traefik.ldap | default(false) %}
+{% if traefik_ldap_enabled | default(false) %}
       - "636:636"
+{% endif %}
+{% if traefik_gopher_enabled | default(false) %}
+      - "70:70/tcp"
 {% endif %}
     networks:
       - proxy

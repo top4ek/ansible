@@ -23,6 +23,12 @@ services:
       - "traefik.http.routers.warehouse06.tls=true"
       - "traefik.http.routers.warehouse06.tls.certresolver=letsencrypt"
       - "traefik.http.services.warehouse06.loadbalancer.server.port={{ warehouse06.config.server.port }}"
+{% if traefik_gopher_enabled | default(false) %}
+      - "traefik.tcp.routers.warehouse06-gopher.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.warehouse06-gopher.entrypoints=gopher"
+      - "traefik.tcp.routers.warehouse06-gopher.service=warehouse06-gopher"
+      - "traefik.tcp.services.warehouse06-gopher.loadbalancer.server.port=7070"
+{% endif %}
 
 networks:
   proxy:
