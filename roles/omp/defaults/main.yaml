@@ -1,0 +1,86 @@
+---
+omp_packages:
+
+omp_plugins:
+  - npm:@upstash/context7-pi
+
+omp_agent_dir: "/home/{{ admin_user }}/.omp/agent"
+
+omp_config:
+  setupVersion: 2
+  theme:
+    dark: dark-catppuccin
+    light: light-catppuccin
+  symbolPreset: nerd
+  composer:
+    shape: claude
+    tokenRate: true
+  plan:
+    autosave: false
+  memory:
+    backend: mnemopi
+  autolearn:
+    enabled: true
+  mnemopi:
+    scoping: per-project-tagged
+    embeddingVariant: multilingual
+    enhancedRecall: true
+    noEmbeddings: false
+    llmMode: smol
+  modelRoles:
+    default: openai-codex/gpt-6.1-terra:medium
+    tiny: openai-codex/gpt-6-luna:medium
+    image: openai-codex/gpt-image-2
+    slow: openai-codex/gpt-6.1-sol:medium
+    plan: openai-codex/gpt-6-astra:medium
+    vision: openai-codex/gpt-6.1-terra:low
+    commit: openai-codex/gpt-6-luna:low
+    advisor: openai-codex/gpt-6.1-terra:medium
+    task: openai-codex/gpt-6.1-sol:auto
+  cycleOrder:
+    - smol
+    - default
+    - slow
+    - vision
+    - plan
+    - commit
+    - tiny
+    - memory
+    - task
+    - advisor
+    - widget
+  statusLine:
+    preset: nerd
+    separator: none
+    contextLine: percentage
+  display:
+    showTokenUsage: true
+    shimmer: kitt
+    showTurnTime: true
+    pinnedAgents: full
+    cacheMissMarker: true
+    smoothStreaming: true
+  marketplace:
+    autoUpdate: notify
+  power:
+    sleepPrevention: "on"
+  lsp:
+    formatOnWrite: true
+    diagnosticsOnEdit: false
+  bashInterceptor:
+    enabled: true
+  async:
+    enabled: true
+  bash:
+    autoBackground:
+      enabled: false
+  terminal:
+    showProgress: true
+  read:
+    renderMarkdown: true
+  astGrep:
+    enabled: true
+  github:
+    enabled: true
+  commands:
+    enableClaudeUser: true

@@ -1,6 +1,0 @@
-- name: Install Steam
-  become: yes
-  package:
-    name:
-      - steam
-

@@ -1,0 +1,12 @@
+---
+- name: Warn about unsupported platform
+  ansible.builtin.debug:
+    msg: >-
+      omp-bin is packaged in the AUR only, so roles/omp supports Archlinux and
+      nothing else, while {{ inventory_hostname }} runs
+      {{ ansible_facts['os_family'] }}; skipping the omp role without error.
+  when: ansible_facts['os_family'] != 'Archlinux'
+
+- name: Apply the Archlinux tasks
+  ansible.builtin.include_tasks: Archlinux.yaml
+  when: ansible_facts['os_family'] == 'Archlinux'

@@ -1,0 +1,107 @@
+---
+- name: Install omp from AUR
+  ansible.builtin.include_role:
+    name: base
+    tasks_from: yay
+    apply:
+      become: false
+  vars:
+    packages:
+      - omp-bin
+
+- name: Ensure omp agent directories exist
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - path: "/home/{{ admin_user }}/.omp"
+      mode: "0700"
+    - path: "{{ omp_agent_dir }}"
+      mode: "0700"
+    - path: "{{ omp_agent_dir }}/skills"
+      mode: "0755"
+
+- name: Install the omp configuration
+  ansible.builtin.copy:
+    content: "{{ omp_config | to_nice_yaml(indent=2, sort_keys=false) }}"
+    dest: "{{ omp_agent_dir }}/config.yml"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0600"
+
+- name: List installed OMP plugins
+  ansible.builtin.command:
+    argv: [omp, plugin, list, --json]
+  become: true
+  become_user: "{{ admin_user }}"
+  environment:
+    HOME: "/home/{{ admin_user }}"
+    PI_CODING_AGENT_DIR: "{{ omp_agent_dir }}"
+  register: omp_installed_plugins
+  changed_when: false
+  when: omp_plugins | length > 0 and not ansible_check_mode
+
+- name: Install OMP plugins
+  ansible.builtin.command:
+    argv: [omp, install, "{{ item }}", --json]
+  become: true
+  become_user: "{{ admin_user }}"
+  environment:
+    HOME: "/home/{{ admin_user }}"
+    PI_CODING_AGENT_DIR: "{{ omp_agent_dir }}"
+  loop: "{{ omp_plugins | unique | list }}"
+  register: omp_plugin_installs
+  changed_when: >-
+    (omp_plugin_installs.stdout | from_json).name not in
+    (((omp_installed_plugins.stdout | from_json).npm +
+      (omp_installed_plugins.stdout | from_json).marketplace) | map(attribute='name') | list)
+  when: not ansible_check_mode
+
+- name: Upgrade OMP plugins
+  ansible.builtin.command:
+    argv: [omp, plugin, upgrade, "{{ (item.stdout | from_json).name }}", --json]
+  become: true
+  become_user: "{{ admin_user }}"
+  environment:
+    HOME: "/home/{{ admin_user }}"
+    PI_CODING_AGENT_DIR: "{{ omp_agent_dir }}"
+  loop: "{{ omp_plugin_installs.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  register: omp_plugin_upgrade
+  changed_when: (omp_plugin_upgrade.stdout | from_json).changed | bool
+  when: not ansible_check_mode
+
+- name: Discover OMP skills on the controller
+  ansible.builtin.find:
+    paths: "{{ role_path }}/files"
+    patterns: SKILL.md
+    recurse: true
+    depth: 2
+    file_type: file
+  delegate_to: localhost
+  become: false
+  register: omp_skill_files
+
+- name: Install OMP skills
+  ansible.builtin.copy:
+    src: "{{ item | dirname }}"
+    dest: "{{ omp_agent_dir }}/skills/"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0600"
+    directory_mode: "0700"
+  loop: "{{ omp_skill_files.files | map(attribute='path') | list }}"
+  loop_control:
+    label: "{{ item | dirname | basename }}"
+
+- name: Install OMP user context
+  ansible.builtin.copy:
+    src: AGENTS.md
+    dest: "/home/{{ admin_user }}/AGENTS.md"
+    owner: "{{ admin_user }}"
+    group: "{{ admin_user }}"
+    mode: "0644"
